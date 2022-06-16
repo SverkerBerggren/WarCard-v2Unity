@@ -15,10 +15,14 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     public int Width = 20;
     public int Height = 20;
 
+    private float m_TileWidth = 0;
 
-    void p_RegisterUnit(RuleManager.UnitInfo NewUnit, int PlayerIndex)
+    Vector3 p_GridToWorldPosition(int X, int Y)
     {
-
+        Vector3 ReturnValue= new Vector3(0, 0, 0);
+        ReturnValue.x = transform.position.x + m_TileWidth * X;
+        ReturnValue.y = transform.position.y + m_TileWidth * Y;
+        return (ReturnValue);
     }
     // Start is called before the first frame update
     void Start()
@@ -31,6 +35,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
                 GameObject NewObject = Instantiate(TileObject);
                 //Assumes that tiles are quadratic
                 float TileWidth = NewObject.GetComponent<SpriteRenderer>().size.x;
+                m_TileWidth = TileWidth;
                 Vector3 NewPosition = new Vector3(transform.position.x + XIndex * TileWidth, transform.position.y - YIndex * TileWidth, 0);
                 GridClick ClickObject = NewObject.GetComponent<GridClick>();
                 ClickObject.X = XIndex;
@@ -38,6 +43,22 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
                 ClickObject.AssociatedGrid = this;
                 NewObject.transform.position = NewPosition;
             }
+        }
+        UnitStats Stats = new UnitStats();
+        Stats.ActivationCost = 0;
+        Stats.Damage = 0;
+        Stats.HP = 5;
+        Stats.Damage = 3;
+        Stats.Movement = 3;
+
+        for(int i = 0; i < 3; i++)
+        {
+            UnitInfo NewUnit = new UnitInfo();
+            NewUnit.Stats = Stats;
+            NewUnit.Position = new Coordinate(0, i);
+            m_RuleManager.RegisterUnit(NewUnit, 0);
+            NewUnit.Position = new Coordinate(5, i);
+            m_RuleManager.RegisterUnit(NewUnit, 1);
         }
     }
 
@@ -51,11 +72,16 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     }
     public void OnUnitDestroyed(int UnitID)
     {
-
+        Destroy(m_VisibleUnits[UnitID]);
+        m_VisibleUnits.Remove(UnitID);
     }
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
 
+    }
+    public void OnUnitCreate(RuleManager.UnitInfo NewUnit)
+    {
+        
     }
 
     public void OnClick(int X, int Y)

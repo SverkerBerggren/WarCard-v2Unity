@@ -67,6 +67,12 @@ namespace RuleManager
             HP = StatToCopy.HP;
             Movement = StatToCopy.Movement;
             ActivationCost = StatToCopy.ActivationCost;
+            Range = StatToCopy.Range;
+            Damage = StatToCopy.Damage;
+        }
+        public UnitStats()
+        {
+
         }
     }
     public struct Coordinate
@@ -92,6 +98,20 @@ namespace RuleManager
         public Coordinate Position;
         public List<Effect> Effects;
         public UnitStats Stats;
+
+        public UnitInfo()
+        {
+
+        }
+        public UnitInfo(UnitInfo InfoToCopy)
+        {
+            UnitID = InfoToCopy.UnitID;
+            UnitID = InfoToCopy.PlayerIndex;
+            OpaqueInteger = InfoToCopy.OpaqueInteger;
+            Position = InfoToCopy.Position;
+            Effects = InfoToCopy.Effects;
+            Stats = new UnitStats(InfoToCopy.Stats);
+        }
     }
     public class TileInfo
     {
@@ -99,7 +119,6 @@ namespace RuleManager
 
         public TileInfo()
         {
-
 
         }
         public TileInfo(TileInfo TileToCopy)
@@ -114,6 +133,7 @@ namespace RuleManager
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
+        void OnUnitCreate(UnitInfo NewUnit);
     }
 
     class RuleManager
@@ -148,6 +168,7 @@ namespace RuleManager
 
         public int RegisterUnit(UnitInfo NewUnit,int PlayerIndex)
         {
+            NewUnit = new UnitInfo(NewUnit);
             int NewID = m_CurrentID + 1;
             m_CurrentID++;
             NewUnit.UnitID = NewID;
