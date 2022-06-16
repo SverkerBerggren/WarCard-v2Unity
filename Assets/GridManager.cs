@@ -8,8 +8,8 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     public GameObject TileObject;
 
     //Temp
-    RuleManager.RuleManager m_RuleManager;
-    Dictionary<int, GameObject> m_VisibleUnits;
+      RuleManager.RuleManager m_RuleManager;
+    // Dictionary<int, GameObject> m_VisibleUnits;
 
 
     public int Width = 20;
@@ -27,7 +27,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     // Start is called before the first frame update
     void Start()
     {
-        m_RuleManager = new RuleManager.RuleManager( (uint)Width, (uint)Height);
+        m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
         for(int YIndex = 0; YIndex < Height; YIndex++)
         {
             for(int XIndex = 0; XIndex < Width; XIndex++)
@@ -72,8 +72,8 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     }
     public void OnUnitDestroyed(int UnitID)
     {
-        Destroy(m_VisibleUnits[UnitID]);
-        m_VisibleUnits.Remove(UnitID);
+   //     Destroy(m_VisibleUnits[UnitID]);
+   //     m_VisibleUnits.Remove(UnitID);
     }
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
@@ -93,4 +93,16 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     {
         
     }
+
+    public void SetInputReciever(ClickReciever clicker)
+    {
+
+    }
+
+    
+}
+public interface ClickReciever
+{
+    void OnClick(ClickType clickType, Coordinate cord);
+    
 }

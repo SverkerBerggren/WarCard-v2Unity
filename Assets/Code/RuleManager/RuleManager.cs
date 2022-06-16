@@ -95,9 +95,9 @@ namespace RuleManager
         public int UnitID = 0;
         public int PlayerIndex = 0;
         public int OpaqueInteger = 0;
-        public Coordinate Position;
-        public List<Effect> Effects;
-        public UnitStats Stats;
+        public Coordinate Position = new Coordinate();
+        public List<Effect> Effects = new List<Effect>();
+        public UnitStats Stats = new UnitStats();
 
         public UnitInfo()
         {
@@ -136,7 +136,7 @@ namespace RuleManager
         void OnUnitCreate(UnitInfo NewUnit);
     }
 
-    class RuleManager
+    public class RuleManager
     {
         //retunrs UnitInfo with invalid UnitID on error, that is to say UnitID = 0
         private Dictionary<int,UnitInfo> m_UnitInfos;

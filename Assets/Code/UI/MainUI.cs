@@ -1,25 +1,13 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-
-
-
-public class Clickable : MonoBehaviour
+public class MainUI : MonoBehaviour
 {
-
-    
     // Start is called before the first frame update
     void Start()
     {
         
-    }
-
-
-    public virtual void OnClick()
-    {
-
     }
 
     // Update is called once per frame
@@ -28,10 +16,3 @@ public class Clickable : MonoBehaviour
         
     }
 }
-
-
-public enum ClickType
-{
-    leftClick, rightClick,middleClick
-}
-
