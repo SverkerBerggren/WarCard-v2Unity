@@ -149,7 +149,10 @@ namespace RuleManager
 
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
-
+        void SetEventHandler(RuleEventHandler NewHandler)
+        {
+            m_EventHandler = NewHandler;
+        }
         public RuleManager(uint Width,uint Height)
         {
             m_Tiles = new List<List<TileInfo>>((int)Height);
@@ -164,8 +167,6 @@ namespace RuleManager
             }
             m_UnitInfos = new Dictionary<int, UnitInfo>();
         }
-
-
         public int RegisterUnit(UnitInfo NewUnit,int PlayerIndex)
         {
             NewUnit = new UnitInfo(NewUnit);
