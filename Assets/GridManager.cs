@@ -14,6 +14,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
 
     public int Width = 20;
     public int Height = 20;
+    private ClickReciever m_Reciever = null;
 
     private float m_TileWidth = 0;
 
@@ -84,9 +85,13 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
         
     }
 
-    public void OnClick(int X, int Y)
+    public void OnClick(ClickType Type, int X, int Y)
     {
         print(Y+" "+X);
+        if(m_Reciever != null)
+        {
+            m_Reciever.OnClick(Type, new Coordinate(X, Y));
+        }
     }
     // Update is called once per frame
     void Update()

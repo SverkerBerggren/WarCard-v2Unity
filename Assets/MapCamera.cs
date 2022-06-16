@@ -47,7 +47,7 @@ public class MapCamera : MonoBehaviour
         {
             m_CameraComponent.orthographicSize = 1;
         }
-        if(Input.GetKeyDown(KeyCode.Mouse0))
+        if(Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1) || Input.GetKeyDown(KeyCode.Mouse2))
         {
             RaycastHit HitInfo;
             bool Result = Physics.Raycast(m_CameraComponent.ScreenToWorldPoint(Input.mousePosition), new Vector3(0, 0, 1000),out HitInfo,10000,(1<<LayerMask.NameToLayer("Clickable")));
@@ -56,7 +56,20 @@ public class MapCamera : MonoBehaviour
                 Clickable Clicker = HitInfo.collider.gameObject.GetComponent<Clickable>();
                 if(Clicker != null)
                 {
-                    Clicker.OnClick();
+                    ClickType Type = ClickType.rightClick;
+                    if(Input.GetKeyDown(KeyCode.Mouse0))
+                    {
+                        Type = ClickType.leftClick;
+                    }
+                    else if(Input.GetKeyDown(KeyCode.Mouse1))
+                    {
+                        Type = ClickType.rightClick;
+                    }
+                    else if (Input.GetKeyDown(KeyCode.Mouse2))
+                    {
+                        Type = ClickType.middleClick;
+                    }
+                    Clicker.OnClick(Type);
                 }
             }
         }

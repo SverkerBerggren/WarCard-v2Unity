@@ -8,9 +8,9 @@ public class GridClick : Clickable
     public GridManager AssociatedGrid;
     public int X = 0;
     public int Y = 0;
-    override public void OnClick() 
+    override public void OnClick(ClickType Type) 
     {
-        AssociatedGrid.OnClick(X, Y);
+        AssociatedGrid.OnClick(Type,X, Y);
     }
     void Start()
     {
