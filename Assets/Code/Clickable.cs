@@ -1,15 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using RuleManager;
 
-public class TempTest : MonoBehaviour
+
+
+
+
+public class Clickable : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
     {
-        //RuleManager.RuleManager Ruler = new RuleManager.RuleManager();
-        //print(Ruler.GetUnitInfo(new UnitID()).Temp.ToString());
+        
+    }
+
+
+    public virtual void OnClick()
+    {
+
     }
 
     // Update is called once per frame
