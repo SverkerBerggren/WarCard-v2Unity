@@ -8,7 +8,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     public GameObject TileObject;
 
     //Temp
-      RuleManager.RuleManager m_RuleManager;
+      //RuleManager.RuleManager m_RuleManager;
     // Dictionary<int, GameObject> m_VisibleUnits;
 
 
@@ -28,7 +28,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     // Start is called before the first frame update
     void Start()
     {
-        m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
+        //m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
         for(int YIndex = 0; YIndex < Height; YIndex++)
         {
             for(int XIndex = 0; XIndex < Width; XIndex++)
@@ -45,22 +45,24 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
                 NewObject.transform.position = NewPosition;
             }
         }
-        UnitStats Stats = new UnitStats();
-        Stats.ActivationCost = 0;
-        Stats.Damage = 0;
-        Stats.HP = 5;
-        Stats.Damage = 3;
-        Stats.Movement = 3;
 
-        for(int i = 0; i < 3; i++)
-        {
-            UnitInfo NewUnit = new UnitInfo();
-            NewUnit.Stats = Stats;
-            NewUnit.Position = new Coordinate(0, i);
-            m_RuleManager.RegisterUnit(NewUnit, 0);
-            NewUnit.Position = new Coordinate(5, i);
-            m_RuleManager.RegisterUnit(NewUnit, 1);
-        }
+        print("vad är tilewidth " + m_TileWidth);
+        //UnitStats Stats = new UnitStats();
+        //Stats.ActivationCost = 0;
+        //Stats.Damage = 0;
+        //Stats.HP = 5;
+        //Stats.Damage = 3;
+        //Stats.Movement = 3;
+        //
+        //for(int i = 0; i < 3; i++)
+        //{
+        //    UnitInfo NewUnit = new UnitInfo();
+        //    NewUnit.Stats = Stats;
+        //    NewUnit.Position = new Coordinate(0, i);
+        //    m_RuleManager.RegisterUnit(NewUnit, 0);
+        //    NewUnit.Position = new Coordinate(5, i);
+        //    m_RuleManager.RegisterUnit(NewUnit, 1);
+        //}
     }
 
     public void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition)
@@ -96,15 +98,22 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     // Update is called once per frame
     void Update()
     {
-        
+      //  print("tilewidth update " + m_TileWidth);
     }
 
     public void SetInputReciever(ClickReciever clicker)
     {
-
+        m_Reciever = clicker; 
     }
 
-    
+    public Vector3 GetTilePosition(Coordinate cord)
+    {
+       // print("tildedithe" + m_TileWidth);
+
+      //  print(transform.position + new Vector3(16 * cord.X, 16 * -cord.Y));
+
+        return transform.position + new Vector3(16 * cord.X, 16 * -cord.Y);
+    }
 }
 public interface ClickReciever
 {
