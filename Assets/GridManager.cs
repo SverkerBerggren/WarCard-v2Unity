@@ -28,7 +28,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
     // Start is called before the first frame update
     void Start()
     {
-        m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
+        //m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
         for(int YIndex = 0; YIndex < Height; YIndex++)
         {
             for(int XIndex = 0; XIndex < Width; XIndex++)
@@ -57,9 +57,9 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
             UnitInfo NewUnit = new UnitInfo();
             NewUnit.Stats = Stats;
             NewUnit.Position = new Coordinate(0, i);
-            m_RuleManager.RegisterUnit(NewUnit, 0);
+            //m_RuleManager.RegisterUnit(NewUnit, 0);
             NewUnit.Position = new Coordinate(5, i);
-            m_RuleManager.RegisterUnit(NewUnit, 1);
+            //m_RuleManager.RegisterUnit(NewUnit, 1);
         }
     }
 

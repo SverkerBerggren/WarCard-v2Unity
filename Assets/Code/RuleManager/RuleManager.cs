@@ -14,6 +14,21 @@ namespace RuleManager
     {
           
     }
+    [Serializable]
+    public struct Coordinate
+    {
+        public int X;
+        public int Y;
+        public Coordinate(int NewX, int NewY)
+        {
+            X = NewX;
+            Y = NewY;
+        }
+        public static int Distance(Coordinate LeftCoordinate, Coordinate RightCoordinate)
+        {
+            return (Math.Abs(LeftCoordinate.X - RightCoordinate.X) + Math.Abs(LeftCoordinate.Y - RightCoordinate.Y));
+        }
+    }
     public enum ActionType
     {
         Null,
@@ -23,21 +38,24 @@ namespace RuleManager
         Stratagem,
         Pass,
     }
+    [Serializable]
     public class Action
     {
         public int PlayerIndex = -1;
     }
-
+    [Serializable]
     public class MoveAction : Action
     {
         public int UnitID = 0;
         public Coordinate NewPosition;
     }
+    [Serializable]
     public class AttackAction : Action
     {
         public int AttackerID = 0;
         public int DefenderID = 0;
     }
+    [Serializable]
     public class PassAction : Action
     {
 
@@ -73,20 +91,6 @@ namespace RuleManager
         public UnitStats()
         {
 
-        }
-    }
-    public struct Coordinate
-    {
-        public int X;
-        public int Y;
-        public Coordinate(int NewX,int NewY)
-        {
-            X = NewX;
-            Y = NewY;
-        }
-        public static int Distance(Coordinate LeftCoordinate,Coordinate RightCoordinate)
-        {
-            return (Math.Abs(LeftCoordinate.X - RightCoordinate.X) + Math.Abs(LeftCoordinate.Y - RightCoordinate.Y));
         }
     }
     public class UnitInfo
