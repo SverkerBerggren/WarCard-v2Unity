@@ -98,7 +98,7 @@ namespace RuleManager
         //public EffectType Temp = EffectType.Activated;
         public int UnitID = 0;
         public int PlayerIndex = 0;
-        public int OpaqueInteger = 0;
+        public object OpaqueInteger = null;
         public Coordinate Position = new Coordinate();
         public List<Effect> Effects = new List<Effect>();
         public UnitStats Stats = new UnitStats();
@@ -179,6 +179,8 @@ namespace RuleManager
             NewUnit.UnitID = NewID;
             NewUnit.PlayerIndex = PlayerIndex;
             m_UnitInfos[NewID] = NewUnit;
+            m_Tiles[NewUnit.Position.Y][NewUnit.Position.X].StandingUnitID = NewID;
+
             return (NewID);
         }
 
@@ -193,7 +195,7 @@ namespace RuleManager
         }
 
         //Modifiers
-        void ExecuteAction(Action ActionToExecute)
+        public void ExecuteAction(Action ActionToExecute)
         {
             string Error;
             if(!ActionIsValid(ActionToExecute,out Error))
@@ -320,6 +322,15 @@ namespace RuleManager
         public List<Coordinate> PossibleMoves(int UnitID)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
+
+            for(int i = 0; i < m_Tiles.Count; i++)
+            {
+                for(int j = 0; j < m_Tiles[0].Count; j++)
+                {
+                    ReturnValue.Add(new Coordinate(j, i));
+                }
+            }
+
 
             return (ReturnValue);
         }
