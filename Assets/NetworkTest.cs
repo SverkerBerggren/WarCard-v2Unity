@@ -68,11 +68,28 @@ public class NetworkTest : MonoBehaviour
         //print(NewAction.PlayerIndex);
         //print(NewAction.UnitID);
     }
-
+    [Serializable]
+    class SerializeTest
+    {
+        public int TestInt = 123;
+        public string TestString = "StringData";
+        public List<int> TestArray = new List<int>{1, 2, 3, 4};
+    }
     void Start()
     {
-        Thread TestThread = new Thread(new ThreadStart(TestSendStuff));
-        TestThread.Start();
+        //Thread TestThread = new Thread(new ThreadStart(TestSendStuff));
+        //TestThread.Start();
+        byte[] BufferData = Encoding.UTF8.GetBytes("{\"123321\":123,\"array\":[123,true]}");
+        int OutInt;
+        print(MBJson.JSONObject.ParseJSONObject(BufferData, 0, out OutInt).ToString());
+        print(MBJson.JSONObject.SerializeObject(new SerializeTest()).ToString());
+        SerializeTest DeserializedData = MBJson.JSONObject.DeserializeObject<SerializeTest>(MBJson.JSONObject.SerializeObject(new SerializeTest()));
+        print(DeserializedData.TestInt);
+        print(DeserializedData.TestString);
+        foreach(int integer in DeserializedData.TestArray)
+        {
+            print(integer);
+        }
     }
 
     // Update is called once per frame

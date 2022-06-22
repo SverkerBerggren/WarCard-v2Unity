@@ -93,6 +93,7 @@ namespace RuleManager
 
         }
     }
+    [Serializable]
     public class UnitInfo
     {
         //public EffectType Temp = EffectType.Activated;

@@ -90,7 +90,7 @@ namespace MBJson
         }
         public Dictionary<string,JSONObject> GetAggregateData()
         {
-            if (m_Type != JSONType.Array)
+            if (m_Type != JSONType.Aggregate)
             {
                 throw new System.Exception("Object not of string type");
             }
@@ -131,8 +131,10 @@ namespace MBJson
             ParseOffset += 1;
             int NextQuote = FindCharacter(Buffer, ParseOffset, '\"');
             ReturnValue = System.Text.Encoding.UTF8.GetString(Buffer, ParseOffset, NextQuote - ParseOffset);
+            //throw new Exception("ParseOffset: " + ParseOffset + " NextQuote: " + NextQuote + " ReturnValue: " + ReturnValue);
             ParseOffset = NextQuote + 1;
             OutOffset = ParseOffset;
+            //throw new Exception("Parseoffset: " + ParseOffset);
             return (ReturnValue);
         }
 
@@ -158,7 +160,7 @@ namespace MBJson
             int ReturnValue = Offset;
             while(ReturnValue < Buffer.Length)
             {
-                if(Buffer[Offset] == CharacterToFind)
+                if(Buffer[ReturnValue] == CharacterToFind)
                 {
                     break;
                 }
@@ -209,7 +211,16 @@ namespace MBJson
                 }
                 IntEnd += 1;
             }
-            ReturnValue = int.Parse(System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
+            try
+            {
+                ReturnValue = int.Parse(System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
+            }
+            catch (Exception e)
+            {
+                throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
+                throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
+                throw new Exception("Invalid integer when parsing string: "+System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
+            }
 
             OutOffset = IntEnd;
             return (new JSONObject(ReturnValue));
@@ -230,7 +241,8 @@ namespace MBJson
         {
             string ReturnValue = null;
             int ParseOffset = Offset;
-            ParseQuotedString(Buffer, ParseOffset, out ParseOffset);
+            ReturnValue = ParseQuotedString(Buffer, ParseOffset, out ParseOffset);
+            //throw new Exception("Parseoffset: " + ParseOffset + " string: " + ReturnValue);
             OutOffset = ParseOffset;
             return (new JSONObject(ReturnValue));
         }
@@ -268,6 +280,7 @@ namespace MBJson
                 {
                     throw new System.Exception("Invalid value delimiter in json object");
                 }
+                ParseOffset += 1;
                 JSONObject Value = ParseJSONObject(Buffer, ParseOffset, out ParseOffset);
                 Contents.Add(MemberName, Value);
                 SkipWhiteSpace(Buffer, ParseOffset, out ParseOffset);
@@ -283,7 +296,7 @@ namespace MBJson
                 }
                 if (Buffer[ParseOffset] != ',')
                 {
-                    throw new System.Exception("Invalid array delimiter");
+                    throw new System.Exception("Invalid aggregate delimiter");
                 }
                 ParseOffset += 1;
             }
@@ -314,7 +327,10 @@ namespace MBJson
                     ParseOffset += 1;
                     break;
                 }
+                //int ParseBefore = ParseOffset;
                 Contents.Add(ParseJSONObject(ByteBuffer, ParseOffset, out ParseOffset));
+                //int ParseAfter = ParseOffset;
+                //throw new Exception("Before: " + ParseBefore + " After: " + ParseAfter);
                 SkipWhiteSpace(ByteBuffer, ParseOffset, out ParseOffset);
                 if(ParseOffset >= ByteBuffer.Length)
                 {
@@ -326,9 +342,9 @@ namespace MBJson
                     ParseOffset += 1;
                     break;
                 }
-                if(ByteBuffer[ParseOffset]  != ',')
+                if (ByteBuffer[ParseOffset] != ',')
                 {
-                    throw new System.Exception("Invalid array delimiter");
+                    throw new System.Exception("Invalid array delimiter: " + ByteBuffer[ParseOffset]);
                 }
                 ParseOffset += 1;
                 SkipWhiteSpace(ByteBuffer, ParseOffset, out ParseOffset);
@@ -360,7 +376,7 @@ namespace MBJson
             }
             else if(ByteBuffer[ParseOffset] == '\"')
             {
-                ReturnValue = Parse_String(ByteBuffer, ParseOffset,out OutOffset);
+                ReturnValue = Parse_String(ByteBuffer, ParseOffset,out ParseOffset);
             }
             else if(ByteBuffer[ParseOffset] == 't' || ByteBuffer[ParseOffset] == 'f')
             {
@@ -379,7 +395,7 @@ namespace MBJson
             return (ReturnValue);
         }
     
-        public static JSONObject SerializeObject<T,U>(T ObjectToSerialize)
+        public static JSONObject SerializeObject(object ObjectToSerialize)
         {
             JSONObject ReturnValue = null;
             Type ObjectType = ObjectToSerialize.GetType();
@@ -391,21 +407,196 @@ namespace MBJson
             {
                 ReturnValue = new JSONObject((int)(object)ObjectToSerialize);
             }
-            else if(ObjectToSerialize is List<U>)
+            else if (ObjectToSerialize is IDictionary)
             {
-
+                IEnumerable Enumerator = (IEnumerable)ObjectToSerialize;
+                Dictionary<string, JSONObject> JsonList = new Dictionary<string, JSONObject>();
+                foreach (DictionaryEntry Entry in Enumerator)
+                {
+                    if (!(Entry.Key is string))
+                    {
+                        throw new Exception("Invalid key: key must have string type");
+                    }
+                    JsonList.Add((string)Entry.Key, SerializeObject(Entry.Value));
+                }
+                ReturnValue = new JSONObject(JsonList);
+            }
+            else if(ObjectToSerialize is IEnumerable)
+            {
+                IEnumerable Enumerator = (IEnumerable)ObjectToSerialize;
+                List<JSONObject> JsonList = new List<JSONObject>();
+                foreach (object ListObject in Enumerator)
+                {
+                    JsonList.Add(SerializeObject(ListObject));
+                }
+                ReturnValue = new JSONObject(JsonList);
+            }
+            else
+            {
+                FieldInfo[] Fields = ObjectType.GetFields();
+                Dictionary<string, JSONObject> JsonDictionary = new Dictionary<string, JSONObject>();
+                foreach (FieldInfo Field in Fields)
+                {
+                    if(Field.FieldType.IsSerializable)
+                    {
+                        JsonDictionary.Add(Field.Name, SerializeObject(Field.GetValue(ObjectToSerialize)));
+                    }
+                }
+                ReturnValue = new JSONObject(JsonDictionary);
             }
             //else if(ObjectToSerialize is Dictionary<string,)
             return (ReturnValue);
         }
-        public static T DeserializeObject<T>(JSONObject ObjectToParse) where T : new()
+        public static T DeserializeObject<T>(JSONObject ObjectToParse)
         {
-            T ReturnValue = new T();
+            //T ReturnValue = new T();
+            T ReturnValue = default(T);
+            bool Return = false;
+            if(typeof(T) == typeof(int))
+            {
+                Return = true;
+                ReturnValue = (T)(object)ObjectToParse.GetIntegerData();
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                Return = true;
+                ReturnValue = (T)(object)ObjectToParse.GetStringData();
+            }
+            if(Return)
+            {
+                return (ReturnValue);
+            }
+            ReturnValue = (T)typeof(T).GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
+            if (ReturnValue is IDictionary)
+            {
+                IDictionary DictionaryData = (IDictionary)ReturnValue;
+                Type ReturnType = ReturnValue.GetType();
+                Dictionary<string, JSONObject> SerializedDictionary = ObjectToParse.GetAggregateData();
+                foreach (KeyValuePair<string, JSONObject> SerializedField in SerializedDictionary)
+                {
+                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[1]).Invoke(null, new object[] {SerializedField.Value});
+                    DictionaryData.Add(SerializedField.Key,SerializedValue);
+                }
+            }
+            else if (ReturnValue is IList)
+            {
+                IList ListToModify = (IList)ReturnValue;
+                Type ReturnType = ReturnValue.GetType();
+                List<JSONObject> SerializedList = ObjectToParse.GetArrayData();
+                foreach (JSONObject ListEntry in SerializedList)
+                {
+                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[0]).Invoke(null, new object[] { ListEntry});
+                    ListToModify.Add(SerializedValue);
+                }
+            }
+            else
+            {
+                Type ObjectType = ReturnValue.GetType();
+                FieldInfo[] Fields = ObjectType.GetFields();
+                Dictionary<string, JSONObject> SerializedObjectData = ObjectToParse.GetAggregateData();
+                foreach (FieldInfo Field in Fields)
+                {
+                    MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeObject");
+                    //throw new Exception(Field.Name +" "+ Field.FieldType.ToString());
+                    //throw new Exception(DeserializeMethod.ToString());
+                    MethodInfo MethodToCall = DeserializeMethod.MakeGenericMethod(Field.FieldType);
+                    object SerializedValue = MethodToCall.Invoke(null, new object[] { SerializedObjectData[Field.Name]});
+                    Field.SetValue(ReturnValue, SerializedValue);
+                }
+            }
+            return (ReturnValue);
+        }
 
+
+
+
+        string ToString_Int()
+        {
+            return (((int)m_InternalData).ToString());
+        }
+        string ToString_Boolean()
+        {
+            bool BooleanValue = (bool)m_InternalData;
+            if(BooleanValue)
+            {
+                return ("true");
+            }
+            else
+            {
+                return ("false");
+            }
+        }
+        string ToString_String()
+        {
+            return ("\""+(string)m_InternalData+"\"");
+        }
+        string ToString_Array()
+        {
+            string ReturnValue = "[";
+            List<JSONObject> Values = GetArrayData();
+            foreach(JSONObject Value in Values)
+            {
+                ReturnValue += Value.ToString()+",";
+            }
+            if(Values.Count > 0)
+            {
+                //System.Console.WriteLine("Removing last");
+                ReturnValue = ReturnValue.Remove(ReturnValue.Length - 1,1);
+                
+            }
+            ReturnValue += "]";
+            return (ReturnValue);
+        }
+        string ToString_Aggregate()
+        {
+            Dictionary<string, JSONObject> DictionaryData = GetAggregateData();
+            string ReturnValue = "{";
+            foreach(KeyValuePair<string,JSONObject> Value in DictionaryData)
+            {
+                ReturnValue += "\"" + Value.Key + "\":"+Value.Value.ToString()+",";
+            }
+            if(DictionaryData.Count > 0)
+            {
+                ReturnValue = ReturnValue.Remove(ReturnValue.Length - 1);
+            }
+            ReturnValue += "}";
+            return (ReturnValue);
+        }
+        public override string ToString()
+        {
+            string ReturnValue = "";
+            if(m_Type == JSONType.Integer)
+            {
+                ReturnValue =ToString_Int();
+            }
+            else if(m_Type == JSONType.Aggregate)
+            {
+                ReturnValue = ToString_Aggregate();
+            }
+            else if(m_Type == JSONType.Boolean)
+            {
+                ReturnValue = ToString_Boolean();
+            }
+            else if(m_Type == JSONType.Array)
+            {
+                ReturnValue = ToString_Array();
+            }
+            else if(m_Type == JSONType.Null)
+            {
+                ReturnValue = "null";
+            }
+            else if (m_Type == JSONType.String)
+            {
+                ReturnValue = ToString_String();
+            }
+            else
+            {
+                throw new Exception("Invalid json type when serializing to string: " + m_Type.ToString());
+            }
             return (ReturnValue);
         }
     }
 
     
-
+   
 }
