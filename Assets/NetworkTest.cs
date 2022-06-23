@@ -17,32 +17,6 @@ public class NetworkTest : MonoBehaviour
 {
     // Start is called before the first frame update
 
-    static void WriteBigEndianInteger(UInt64 IntegerToWrite, int IntegerSize,Stream OutStream)
-    {
-        byte[] ArrayToWrite = new byte[IntegerSize];
-        for(int i = 0; i < IntegerSize;i++)
-        {
-            ArrayToWrite[i] = (byte)(IntegerToWrite >> (IntegerSize * 8 - ((i + 1) * 8)));
-        }
-        OutStream.Write(ArrayToWrite, 0, IntegerSize);
-    }
-    static UInt64 ReadBigEndianInteger(int IntegerSize,Stream InStream)
-    {
-        UInt64 ReturnValue = 0;
-        byte[] IntegerBytes = new byte[IntegerSize];
-        int ReadBytes = InStream.Read(IntegerBytes, 0, IntegerSize);
-        if(ReadBytes < IntegerSize)
-        {
-            throw new Exception("Early end of stream reached");
-        }
-        for(int i = 0; i < IntegerSize; i++)
-        {
-            ReturnValue <<= 8;
-            ReturnValue += IntegerBytes[i];
-        }
-        return (ReturnValue);
-    }
-
     
     public static void TestSendStuff()
     {

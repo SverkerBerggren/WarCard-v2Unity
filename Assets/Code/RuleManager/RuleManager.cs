@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Reflection;
 
 namespace RuleManager
 {
@@ -39,26 +40,61 @@ namespace RuleManager
         Pass,
     }
     [Serializable]
-    public class Action
+    public class Action  : MBJson.JSONDeserializeable,MBJson.JSONTypeConverter
     {
+        
+        protected Action(ActionType TypeToUse)
+        {
+            Type = TypeToUse;
+        }
+        public ActionType Type = ActionType.Null;
         public int PlayerIndex = -1;
+
+        public Type GetType(int IntegerToConvert)
+        {
+            Type ReturnValue = null;
+            ActionType SerializedType = (ActionType) IntegerToConvert;
+            if (SerializedType == ActionType.Move)
+            {
+                ReturnValue = typeof(MoveAction);
+            }
+            else if (SerializedType == ActionType.Attack)
+            {
+                ReturnValue = typeof(AttackAction);
+            }
+            else if (SerializedType == ActionType.Pass)
+            {
+                ReturnValue = typeof(PassAction);
+            }
+            else
+            {
+                throw new Exception("Invalid Action type in when deserizalizing action");
+            }
+            return (ReturnValue);
+        }
+        public object Deserialize(MBJson.JSONObject ObjectToDeserialize)
+        {
+            return (new MBJson.DynamicJSONDeserializer(this).Deserialize(ObjectToDeserialize));
+        }
     }
     [Serializable]
     public class MoveAction : Action
     {
+        public MoveAction() : base(ActionType.Move) {}
         public int UnitID = 0;
         public Coordinate NewPosition;
     }
     [Serializable]
     public class AttackAction : Action
     {
+        AttackAction() : base(ActionType.Attack) { }
         public int AttackerID = 0;
         public int DefenderID = 0;
     }
     [Serializable]
     public class PassAction : Action
     {
-
+        PassAction() : base(ActionType.Pass) { }
     }
 
     public enum EffectType
@@ -258,7 +294,7 @@ namespace RuleManager
         }
 
         //Observers
-        bool ActionIsValid(Action ActionToCheck,out string OutInfo)
+        public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
             bool ReturnValue = true;
             string ErrorString = "";

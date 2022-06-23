@@ -407,6 +407,10 @@ namespace MBJson
             {
                 ReturnValue = new JSONObject((int)(object)ObjectToSerialize);
             }
+            else if(ObjectType.IsEnum)
+            {
+                ReturnValue = new JSONObject((int)(object)ObjectToSerialize);
+            }
             else if (ObjectToSerialize is IDictionary)
             {
                 IEnumerable Enumerator = (IEnumerable)ObjectToSerialize;
@@ -462,12 +466,22 @@ namespace MBJson
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetStringData();
             }
+            else if(typeof(T).IsEnum)
+            {
+                Return = true;
+                ReturnValue = (T)(object)ObjectToParse.GetIntegerData();
+            }
             if(Return)
             {
                 return (ReturnValue);
             }
             ReturnValue = (T)typeof(T).GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
-            if (ReturnValue is IDictionary)
+            if(ReturnValue is JSONDeserializeable)
+            {
+                JSONDeserializeable JsonSerializer = (JSONDeserializeable)ReturnValue;
+                ReturnValue = (T) JsonSerializer.Deserialize(ObjectToParse);
+            }
+            else if (ReturnValue is IDictionary)
             {
                 IDictionary DictionaryData = (IDictionary)ReturnValue;
                 Type ReturnType = ReturnValue.GetType();
@@ -493,6 +507,7 @@ namespace MBJson
             {
                 Type ObjectType = ReturnValue.GetType();
                 FieldInfo[] Fields = ObjectType.GetFields();
+                //Fields[0].FieldType.isen
                 Dictionary<string, JSONObject> SerializedObjectData = ObjectToParse.GetAggregateData();
                 foreach (FieldInfo Field in Fields)
                 {
@@ -597,6 +612,44 @@ namespace MBJson
         }
     }
 
+
+    interface JSONDeserializeable
+    {
+        object Deserialize(JSONObject ObjectToParse);
+    }
     
-   
+    interface JSONTypeConverter
+    {
+        Type GetType(int SerializedType);
+    }
+    
+    class DynamicJSONDeserializer
+    {
+
+        JSONTypeConverter m_Converter;
+
+        public DynamicJSONDeserializer(JSONTypeConverter Converter)
+        {
+            m_Converter = Converter;
+        }
+        public object Deserialize(JSONObject ObjectToParse)
+        {
+            object ReturnValue = null;
+            Type ObjectType = m_Converter.GetType(ObjectToParse["Type"].GetIntegerData());
+            ReturnValue = ObjectType.GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
+            FieldInfo[] Fields = ObjectType.GetFields();
+            //Fields[0].FieldType.isen
+            Dictionary<string, JSONObject> SerializedObjectData = ObjectToParse.GetAggregateData();
+            foreach (FieldInfo Field in Fields)
+            {
+                MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeObject");
+                //throw new Exception(Field.Name +" "+ Field.FieldType.ToString());
+                //throw new Exception(DeserializeMethod.ToString());
+                MethodInfo MethodToCall = DeserializeMethod.MakeGenericMethod(Field.FieldType);
+                object SerializedValue = MethodToCall.Invoke(null, new object[] { SerializedObjectData[Field.Name] });
+                Field.SetValue(ReturnValue, SerializedValue);
+            }
+            return (ReturnValue);
+        }
+    }
 }
