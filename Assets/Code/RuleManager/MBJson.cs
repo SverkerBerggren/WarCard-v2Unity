@@ -100,7 +100,7 @@ namespace MBJson
         {
             get
             {
-                if(m_Type != JSONType.Array)
+                if(m_Type != JSONType.Aggregate)
                 {
                     throw new System.Exception("Object not of aggregate type");
                 }
@@ -109,7 +109,7 @@ namespace MBJson
             }
             set
             {
-                if (m_Type != JSONType.Array)
+                if (m_Type != JSONType.Aggregate)
                 {
                     throw new System.Exception("Object not of aggregate type");
                 }
@@ -643,8 +643,6 @@ namespace MBJson
             foreach (FieldInfo Field in Fields)
             {
                 MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeObject");
-                //throw new Exception(Field.Name +" "+ Field.FieldType.ToString());
-                //throw new Exception(DeserializeMethod.ToString());
                 MethodInfo MethodToCall = DeserializeMethod.MakeGenericMethod(Field.FieldType);
                 object SerializedValue = MethodToCall.Invoke(null, new object[] { SerializedObjectData[Field.Name] });
                 Field.SetValue(ReturnValue, SerializedValue);

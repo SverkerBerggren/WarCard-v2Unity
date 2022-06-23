@@ -42,7 +42,10 @@ namespace RuleManager
     [Serializable]
     public class Action  : MBJson.JSONDeserializeable,MBJson.JSONTypeConverter
     {
-        
+        public Action()
+        {
+
+        }
         protected Action(ActionType TypeToUse)
         {
             Type = TypeToUse;
@@ -87,7 +90,7 @@ namespace RuleManager
     [Serializable]
     public class AttackAction : Action
     {
-        AttackAction() : base(ActionType.Attack) { }
+        public AttackAction() : base(ActionType.Attack) { }
         public int AttackerID = 0;
         public int DefenderID = 0;
     }

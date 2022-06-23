@@ -16,58 +16,44 @@ using System;
 public class NetworkTest : MonoBehaviour
 {
     // Start is called before the first frame update
-
-    
-    public static void TestSendStuff()
+    static void WriteBigEndianInteger(UInt64 IntegerToWrite, int IntegerSize, Stream OutStream)
     {
-        //sprint("Kommisch hitisch")
-        RuleManager.MoveAction MoveStuff = new RuleManager.MoveAction();
-        MoveStuff.NewPosition = new RuleManager.Coordinate(1, 1);
-        MoveStuff.PlayerIndex = 12;
-        MoveStuff.UnitID = 1221;
-
-        TcpClient Connecterino = new TcpClient("mrboboget.se", 443);
-        NetworkStream Stream = Connecterino.GetStream();
-
-        MemoryStream MemoryStreamToUse = new MemoryStream();
-        //byte[] Buffer = new byte[4];
-        RuleManager.MoveAction TestMove = new RuleManager.MoveAction();
-        TestMove.NewPosition = new RuleManager.Coordinate(1, 1);
-        TestMove.PlayerIndex = 1;
-        TestMove.UnitID = 2;
-        print("Network Test");
-        byte[] MoveData = Encoding.UTF8.GetBytes(MBJson.JSONObject.SerializeObject(TestMove).ToString());
-        print(System.Text.Encoding.UTF8.GetString(MoveData));
-        WriteBigEndianInteger((ulong) MoveData.Length, 4, MemoryStreamToUse);
-        MemoryStreamToUse.Write(MoveData, 0, MoveData.Length);
-
-        RuleManager.AttackAction TestAttack = new RuleManager.AttackAction();
-        TestAttack.PlayerIndex = 1;
-        TestAttack.AttackerID = 2;
-        TestAttack.DefenderID = 2;
-        byte[] AttackData = Encoding.UTF8.GetBytes(MBJson.JSONObject.SerializeObject(TestAttack).ToString());
-        print(System.Text.Encoding.UTF8.GetString(AttackData));
-        WriteBigEndianInteger((ulong)AttackData.Length, 4, MemoryStreamToUse);
-        MemoryStreamToUse.Write(AttackData, 0, AttackData.Length);
-
-        
-        print(MBJson.JSONObject.SerializeObject(TestMove).ToString());
-        print(MBJson.JSONObject.SerializeObject(TestAttack).ToString());
-
-        byte[] BytesToSend = MemoryStreamToUse.GetBuffer();
-        print(BytesToSend.Length);
-        Stream.Write(BytesToSend, 0, BytesToSend.Length);
-
-
-        Connecterino.Close();
-        return;
-        for (int i = 0; i < 2; i++)
+        byte[] ArrayToWrite = new byte[IntegerSize];
+        for (int i = 0; i < IntegerSize; i++)
         {
-            int ObjectSize = (int)ReadBigEndianInteger(4, Stream);
-            byte[] ByteBuffer = new byte[ObjectSize];
-            Stream.Read(ByteBuffer, 0, ObjectSize);
-            print(MBJson.JSONObject.ParseJSONObject(ByteBuffer, 0, out ObjectSize));
+            ArrayToWrite[i] = (byte)(IntegerToWrite >> (IntegerSize * 8 - ((i + 1) * 8)));
         }
+        OutStream.Write(ArrayToWrite, 0, IntegerSize);
+    }
+    static UInt64 ReadBigEndianInteger(int IntegerSize, Stream InStream)
+    {
+        UInt64 ReturnValue = 0;
+        byte[] IntegerBytes = new byte[IntegerSize];
+        int ReadBytes = InStream.Read(IntegerBytes, 0, IntegerSize);
+        if (ReadBytes < IntegerSize)
+        {
+            throw new Exception("Early end of stream reached");
+        }
+        for (int i = 0; i < IntegerSize; i++)
+        {
+            ReturnValue <<= 8;
+            ReturnValue += IntegerBytes[i];
+        }
+        return (ReturnValue);
+    }
+
+    public static void ClientPart()
+    {
+        RuleServer.ClientConnection NewConnection = new RuleServer.ClientConnection("127.0.0.1", 21337);
+        RuleServer.ServerMessage Response = NewConnection.SendMessage(new RuleServer.OpponentActionPoll());
+        print(MBJson.JSONObject.SerializeObject(Response).ToString());
+        Response = NewConnection.SendMessage(new RuleServer.OpponentActionPoll());
+        print(MBJson.JSONObject.SerializeObject(Response).ToString());
+    }
+    public static void ServerPart()
+    {
+        RuleServer.RuleServer LocalServer = new RuleServer.RuleServer(21337);
+        LocalServer.Run();
     }
     [Serializable]
     class SerializeTest
@@ -78,19 +64,24 @@ public class NetworkTest : MonoBehaviour
     }
     void Start()
     {
-        Thread TestThread = new Thread(new ThreadStart(TestSendStuff));
-        TestThread.Start();
-        byte[] BufferData = Encoding.UTF8.GetBytes("{\"123321\":123,\"array\":[123,true]}");
-        int OutInt;
-        print(MBJson.JSONObject.ParseJSONObject(BufferData, 0, out OutInt).ToString());
-        print(MBJson.JSONObject.SerializeObject(new SerializeTest()).ToString());
-        SerializeTest DeserializedData = MBJson.JSONObject.DeserializeObject<SerializeTest>(MBJson.JSONObject.SerializeObject(new SerializeTest()));
-        print(DeserializedData.TestInt);
-        print(DeserializedData.TestString);
-        foreach(int integer in DeserializedData.TestArray)
-        {
-            print(integer);
-        }
+        Thread ClientThread = new Thread(new ThreadStart(ClientPart));
+        ClientThread.Start();
+        Thread ServerThread = new Thread(new ThreadStart(ServerPart));
+        ServerThread.Start();
+        //int tempint;
+        //print(MBJson.JSONObject.ParseJSONObject(Encoding.UTF8.GetBytes("{\"OpponentIndex\":0,\"GameIdentifier\":0,\"Type\":2,\"ConnectionIdentifier\":0}"), 0, out tempint).ToString());
+        
+        //byte[] BufferData = Encoding.UTF8.GetBytes("{\"123321\":123,\"array\":[123,true]}");
+        //int OutInt;
+        //print(MBJson.JSONObject.ParseJSONObject(BufferData, 0, out OutInt).ToString());
+        //print(MBJson.JSONObject.SerializeObject(new SerializeTest()).ToString());
+        //SerializeTest DeserializedData = MBJson.JSONObject.DeserializeObject<SerializeTest>(MBJson.JSONObject.SerializeObject(new SerializeTest()));
+        //print(DeserializedData.TestInt);
+        //print(DeserializedData.TestString);
+        //foreach(int integer in DeserializedData.TestArray)
+        //{
+        //    print(integer);
+        //}
     }
 
     // Update is called once per frame

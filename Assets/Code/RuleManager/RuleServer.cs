@@ -13,12 +13,22 @@ namespace RuleServer
 
     public enum ClientMessageType
     {
+        Null,
         GameAction,
         OpponentActionPoll,
     }
     [Serializable]
     public class ClientMessage : MBJson.JSONDeserializeable,MBJson.JSONTypeConverter
     {
+        public ClientMessageType Type = ClientMessageType.Null;
+        public ClientMessage()
+        {
+
+        }
+        protected ClientMessage(ClientMessageType TypeToUse)
+        {
+            Type = TypeToUse;
+        }
         public Type GetType(int MessageType)
         {
             Type ReturnValue = null;
@@ -26,6 +36,10 @@ namespace RuleServer
             if(SerializedType == ClientMessageType.GameAction)
             {
                 ReturnValue = typeof(GameMessage);
+            }
+            else if(SerializedType == ClientMessageType.OpponentActionPoll)
+            {
+                ReturnValue = typeof(OpponentActionPoll);
             }
             else
             {
@@ -42,14 +56,17 @@ namespace RuleServer
     [Serializable]
     public class GameMessage : ClientMessage
     {
+        protected GameMessage(ClientMessageType TypeToUse) : base(TypeToUse) { }
         public int GameIdentifier = 0;
     }
     public class GameAction : GameMessage
     {
+        public GameAction() : base(ClientMessageType.GameAction) { }
         public RuleManager.Action ActionToExecute;
     }
     public class OpponentActionPoll : GameMessage
     {
+        public OpponentActionPoll() : base(ClientMessageType.OpponentActionPoll) { }
         public int OpponentIndex = 0;
     }
 
@@ -65,6 +82,10 @@ namespace RuleServer
     {
         public ServerMessageType Type = ServerMessageType.Null;
 
+        public ServerMessage()
+        {
+
+        }
         public ServerMessage(ServerMessageType TypeToUse)
         {
             Type = TypeToUse;
@@ -76,6 +97,14 @@ namespace RuleServer
             if (SerializedType == ServerMessageType.OpponentAction)
             {
                 ReturnValue = typeof(OpponentAction);
+            }
+            else if(SerializedType == ServerMessageType.Error)
+            {
+                ReturnValue = typeof(ErrorMessage);
+            }
+            else if(SerializedType == ServerMessageType.Ok)
+            {
+                ReturnValue = typeof(ServerResponseOK);
             }
             else
             {
@@ -96,6 +125,10 @@ namespace RuleServer
     }
     public class ErrorMessage : ServerMessage
     {
+        public ErrorMessage()
+        {
+
+        }
         public ErrorMessage(string Error) : base(ServerMessageType.Error) 
         {
             ErrorString = Error;
@@ -190,16 +223,10 @@ namespace RuleServer
             return (ReturnValue);
         }
     }
-    public class ClientConnection
+    
+    public class JSONConnection
     {
-
-    }
-    public class RuleServer
-    {
-        Mutex m_InternalsMutex = new Mutex();
-        private Dictionary<int, ActiveGameInfo> m_ActiveGames = new Dictionary<int, ActiveGameInfo>();
-
-        static void WriteBigEndianInteger(UInt64 IntegerToWrite, int IntegerSize, Stream OutStream)
+        protected static void WriteBigEndianInteger(UInt64 IntegerToWrite, int IntegerSize, Stream OutStream)
         {
             byte[] ArrayToWrite = new byte[IntegerSize];
             for (int i = 0; i < IntegerSize; i++)
@@ -208,7 +235,7 @@ namespace RuleServer
             }
             OutStream.Write(ArrayToWrite, 0, IntegerSize);
         }
-        static UInt64 ReadBigEndianInteger(int IntegerSize, Stream InStream)
+        protected static UInt64 ReadBigEndianInteger(int IntegerSize, Stream InStream)
         {
             UInt64 ReturnValue = 0;
             byte[] IntegerBytes = new byte[IntegerSize];
@@ -224,6 +251,82 @@ namespace RuleServer
             }
             return (ReturnValue);
         }
+        protected static byte[] GetMessageData(MBJson.JSONObject ObjectToSend)
+        {
+            MemoryStream TotalDataStream = new MemoryStream();
+            byte[] TotalObjectData = System.Text.Encoding.UTF8.GetBytes(ObjectToSend.ToString());
+            WriteBigEndianInteger((ulong)TotalObjectData.Length, 4, TotalDataStream);
+            TotalDataStream.Write(TotalObjectData);
+            return (TotalDataStream.ToArray());
+        }
+        protected static MBJson.JSONObject ParseJSONObject(Stream InStream)
+        {
+            MBJson.JSONObject ReturnValue = null;
+            ulong MessageLength = ReadBigEndianInteger(4, InStream);
+            byte[] MessageBuffer = new byte[MessageLength];
+            ulong ReadBytes = 0;
+            while (InStream.CanRead && ReadBytes < MessageLength)
+            {
+                ulong NewBytes = (ulong)InStream.Read(MessageBuffer, (int)ReadBytes, (int)(MessageLength - ReadBytes));
+                if (NewBytes == 0)
+                {
+                    throw new Exception("End of data reached when reading JSON value");
+                }
+                ReadBytes += NewBytes;
+            }
+            int tempint;
+            ReturnValue = MBJson.JSONObject.ParseJSONObject(MessageBuffer, 0, out tempint);
+            //throw new Exception(System.Text.Encoding.UTF8.GetString(MessageBuffer));
+            return (ReturnValue);
+        }
+    }
+
+    public class ClientConnection : JSONConnection
+    {
+
+        NetworkStream m_AssociatedStream = null;
+
+        public ClientConnection(string Adress,int Port)
+        {
+            TcpClient NewClient = new TcpClient(Adress, Port);
+            m_AssociatedStream = NewClient.GetStream();
+        }
+        public ServerMessage SendMessage(ClientMessage MessageToSend)
+        {
+            ServerMessage ReturnValue = null;
+            //throw new Exception(MessageToSend.ToString());
+            //throw new Exception(MBJson.JSONObject.SerializeObject(MessageToSend).ToString());
+            byte[] BytesToSend = GetMessageData(MBJson.JSONObject.SerializeObject(MessageToSend));
+            m_AssociatedStream.Write(BytesToSend);
+            ReturnValue = MBJson.JSONObject.DeserializeObject<ServerMessage>(ParseJSONObject(m_AssociatedStream));
+            return (ReturnValue);
+        }
+    }
+
+    public class ServerConnection : JSONConnection
+    {
+        NetworkStream m_AssociatedStream = null;
+        public ServerConnection(NetworkStream AssociatedStream)
+        {
+            m_AssociatedStream = AssociatedStream;
+        }
+        public ClientMessage GetNextMessage()
+        {
+            ClientMessage ReturnValue =MBJson.JSONObject.DeserializeObject<ClientMessage>(ParseJSONObject(m_AssociatedStream));
+            return (ReturnValue);
+        }
+        public void SendServerResponse(ServerMessage MessageToSend)
+        {
+            byte[] BytesToSend = GetMessageData(MBJson.JSONObject.SerializeObject(MessageToSend));
+            m_AssociatedStream.Write(BytesToSend);
+        }
+    }
+    public class RuleServer
+    {
+        Mutex m_InternalsMutex = new Mutex();
+        int m_PortToUse = 0;
+        private Dictionary<int, ActiveGameInfo> m_ActiveGames = new Dictionary<int, ActiveGameInfo>();
+        
         private ServerMessage p_HandleGameMessage(GameMessage ClientMessage)
         {
             ServerMessage ReturnValue = null;
@@ -253,52 +356,36 @@ namespace RuleServer
             }
             return (ReturnValue);
         }
-        private void p_ConnectionHandler(TcpClient TCPConnection)
+        public void p_ConnectionHandler(object Data)
         {
             //Has the responsibility for handling initial handshakes, but otherwise just forwards the messages
+            TcpClient TCPConnection = (TcpClient)Data;
             NetworkStream ClientStream = TCPConnection.GetStream();
+            ServerConnection Connection = new ServerConnection(ClientStream);
             while(TCPConnection.Connected)
             {
-                ulong MessageSize = ReadBigEndianInteger(4, ClientStream);
-                byte[] MessageBuffer = new byte[MessageSize];
-                ulong ReadBytes = 0;
-                while(TCPConnection.Connected && ReadBytes < MessageSize)
-                {
-                    ulong NewBytes =(ulong) ClientStream.Read(MessageBuffer,(int) ReadBytes,(int)( MessageSize - ReadBytes));
-                    if(NewBytes == 0)
-                    {
-                        break;
-                    }
-                    ReadBytes += NewBytes;
-                }
-                if(ReadBytes < MessageSize)
-                {
-                    break;
-                }
-                int TempInt;
-                MBJson.JSONObject JSONMessage = MBJson.JSONObject.ParseJSONObject(MessageBuffer, 0, out TempInt);
-                ClientMessage NewMessage = MBJson.JSONObject.DeserializeObject<ClientMessage>(JSONMessage);
-
+                ClientMessage NewMessage = Connection.GetNextMessage();
                 ServerMessage Response = p_HandleMessage(NewMessage);
-                MBJson.JSONObject JsonResponse = MBJson.JSONObject.SerializeObject(Response);
-                byte[] ResponseData = System.Text.Encoding.UTF8.GetBytes(JsonResponse.ToString());
-                MemoryStream TotalDataStream = new MemoryStream();
-                WriteBigEndianInteger((ulong)ResponseData.Length, 4, TotalDataStream);
-                TotalDataStream.Write(ResponseData, 0, ResponseData.Length);
-                byte[] TotalResponseData = TotalDataStream.GetBuffer();
-                ClientStream.Write(TotalResponseData, 0, TotalResponseData.Length);
+                Connection.SendServerResponse(Response);
+                //throw new Exception("First message recieved");
+                //break;
             }
         }
 
         public RuleServer(int PortToUse)
         {
-            Int32 port = PortToUse;
+            m_PortToUse = PortToUse;
+        }
+        public void Run()
+        {
+            Int32 port = m_PortToUse;
             TcpListener Server = new TcpListener(port);
             Server.Start();
-            while(true)
+            while (true)
             {
                 TcpClient Client = Server.AcceptTcpClient();
-                
+                Thread NewThread = new Thread(this.p_ConnectionHandler);
+                NewThread.Start(Client);
             }
         }
     }
