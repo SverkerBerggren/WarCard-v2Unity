@@ -45,7 +45,7 @@ public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
                 NewObject.transform.position = NewPosition;
             }
         }
-   }
+    }
 
     public void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition)
     {
