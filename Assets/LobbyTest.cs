@@ -33,7 +33,7 @@ public class LobbyTest : MonoBehaviour
 
     void LobbyServerConnector()
     {
-        RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("127.0.0.1",11337);
+        RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("mrboboget.se",443);
         while(true)
         {
             bool Succesfull = m_Semaphore.Wait(3000);
@@ -115,8 +115,8 @@ public class LobbyTest : MonoBehaviour
     {
         Thread MessageThread = new Thread(LobbyServerConnector);
         MessageThread.Start();
-        Thread ServerThread = new Thread(_RunServer);
-        ServerThread.Start();
+        //Thread ServerThread = new Thread(_RunServer);
+        //ServerThread.Start();
     }
 
     // Update is called once per frame
