@@ -16,9 +16,16 @@ namespace RuleServer
         Null,
         GameAction,
         OpponentActionPoll,
+        RegisterLobby,
+
+
+        JoinLobby,
+        LobbyEventPoll,
+        UpdateLobbyStatus,
+        SendLobbyEvent,
     }
     [Serializable]
-    public class ClientMessage : MBJson.JSONDeserializeable,MBJson.JSONTypeConverter
+    public class ClientMessage : MBJson.JSONDeserializeable, MBJson.JSONTypeConverter
     {
         public ClientMessageType Type = ClientMessageType.Null;
         public ClientMessage()
@@ -33,13 +40,37 @@ namespace RuleServer
         {
             Type ReturnValue = null;
             ClientMessageType SerializedType = (ClientMessageType)MessageType;
-            if(SerializedType == ClientMessageType.GameAction)
+            if (SerializedType == ClientMessageType.GameAction)
             {
                 ReturnValue = typeof(GameMessage);
             }
-            else if(SerializedType == ClientMessageType.OpponentActionPoll)
+            else if (SerializedType == ClientMessageType.OpponentActionPoll)
             {
                 ReturnValue = typeof(OpponentActionPoll);
+            }
+            else if(SerializedType == ClientMessageType.RegisterLobby)
+            {
+                ReturnValue = typeof(RegisterLobby);
+            }
+            else if(SerializedType == ClientMessageType.JoinLobby)
+            {
+                ReturnValue = typeof(JoinLobby);
+            }
+            else if(SerializedType == ClientMessageType.LobbyEventPoll)
+            {
+                ReturnValue = typeof(LobbyEventPoll);
+            }
+            else if (SerializedType == ClientMessageType.UpdateLobbyStatus)
+            {
+                ReturnValue = typeof(UpdateLobbyStatus);
+            }
+            else if (SerializedType == ClientMessageType.SendLobbyEvent)
+            {
+                ReturnValue = typeof(SendLobbyEvent);
+            }
+            else if(SerializedType == ClientMessageType.Null)
+            {
+                throw new Exception("Cant serialize null message");
             }
             else
             {
@@ -70,12 +101,44 @@ namespace RuleServer
         public int OpponentIndex = 0;
     }
 
+    public class LobbyMessage : ClientMessage
+    {
+        public LobbyMessage() { }
+        public LobbyMessage(ClientMessageType NewType) { Type = NewType; }
+        public string LobbyID = "";
+    }
+    public class RegisterLobby : LobbyMessage
+    {
+        public RegisterLobby() : base(ClientMessageType.RegisterLobby) { }
+    }
+    public class JoinLobby : LobbyMessage
+    {
+        public JoinLobby() : base(ClientMessageType.JoinLobby) { }
+    }
+    public class LobbyEventPoll : LobbyMessage
+    {
+        public LobbyEventPoll() : base(ClientMessageType.LobbyEventPoll) { }
+    }
+    public class SendLobbyEvent : LobbyMessage
+    {
+        public SendLobbyEvent() : base(ClientMessageType.SendLobbyEvent)
+        {
+
+        }
+        public LobbyEvent EventToSend = new LobbyEvent();
+    }
+    public class UpdateLobbyStatus : LobbyMessage
+    {
+        public UpdateLobbyStatus() : base(ClientMessageType.UpdateLobbyStatus) { }
+        public ConnectionLobbyStatus NewStatus = new ConnectionLobbyStatus();
+    }
     public enum ServerMessageType
     {
         Null,
         OpponentAction,
-        Ok,
-        Error,
+        RequestStatusResponse,
+        RegisterLobbyResponse,
+        LobbyEventResponse
     }
     [Serializable]
     public class ServerMessage : MBJson.JSONDeserializeable, MBJson.JSONTypeConverter
@@ -98,17 +161,25 @@ namespace RuleServer
             {
                 ReturnValue = typeof(OpponentAction);
             }
-            else if(SerializedType == ServerMessageType.Error)
+            else if (SerializedType == ServerMessageType.RequestStatusResponse)
             {
-                ReturnValue = typeof(ErrorMessage);
+                ReturnValue = typeof(RequestStatusResponse);
             }
-            else if(SerializedType == ServerMessageType.Ok)
+            else if (SerializedType == ServerMessageType.RegisterLobbyResponse)
             {
-                ReturnValue = typeof(ServerResponseOK);
+                ReturnValue = typeof(RegisterLobbyResponse);
+            }
+            else if (SerializedType == ServerMessageType.LobbyEventResponse)
+            {
+                ReturnValue = typeof(LobbyEventResponse);
+            }
+            else if(SerializedType == ServerMessageType.Null)
+            {
+                throw new Exception("Cant deserizalize null message");
             }
             else
             {
-                throw new Exception("Invalid ClientMessage type when deserializing client message");
+                throw new Exception("Invalid Server type when deserializing client message");
             }
             return (ReturnValue);
         }
@@ -118,37 +189,109 @@ namespace RuleServer
         }
     }
     [Serializable]
-    public class OpponentAction  : ServerMessage
+    public class OpponentAction : ServerMessage
     {
         public OpponentAction() : base(ServerMessageType.OpponentAction) { }
         public List<RuleManager.Action> OpponentActions;
     }
-    public class ErrorMessage : ServerMessage
+    public class RequestStatusResponse : ServerMessage
     {
-        public ErrorMessage()
+        public RequestStatusResponse(): base(ServerMessageType.RequestStatusResponse)
         {
 
         }
-        public ErrorMessage(string Error) : base(ServerMessageType.Error) 
+        public RequestStatusResponse(string Error) : base(ServerMessageType.RequestStatusResponse)
         {
             ErrorString = Error;
         }
         public string ErrorString = "";
     }
-    public class ServerResponseOK : ServerMessage
+    public class RegisterLobbyResponse : ServerMessage
     {
-        public ServerResponseOK() : base(ServerMessageType.Ok) { }
+        public RegisterLobbyResponse() : base(ServerMessageType.RegisterLobbyResponse) { }
+        public string LobbyID = "";
+    }
+    //OK means that you sucesfully joined a lobby
+    public enum LobbyEventType
+    {
+        Null,
+        PlayerJoined,
+        GameStart,
+        PlayerStatusUpdated
     }
 
+    public class LobbyEvent : MBJson.JSONDeserializeable, MBJson.JSONTypeConverter
+    {
+        public LobbyEventType Type = LobbyEventType.Null;
+        public LobbyEvent()
+        {
 
+        }
+        public LobbyEvent(LobbyEventType TypeToUse)
+        {
+            Type = TypeToUse;
+        }
+        public Type GetType(int IntegerToConvert)
+        {
+            Type ReturnValue = null;
+            LobbyEventType SerializedType = (LobbyEventType)IntegerToConvert;
+            if (SerializedType == LobbyEventType.GameStart)
+            {
+                ReturnValue = typeof(LobbyEvent_GameStart);
+            }
+            else if (SerializedType == LobbyEventType.PlayerJoined)
+            {
+                ReturnValue = typeof(LobbyEvent_PlayerJoined);
+            }
+            else if (SerializedType == LobbyEventType.PlayerStatusUpdated)
+            {
+                ReturnValue = typeof(LobbyEvent_StatusUpdated);
+            }
+            else
+            {
+                throw new Exception("Invalid LobbyEventType");
+            }
+            return (ReturnValue);
+        }
+        public object Deserialize(MBJson.JSONObject ObjectToParse)
+        {
+            return (new MBJson.DynamicJSONDeserializer(this).Deserialize(ObjectToParse));
+        }
+    }
+    public class LobbyEvent_PlayerJoined : LobbyEvent
+    {
+        public LobbyEvent_PlayerJoined() : base(LobbyEventType.PlayerJoined) { }
+    }
 
+    public class LobbyEventResponse : ServerMessage
+    {
+        public LobbyEventResponse() : base(ServerMessageType.LobbyEventResponse) { }
+        public List<LobbyEvent> Events = new List<LobbyEvent>();
+    }
+    public class LobbyEvent_GameStart : LobbyEvent
+    {
+        public LobbyEvent_GameStart() : base(LobbyEventType.GameStart)
+        {
+
+        }
+        public int GameID = 0;
+    }
+    public class LobbyEvent_StatusUpdated : LobbyEvent
+    {
+        public int ConnectionID = 0;
+        public ConnectionLobbyStatus NewStatus = new ConnectionLobbyStatus();
+        public LobbyEvent_StatusUpdated() : base(LobbyEventType.PlayerStatusUpdated)
+        {
+
+        }
+    }
     public class ActiveGameInfo
     {
         Mutex m_InternalsMutex = new Mutex();
         private RuleManager.RuleManager m_GameRuleManager;
         List<List<RuleManager.Action>> m_PlayerActions = new List<List<RuleManager.Action>>();
         //Connection -> player index
-        private Dictionary<int, int> ParticipatingPlayers = new Dictionary<int, int>();
+        public Dictionary<int, int> ParticipatingPlayers = new Dictionary<int, int>();
 
         private ServerMessage p_Handle_Action(GameAction ActionMessage)
         {
@@ -156,14 +299,14 @@ namespace RuleServer
             m_InternalsMutex.WaitOne();
             if(!ParticipatingPlayers.ContainsKey(ActionMessage.ConnectionIdentifier))
             {
-                ReturnValue =new ErrorMessage("Connection not present in game");
+                ReturnValue =new RequestStatusResponse("Connection not present in game");
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
             int PlayerIndex = ParticipatingPlayers[ActionMessage.ConnectionIdentifier];
             if(PlayerIndex != ActionMessage.ActionToExecute.PlayerIndex)
             {
-                ReturnValue = new ErrorMessage("Can't execute actions for your opponent");
+                ReturnValue = new RequestStatusResponse("Can't execute actions for your opponent");
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
@@ -171,13 +314,13 @@ namespace RuleServer
             bool ActionIsValid = m_GameRuleManager.ActionIsValid(ActionMessage.ActionToExecute,out ErrorString);
             if(!ActionIsValid)
             {
-                ReturnValue = new ErrorMessage(ErrorString);
+                ReturnValue = new RequestStatusResponse(ErrorString);
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
             m_GameRuleManager.ExecuteAction(ActionMessage.ActionToExecute);
             m_InternalsMutex.ReleaseMutex();
-            ReturnValue = new ServerResponseOK();
+            ReturnValue = new RequestStatusResponse("Ok");
             return (ReturnValue);
         }
         ServerMessage p_Handle_ActionPoll(OpponentActionPoll PollMessage)
@@ -186,20 +329,20 @@ namespace RuleServer
             m_InternalsMutex.WaitOne();
             if (!ParticipatingPlayers.ContainsKey(PollMessage.ConnectionIdentifier))
             {
-                ReturnValue = new ErrorMessage("Connection not present in game");
+                ReturnValue = new RequestStatusResponse("Connection not present in game");
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
             int PlayerIndex = ParticipatingPlayers[PollMessage.ConnectionIdentifier];
             if(PlayerIndex == PollMessage.OpponentIndex)
             {
-                ReturnValue = new ErrorMessage("Can't pop your own actions");
+                ReturnValue = new RequestStatusResponse("Can't pop your own actions");
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
             if(PollMessage.OpponentIndex > m_PlayerActions.Count || PollMessage.OpponentIndex < 0)
             {
-                ReturnValue = new ErrorMessage("Invalid opponent index");
+                ReturnValue = new RequestStatusResponse("Invalid opponent index");
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
@@ -321,19 +464,183 @@ namespace RuleServer
             m_AssociatedStream.Write(BytesToSend);
         }
     }
+    public class ConnectionLobbyStatus
+    {
+        public bool Ready = false;
+    }
+    public class ConnectionLobbyInfo
+    {
+        public List<LobbyEvent> StoredEvents = new List<LobbyEvent>();
+        public ConnectionLobbyStatus Status = new ConnectionLobbyStatus();
+    }
+    class ActiveLobbyInfo
+    {
+        public Dictionary<int, ConnectionLobbyInfo> ConnectedUsers = new Dictionary<int, ConnectionLobbyInfo>();
+    }
     public class RuleServer
     {
         Mutex m_InternalsMutex = new Mutex();
         int m_PortToUse = 0;
         private Dictionary<int, ActiveGameInfo> m_ActiveGames = new Dictionary<int, ActiveGameInfo>();
-        
+        private Dictionary<string, ActiveLobbyInfo> m_ActiveLobbys = new Dictionary<string, ActiveLobbyInfo>();
+
+        int CurrentGameID = 1;
+        int p_CreateNewGame(ActiveLobbyInfo AssociatedLobby)
+        {
+            CurrentGameID += 1;
+            int NewGameID = CurrentGameID;
+            ActiveGameInfo NewGame = new ActiveGameInfo();
+            int CurrentPlayerIndex = 0;
+            foreach(KeyValuePair<int, ConnectionLobbyInfo> Participant in  AssociatedLobby.ConnectedUsers)
+            {
+                NewGame.ParticipatingPlayers.Add(Participant.Key, CurrentPlayerIndex);
+                CurrentPlayerIndex += 1;
+            }
+            m_ActiveGames.Add(NewGameID, NewGame);
+            return (NewGameID);
+        }
+        private ServerMessage p_HandleLobbyMessage(LobbyMessage MessageToHandle)
+        {
+            ServerMessage ReturnValue = null;
+            if(MessageToHandle is JoinLobby)
+            {
+                JoinLobby JoinMessageToHandle = (JoinLobby)MessageToHandle;
+                m_InternalsMutex.WaitOne();
+                if(!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
+                {
+                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+                ActiveLobbyInfo Lobby = m_ActiveLobbys[JoinMessageToHandle.LobbyID];
+                foreach(KeyValuePair<int, ConnectionLobbyInfo> Connection in Lobby.ConnectedUsers)
+                {
+                    Connection.Value.StoredEvents.Add(new LobbyEvent_PlayerJoined());
+                }
+                Lobby.ConnectedUsers.Add(JoinMessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
+                ReturnValue = new RequestStatusResponse("Ok");
+            }
+            else if(MessageToHandle is RegisterLobby)
+            {
+                byte[] RandomBytes = new byte[4];
+                new System.Random().NextBytes(RandomBytes);
+                string LobbyID = System.Convert.ToBase64String(RandomBytes);
+                RegisterLobbyResponse Response = new RegisterLobbyResponse();
+                Response.LobbyID = LobbyID;
+                ReturnValue = Response;
+                m_InternalsMutex.WaitOne();
+                ActiveLobbyInfo NewLobby = new ActiveLobbyInfo();
+                NewLobby.ConnectedUsers.Add(MessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
+                m_ActiveLobbys.Add(LobbyID, NewLobby);
+            }
+            else if(MessageToHandle is SendLobbyEvent)
+            {
+                SendLobbyEvent ClientLobbyEvent = (SendLobbyEvent)MessageToHandle;
+                m_InternalsMutex.WaitOne();
+                if (!m_ActiveLobbys.ContainsKey(ClientLobbyEvent.LobbyID))
+                {
+                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+                if(ClientLobbyEvent.EventToSend is LobbyEvent_GameStart)
+                {
+                    ActiveLobbyInfo Lobby = m_ActiveLobbys[ClientLobbyEvent.LobbyID];
+                    foreach(KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
+                    {
+                        if(Statuses.Value.Status.Ready == false)
+                        {
+                            ReturnValue = new RequestStatusResponse("Can only start if all players are ready");
+                            m_InternalsMutex.ReleaseMutex();
+                            return (ReturnValue);
+                        }
+                    }
+                    int NewGameID = p_CreateNewGame(Lobby);
+                    foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
+                    {
+                        LobbyEvent_GameStart GameStartEvent = new LobbyEvent_GameStart();
+                        GameStartEvent.GameID = NewGameID;
+                        Statuses.Value.StoredEvents.Add(GameStartEvent);
+                    }
+                    
+                }
+                else
+                {
+                    ReturnValue = new RequestStatusResponse("Invalid client lobby event");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+            }
+            else if(MessageToHandle is UpdateLobbyStatus)
+            {
+                UpdateLobbyStatus UpdateStatusMessage = (UpdateLobbyStatus)MessageToHandle;
+                m_InternalsMutex.WaitOne();
+                if (!m_ActiveLobbys.ContainsKey(UpdateStatusMessage.LobbyID))
+                {
+                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+                ActiveLobbyInfo Lobby = m_ActiveLobbys[UpdateStatusMessage.LobbyID];
+                if(!Lobby.ConnectedUsers.ContainsKey(UpdateStatusMessage.ConnectionIdentifier))
+                {
+                    ReturnValue = new RequestStatusResponse("Connection not in lobby");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+                Lobby.ConnectedUsers[UpdateStatusMessage.ConnectionIdentifier].Status = UpdateStatusMessage.NewStatus;
+                foreach(KeyValuePair<int,ConnectionLobbyInfo> Connection in Lobby.ConnectedUsers)
+                {
+                    if(Connection.Key != UpdateStatusMessage.ConnectionIdentifier)
+                    {
+                        LobbyEvent_StatusUpdated NewEvent = new LobbyEvent_StatusUpdated();
+                        NewEvent.ConnectionID = UpdateStatusMessage.ConnectionIdentifier;
+                        NewEvent.NewStatus = UpdateStatusMessage.NewStatus;
+                        Connection.Value.StoredEvents.Add(NewEvent);
+                    }
+                }
+                ReturnValue = new RequestStatusResponse();
+            }
+            else if(MessageToHandle is LobbyEventPoll)
+            {
+                LobbyEventPoll JoinMessageToHandle = (LobbyEventPoll)MessageToHandle;
+                m_InternalsMutex.WaitOne();
+                if (!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
+                {
+                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+                ActiveLobbyInfo Lobby = m_ActiveLobbys[JoinMessageToHandle.LobbyID];
+                //foreach (KeyValuePair<int, ConnectionLobbyStatus> Connection in Lobby.ConnectedUsers)
+                //{
+                //    Connection.Value.StoredEvents.Add(new LobbyEvent_PlayerJoined());
+                //}
+
+                if(!Lobby.ConnectedUsers.ContainsKey(JoinMessageToHandle.ConnectionIdentifier))
+                {
+                    ReturnValue = new RequestStatusResponse("Need to join lobby before you can poll events");
+                    m_InternalsMutex.ReleaseMutex();
+                    return (ReturnValue);
+                }
+                ConnectionLobbyInfo LobbyInfo = Lobby.ConnectedUsers[MessageToHandle.ConnectionIdentifier];
+                LobbyEventResponse Response = new LobbyEventResponse();
+                Response.Events = new List<LobbyEvent>(LobbyInfo.StoredEvents);
+                LobbyInfo.StoredEvents.Clear();
+                ReturnValue = Response;
+
+            }
+
+            m_InternalsMutex.ReleaseMutex();
+            return (ReturnValue);
+        }
         private ServerMessage p_HandleGameMessage(GameMessage ClientMessage)
         {
             ServerMessage ReturnValue = null;
             m_InternalsMutex.WaitOne();
             if(!m_ActiveGames.ContainsKey(ClientMessage.GameIdentifier))
             {
-                ReturnValue = new ErrorMessage("Invalid game ID");
+                ReturnValue = new RequestStatusResponse("Invalid game ID");
                 m_InternalsMutex.ReleaseMutex();
                 return (ReturnValue);
             }
@@ -350,9 +657,13 @@ namespace RuleServer
             {
                 ReturnValue = p_HandleGameMessage((GameMessage) MessageToHandle);
             }
+            else if(MessageToHandle is LobbyMessage)
+            {
+                ReturnValue = p_HandleLobbyMessage((LobbyMessage) MessageToHandle);
+            }
             else
             {
-                ReturnValue = new ErrorMessage("unsupported message type");
+                ReturnValue = new RequestStatusResponse("unsupported message type");
             }
             return (ReturnValue);
         }
