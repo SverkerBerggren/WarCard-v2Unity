@@ -31,6 +31,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private List<GameObject> CreatedMovementRange = new List<GameObject>();
 
+    public RuleManager.UnitInfo selectedUnit;
+
+    public bool MoveActionSelected = false; 
+
   //  public GameObject test; 
     // Start is called before the first frame update
     void Start()
@@ -39,9 +43,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         //    gridManager = FindObjectOfType<GridManager>();
 
         unitCard = GameObject.FindGameObjectWithTag("UnitCard");
-    //    unitCard.SetActive(false);
+        unitCard.SetActive(false);
         unitActions = GameObject.FindGameObjectWithTag("UnitActions");
-     //   unitActions.SetActive(false);
+        unitActions.SetActive(false);
 
 
 
@@ -171,12 +175,43 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
      //   ruleManager.ExecuteAction(hej);
      //
      //   listOfImages[unitId].transform.position = gridManager.GetTilePosition(temp);
-        
-        if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
+        if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0)
         {
+           // RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+            if (MoveActionSelected)
+            {
+                //  bool isActionValid = false; 
+                print(ruleManager.PossibleMoves(selectedUnit.UnitID));
+                foreach (RuleManager.Coordinate cords in ruleManager.PossibleMoves(selectedUnit.UnitID))
+                {
+                    if (cords.X == cord.X && cords.Y == cord.Y)
+                    {
+                        RuleManager.MoveAction moveAction = new RuleManager.MoveAction();
+
+                        moveAction.NewPosition = cord;
+                        moveAction.PlayerIndex = selectedUnit.PlayerIndex;
+                        moveAction.UnitID = selectedUnit.UnitID;
+                        MoveActionSelected = false;
+
+                        ruleManager.ExecuteAction(moveAction);
+
+                        listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
+
+                        selectedUnit = null;
+
+                        return;
+                    }
+                }
+            }
+        }
+        if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
+        {   
             DestroyMovementRange();
             RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+            selectedUnit = unitInfo; 
 
+
+            MoveActionSelected = false; 
             unitCard.SetActive(true);
 
             unitActions.SetActive(true);
@@ -195,6 +230,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         else
         {
+            selectedUnit = null; 
             unitCard.SetActive(false);
             unitActions.SetActive(false);
             DestroyMovementRange();
@@ -204,12 +240,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {   
 
 
-        int Height = info.Stats.Range;
+        int Height = info.Stats.Movement;
 
-        float xPosition = gridManager.GetTilePosition(info.Position).x;
-        float yPosition = gridManager.GetTilePosition(info.Position).y;
-
+    //    float xPosition = gridManager.GetTilePosition(info.Position).x;
+    //    float yPosition = gridManager.GetTilePosition(info.Position).y;
         
+
+        foreach(RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
+        {
+            GameObject newObject = Instantiate(MovementRange);
+
+            newObject.transform.position = gridManager.GetTilePosition(cord);
+            CreatedMovementRange.Add(newObject);
+        }
+         
 
     //   for (int YIndex = 0; YIndex < Height; YIndex++)
     //   {

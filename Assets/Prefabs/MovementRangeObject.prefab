@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2374017667829168763}
   - component: {fileID: 8027519424816464044}
   - component: {fileID: 2405459324309943162}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: MovementRangeObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}

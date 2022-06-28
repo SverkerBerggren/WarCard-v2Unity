@@ -6,9 +6,12 @@ using UnityEngine.UI;
 
 public class MoveButtonClick : MonoBehaviour
 {
+    public MainUI mainUI;
     // Start is called before the first frame update
     void Start()
     {
+
+        mainUI = GameObject.Find("UI").GetComponent<MainUI>();
     //    GetComponent<Button>().
     }
 
@@ -20,6 +23,7 @@ public class MoveButtonClick : MonoBehaviour
 
     public void moveButtonClick()
     {
-        print("hej");
+        //print("hej");
+        mainUI.MoveActionSelected = true; 
     }
 }
