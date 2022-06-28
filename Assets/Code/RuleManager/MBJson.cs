@@ -215,10 +215,10 @@ namespace MBJson
             {
                 ReturnValue = int.Parse(System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
             }
-            catch (Exception e)
+            catch (Exception )
             {
-                throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
-                throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
+                //throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
+                //throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
                 throw new Exception("Invalid integer when parsing string: "+System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
             }
 
@@ -407,6 +407,10 @@ namespace MBJson
             {
                 ReturnValue = new JSONObject((int)(object)ObjectToSerialize);
             }
+            else if (ObjectToSerialize is bool)
+            {
+                ReturnValue = new JSONObject((bool)(object)ObjectToSerialize);
+            }
             else if(ObjectType.IsEnum)
             {
                 ReturnValue = new JSONObject((int)(object)ObjectToSerialize);
@@ -441,10 +445,7 @@ namespace MBJson
                 Dictionary<string, JSONObject> JsonDictionary = new Dictionary<string, JSONObject>();
                 foreach (FieldInfo Field in Fields)
                 {
-                    if(Field.FieldType.IsSerializable)
-                    {
-                        JsonDictionary.Add(Field.Name, SerializeObject(Field.GetValue(ObjectToSerialize)));
-                    }
+                    JsonDictionary.Add(Field.Name, SerializeObject(Field.GetValue(ObjectToSerialize)));
                 }
                 ReturnValue = new JSONObject(JsonDictionary);
             }
@@ -465,6 +466,11 @@ namespace MBJson
             {
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetStringData();
+            }
+            else if(typeof(T) == typeof(bool))
+            {
+                Return = true;
+                ReturnValue = (T)(object)ObjectToParse.GetBooleanData();
             }
             else if(typeof(T).IsEnum)
             {
