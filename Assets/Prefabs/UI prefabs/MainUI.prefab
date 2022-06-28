@@ -146,7 +146,7 @@ GameObject:
   - component: {fileID: 8368884862831126571}
   - component: {fileID: 3563862231556002281}
   - component: {fileID: 1342766319163810965}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: AttackButtonText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -688,9 +688,9 @@ GameObject:
   - component: {fileID: 6276232184453854422}
   - component: {fileID: 2443121553228822175}
   - component: {fileID: 6481022785058824270}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: AttackButton
-  m_TagString: Untagged
+  m_TagString: Finish
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1079,9 +1079,9 @@ GameObject:
   - component: {fileID: 6251418218639005103}
   - component: {fileID: 2802133466538837288}
   - component: {fileID: 2141076193}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: MoveButton
-  m_TagString: Untagged
+  m_TagString: Finish
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1129,7 +1129,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -1256,7 +1256,7 @@ GameObject:
   - component: {fileID: 8385400020926584322}
   - component: {fileID: 2605457602582599550}
   - component: {fileID: 2052570225375294965}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: MoveButtonText
   m_TagString: Untagged
   m_Icon: {fileID: 0}

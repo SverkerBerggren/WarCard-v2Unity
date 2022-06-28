@@ -10,10 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2374017667829168763}
   - component: {fileID: 8027519424816464044}
-  - component: {fileID: -6000101775353361169}
   - component: {fileID: 2405459324309943162}
   m_Layer: 8
-  m_Name: TileObject
+  m_Name: MovementRangeObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -75,8 +74,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 004158e3ea21c514baa7064a10b7e94e, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Sprite: {fileID: 21300000, guid: 73e488a31498bc448bff8cf9e36e30da, type: 3}
+  m_Color: {r: 0.0047169924, g: 0.65882355, b: 1, a: 0.31764707}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -86,21 +85,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &-6000101775353361169
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3963050006536340265}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc264434831b014469e08cd31023dc11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  AssociatedGrid: {fileID: 0}
-  X: 0
-  Y: 0
 --- !u!65 &2405459324309943162
 BoxCollider:
   m_ObjectHideFlags: 0

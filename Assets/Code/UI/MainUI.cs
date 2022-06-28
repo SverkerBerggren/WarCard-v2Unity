@@ -25,7 +25,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private int unitEtt;
 
-    private int unitTva; 
+    private int unitTva;
+
+    public GameObject MovementRange;
+
+    private List<GameObject> CreatedMovementRange = new List<GameObject>();
 
   //  public GameObject test; 
     // Start is called before the first frame update
@@ -35,9 +39,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         //    gridManager = FindObjectOfType<GridManager>();
 
         unitCard = GameObject.FindGameObjectWithTag("UnitCard");
-        unitCard.SetActive(false);
+    //    unitCard.SetActive(false);
         unitActions = GameObject.FindGameObjectWithTag("UnitActions");
-        unitActions.SetActive(false);
+     //   unitActions.SetActive(false);
 
 
 
@@ -59,7 +63,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         forstaUnit.Stats.Movement = 5;
 
-        forstaUnit.Stats.Range = 1;
+        forstaUnit.Stats.Range = 3;
         forstaUnit.Stats.ActivationCost = 1;
         forstaUnit.Stats.Damage = 10;
 
@@ -90,7 +94,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         andraUnit.Stats.Movement = 5;
 
-        andraUnit.Stats.Range = 1;
+        andraUnit.Stats.Range = 3;
         andraUnit.Stats.ActivationCost = 1;
         andraUnit.Stats.Damage = 10;
 
@@ -170,6 +174,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
         if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
         {
+            DestroyMovementRange();
             RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
 
             unitCard.SetActive(true);
@@ -184,15 +189,60 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitCardInformation.MovementText.text = unitInfo.Stats.Movement.ToString();
             unitCardInformation.RangeText.text = unitInfo.Stats.Range.ToString();
 
+            ConstructMovementRange(unitInfo);
+
 
         }
         else
         {
             unitCard.SetActive(false);
             unitActions.SetActive(false);
+            DestroyMovementRange();
+        }
+    }
+    private void ConstructMovementRange(RuleManager.UnitInfo info)
+    {   
+
+
+        int Height = info.Stats.Range;
+
+        float xPosition = gridManager.GetTilePosition(info.Position).x;
+        float yPosition = gridManager.GetTilePosition(info.Position).y;
+
+        
+
+    //   for (int YIndex = 0; YIndex < Height; YIndex++)
+    //   {
+    //       for (int XIndex = 0; XIndex < Height; XIndex++)
+    //       {
+    //           GameObject NewObject = Instantiate(MovementRange);
+    //           //Assumes that tiles are quadratic
+    //           float TileWidth = NewObject.GetComponent<SpriteRenderer>().size.x;
+    //        //   m_TileWidth = TileWidth;
+    //           Vector3 NewPosition = new Vector3(xPosition + XIndex * TileWidth, yPosition - YIndex * TileWidth, 0);
+    //         //  GridClick ClickObject = NewObject.GetComponent<GridClick>();
+    //         //  ClickObject.X = XIndex;
+    //         //  ClickObject.Y = YIndex;
+    //         //  ClickObject.AssociatedGrid = this;
+    //           NewObject.transform.position = NewPosition;
+    //
+    //           CreatedMovementRange.Add(NewObject);
+    //       }
+    //   }
+    }
+
+    private void DestroyMovementRange()
+    {
+        if(CreatedMovementRange.Count != 0)
+        {
+            foreach(GameObject obj in CreatedMovementRange)
+            {
+                Destroy(obj);
+            }
         }
     }
 }
+
 
 
 public class UIInfo
