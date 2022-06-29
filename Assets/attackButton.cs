@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
-
-public class MoveButtonClick : MonoBehaviour
+public class attackButton : MonoBehaviour
 {
     public MainUI mainUI;
     // Start is called before the first frame update
@@ -12,7 +10,7 @@ public class MoveButtonClick : MonoBehaviour
     {
 
         mainUI = GameObject.Find("UI").GetComponent<MainUI>();
-    //    GetComponent<Button>().
+        //    GetComponent<Button>().
     }
 
     // Update is called once per frame
@@ -20,12 +18,10 @@ public class MoveButtonClick : MonoBehaviour
     {
         
     }
-
-    public void moveButtonClick()
+    public void attackButtonClick()
     {
-        //print("hej");
-        mainUI.MoveActionSelected = true;
+        mainUI.AttackActionSelected = true;
 
-        mainUI.AttackActionSelected = false;
+        mainUI.MoveActionSelected = false;
     }
 }

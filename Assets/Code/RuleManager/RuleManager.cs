@@ -97,7 +97,7 @@ namespace RuleManager
     [Serializable]
     public class PassAction : Action
     {
-        PassAction() : base(ActionType.Pass) { }
+       public PassAction() : base(ActionType.Pass) { }
     }
 
     public enum EffectType

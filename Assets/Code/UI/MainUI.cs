@@ -33,7 +33,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public RuleManager.UnitInfo selectedUnit;
 
-    public bool MoveActionSelected = false; 
+    public bool MoveActionSelected = false;
+
+    public bool AttackActionSelected = false;
+
+    public int m_playerid = 0; 
 
   //  public GameObject test; 
     // Start is called before the first frame update
@@ -107,7 +111,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         andraUnit.OpaqueInteger = 1; 
 
       //  print("unit id andsra  " + andraUnit.UnitID);
-        unitTva = ruleManager.RegisterUnit(andraUnit, 0);
+        unitTva = ruleManager.RegisterUnit(andraUnit, 1);
 
         GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
         listOfImages.Add(unitTva, andraUnitPaKartan);
@@ -155,7 +159,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
-    {   
+    {     
      //   int unitId = ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID;
      //   print(" vad blir ubnit id et " + unitId);
      //   if(unitId != 0)
@@ -178,8 +182,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0)
         {
            // RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-            if (MoveActionSelected)
+            if (MoveActionSelected && selectedUnit.PlayerIndex == m_playerid)
             {
+                AttackActionSelected = false;
                 //  bool isActionValid = false; 
                 print(ruleManager.PossibleMoves(selectedUnit.UnitID));
                 foreach (RuleManager.Coordinate cords in ruleManager.PossibleMoves(selectedUnit.UnitID))
@@ -197,21 +202,57 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                         listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
 
+                        //selectedUnit = null;
                         selectedUnit = null;
-
+                        unitCard.SetActive(false);
+                        unitActions.SetActive(false);
+                        DestroyMovementRange();
                         return;
                     }
                 }
+
+              
             }
         }
-        if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
+        MoveActionSelected = false;
+        if (ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
         {   
             DestroyMovementRange();
             RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-            selectedUnit = unitInfo; 
+       
+            if(selectedUnit != null)
+            {
+                if (AttackActionSelected && selectedUnit.PlayerIndex == m_playerid)
+                {
+                    RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
+
+                    attackAction.AttackerID = selectedUnit.UnitID;
+                    attackAction.DefenderID = unitInfo.UnitID;
+                    attackAction.PlayerIndex = m_playerid;
+                    string actionInfo;
 
 
-            MoveActionSelected = false; 
+
+                    if (ruleManager.ActionIsValid(attackAction, out actionInfo) && selectedUnit.PlayerIndex == m_playerid)
+                    {
+                        ruleManager.ExecuteAction(attackAction);
+                        selectedUnit = null;
+                        unitCard.SetActive(false);
+                        unitActions.SetActive(false);
+                        DestroyMovementRange();
+                        AttackActionSelected = false;
+                        print(actionInfo + "det hände");
+                        return;
+                    }
+
+                    print(actionInfo);
+                }
+            }
+     
+            AttackActionSelected = false;
+
+            selectedUnit = unitInfo;
+           
             unitCard.SetActive(true);
 
             unitActions.SetActive(true);
@@ -284,6 +325,39 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 Destroy(obj);
             }
         }
+    }
+
+    public void CreateFriendlyUnitInformation()
+    {
+
+    }
+
+    public void DestroyFriendlyUnitInformation()
+    {
+
+    }
+
+    public void CreateEnemyUnitInformation()
+    {
+
+    }
+
+    public void SwitchPlayerPriority()
+    {
+        RuleManager.PassAction passAction = new RuleManager.PassAction();
+
+        if(m_playerid == 0)
+        {
+            passAction.PlayerIndex = 0;
+            m_playerid = 1; 
+        }
+        else
+        {
+            passAction.PlayerIndex = 1;
+            m_playerid = 0;
+        }
+
+        ruleManager.ExecuteAction(passAction);
     }
 }
 
