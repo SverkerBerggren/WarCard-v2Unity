@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever
+public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
 
     RuleManager.RuleManager ruleManager;
@@ -37,13 +37,17 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public bool AttackActionSelected = false;
 
-    public int m_playerid = 0; 
+    public int m_playerid = 0;
+
+    public bool isOnline = false; 
+
+    private Queue<RuleManager.Action> ExecutedActions = new Queue<RuleManager.Action>(); 
 
   //  public GameObject test; 
     // Start is called before the first frame update
     void Start()
     {
-        ruleManager = FindObjectOfType<TheRuleManager>().ruleManager;
+        ruleManager = FindObjectOfType<GameState>().GetRuleManager();
         //    gridManager = FindObjectOfType<GridManager>();
 
         unitCard = GameObject.FindGameObjectWithTag("UnitCard");
@@ -198,7 +202,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                         moveAction.UnitID = selectedUnit.UnitID;
                         MoveActionSelected = false;
 
-                        ruleManager.ExecuteAction(moveAction);
+                        if(!isOnline)
+                        {
+                            ruleManager.ExecuteAction(moveAction);
+                        }
+                        else
+                        {
+                            ExecutedActions.Enqueue(moveAction);
+                        }
+                        
 
                         listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
 
@@ -235,7 +247,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                     if (ruleManager.ActionIsValid(attackAction, out actionInfo) && selectedUnit.PlayerIndex == m_playerid)
                     {
-                        ruleManager.ExecuteAction(attackAction);
+                        if(!isOnline)
+                        {
+                            ruleManager.ExecuteAction(attackAction);
+                        }
+                        else
+                        {
+                            ExecutedActions.Enqueue(attackAction);
+                        }
+                        
                         selectedUnit = null;
                         unitCard.SetActive(false);
                         unitActions.SetActive(false);
@@ -356,8 +376,23 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             passAction.PlayerIndex = 1;
             m_playerid = 0;
         }
-
-        ruleManager.ExecuteAction(passAction);
+        if(!isOnline)
+        {
+            ruleManager.ExecuteAction(passAction);
+        }
+        else
+        {
+            ExecutedActions.Enqueue(passAction);
+        }
+        
+    }
+    public RuleManager.Action PopAction()
+    {
+        return ExecutedActions.Dequeue();
+    }
+    public int getAvailableActions()
+    {
+        return ExecutedActions.Count;
     }
 }
 
