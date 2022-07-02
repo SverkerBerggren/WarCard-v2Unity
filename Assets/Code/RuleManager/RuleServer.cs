@@ -399,7 +399,7 @@ namespace RuleServer
             MemoryStream TotalDataStream = new MemoryStream();
             byte[] TotalObjectData = System.Text.Encoding.UTF8.GetBytes(ObjectToSend.ToString());
             WriteBigEndianInteger((ulong)TotalObjectData.Length, 4, TotalDataStream);
-            TotalDataStream.Write(TotalObjectData);
+            TotalDataStream.Write(TotalObjectData,0,TotalObjectData.Length);
             return (TotalDataStream.ToArray());
         }
         protected static MBJson.JSONObject ParseJSONObject(Stream InStream)
@@ -440,7 +440,7 @@ namespace RuleServer
             //throw new Exception(MessageToSend.ToString());
             //throw new Exception(MBJson.JSONObject.SerializeObject(MessageToSend).ToString());
             byte[] BytesToSend = GetMessageData(MBJson.JSONObject.SerializeObject(MessageToSend));
-            m_AssociatedStream.Write(BytesToSend);
+            m_AssociatedStream.Write(BytesToSend,0,BytesToSend.Length);
             ReturnValue = MBJson.JSONObject.DeserializeObject<ServerMessage>(ParseJSONObject(m_AssociatedStream));
             return (ReturnValue);
         }
@@ -461,7 +461,7 @@ namespace RuleServer
         public void SendServerResponse(ServerMessage MessageToSend)
         {
             byte[] BytesToSend = GetMessageData(MBJson.JSONObject.SerializeObject(MessageToSend));
-            m_AssociatedStream.Write(BytesToSend);
+            m_AssociatedStream.Write(BytesToSend,0,BytesToSend.Length);
         }
     }
     public class ConnectionLobbyStatus

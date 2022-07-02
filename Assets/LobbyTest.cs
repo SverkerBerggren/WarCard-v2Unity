@@ -34,6 +34,7 @@ public class LobbyTest : MonoBehaviour
     void LobbyServerConnector()
     {
         RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("mrboboget.se",443);
+        //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("127.0.0.1", 11337);
         while(true)
         {
             bool Succesfull = m_Semaphore.Wait(3000);
@@ -135,8 +136,9 @@ public class LobbyTest : MonoBehaviour
             lock(m_Events)
             {
                 string LobbyString = GetComponent<TextMeshPro>().text;
-                print("Join string: LobbyString");
+                print("Join string: "+ LobbyString);
                 Connect ConnectEvent = new Connect();
+                LobbyID = LobbyString;
                 ConnectEvent.LobbyCode = LobbyString;
                 m_Events.Push(ConnectEvent);
             }
