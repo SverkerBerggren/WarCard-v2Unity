@@ -211,8 +211,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                             ExecutedActions.Enqueue(moveAction);
                         }
                         
-
-                        listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
+                        if(!isOnline)
+                        {
+                            listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
+                        }
+                      
 
                         //selectedUnit = null;
                         selectedUnit = null;
