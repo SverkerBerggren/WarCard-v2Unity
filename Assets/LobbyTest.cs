@@ -40,8 +40,8 @@ public class LobbyTest : MonoBehaviour
     bool LoadGameScene = false;
     void LobbyServerConnector()
     {
-        //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("mrboboget.se",443);
-        RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("127.0.0.1", 11337);
+        RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("mrboboget.se",443);
+        //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("127.0.0.1", 11337);
         while(true)
         {
             bool Succesfull = m_Semaphore.Wait(3000);
@@ -160,8 +160,8 @@ public class LobbyTest : MonoBehaviour
         StateObject = FindObjectOfType<GameState>();
         Thread MessageThread = new Thread(LobbyServerConnector);
         MessageThread.Start();
-        Thread ServerThread = new Thread(_RunServer);
-        ServerThread.Start();
+        //Thread ServerThread = new Thread(_RunServer);
+        //ServerThread.Start();
     }
 
     // Update is called once per frame
