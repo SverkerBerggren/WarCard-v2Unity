@@ -43,7 +43,7 @@ namespace RuleServer
             ClientMessageType SerializedType = (ClientMessageType)MessageType;
             if (SerializedType == ClientMessageType.GameAction)
             {
-                ReturnValue = typeof(GameMessage);
+                ReturnValue = typeof(GameAction);
             }
             else if (SerializedType == ClientMessageType.OpponentActionPoll)
             {
@@ -323,7 +323,7 @@ namespace RuleServer
         public ActiveGameInfo()
         {
 
-        }
+        }   §
         private ServerMessage p_Handle_Action(GameAction ActionMessage)
         {
             ServerMessage ReturnValue = null;

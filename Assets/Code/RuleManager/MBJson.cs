@@ -646,7 +646,12 @@ namespace MBJson
         {
             object ReturnValue = null;
             Type ObjectType = m_Converter.GetType(ObjectToParse["Type"].GetIntegerData());
-            ReturnValue = ObjectType.GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
+            ConstructorInfo ConstructorToUse = ObjectType.GetConstructor(Type.EmptyTypes);
+            if(ConstructorToUse == null)
+            {
+                throw new Exception("No valid default constructor for type: " +ObjectType.Name);
+            }
+            ReturnValue = ConstructorToUse.Invoke(new object[] { });
             FieldInfo[] Fields = ObjectType.GetFields();
             //Fields[0].FieldType.isen
             Dictionary<string, JSONObject> SerializedObjectData = ObjectToParse.GetAggregateData();
