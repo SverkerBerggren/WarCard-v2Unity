@@ -219,7 +219,7 @@ namespace MBJson
             {
                 //throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
                 //throw new Exception("IntEnd " + IntEnd + " IntegerBegin: " + IntegerBegin);
-                throw new Exception("Invalid integer when parsing string: "+System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
+                throw new Exception("Invalid integer when parsing string: "+System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin)+" Whole data: "+System.Text.Encoding.UTF8.GetString(Buffer));
             }
 
             OutOffset = IntEnd;

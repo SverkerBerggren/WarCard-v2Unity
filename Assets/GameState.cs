@@ -36,6 +36,7 @@ public class GameState : MonoBehaviour
         {
             m_PlayerActionRetrievers.Add(null);
         }
+        print("The opponent index: " + PlayerIndex);
         m_PlayerActionRetrievers[PlayerIndex] = NewRetriever;
     }
 

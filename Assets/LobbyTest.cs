@@ -42,7 +42,7 @@ public class LobbyTest : MonoBehaviour
     {
         RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("192.168.0.16", 11337);
         //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("127.0.0.1", 11337);
-        while(true)
+        while(!LoadGameScene)
         {
             bool Succesfull = m_Semaphore.Wait(3000);
             if(Succesfull)
