@@ -138,9 +138,10 @@ public class LobbyTest : MonoBehaviour
                     if(Event.Type == RuleServer.LobbyEventType.GameStart)
                     {
                         RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
-                        StateObject.SetActionRetriever(GameStartEvent.PlayerIndex, new NetworkActionRetriever(Connection, GameStartEvent.GameID, GameStartEvent.PlayerIndex == 0 ? 1 : 0));
-                        StateObject.SetLocalPlayerIndex(GameStartEvent.PlayerIndex == 0 ? 1 : 0);
-                        print(GameStartEvent.PlayerIndex);
+                        StateObject.SetActionRetriever(GameStartEvent.PlayerIndex == 0 ? 1 : 0, new NetworkActionRetriever(Connection, GameStartEvent.GameID, GameStartEvent.PlayerIndex == 0 ? 1 : 0));
+                        StateObject.SetLocalPlayerIndex(GameStartEvent.PlayerIndex);
+                        print("This is the local player index: "+GameStartEvent.PlayerIndex);
+                        print("This is the opponent index: "+(GameStartEvent.PlayerIndex == 0 ? 1 : 0));
                         LoadGameScene = true;
                         
                     }
@@ -148,6 +149,7 @@ public class LobbyTest : MonoBehaviour
                 }
             }
         }
+        print("Exiting lobby thread");
     }
 
     void _RunServer()
@@ -160,8 +162,8 @@ public class LobbyTest : MonoBehaviour
         StateObject = FindObjectOfType<GameState>();
         Thread MessageThread = new Thread(LobbyServerConnector);
         MessageThread.Start();
-        //Thread ServerThread = new Thread(_RunServer);
-        //ServerThread.Start();
+        Thread ServerThread = new Thread(_RunServer);
+        ServerThread.Start();
     }
 
     // Update is called once per frame
