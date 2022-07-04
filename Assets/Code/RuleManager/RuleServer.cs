@@ -315,68 +315,69 @@ namespace RuleServer
     public class ActiveGameInfo
     {
         Mutex m_InternalsMutex = new Mutex();
-        private RuleManager.RuleManager m_GameRuleManager;
-        List<List<RuleManager.Action>> m_PlayerActions = new List<List<RuleManager.Action>>();
+        private RuleManager.RuleManager m_GameRuleManager = new RuleManager.RuleManager(15,15);
+        public List<List<RuleManager.Action>> m_PlayerActions = new List<List<RuleManager.Action>>();
         //Connection -> player index
         public Dictionary<int, int> ParticipatingPlayers = new Dictionary<int, int>();
 
+        public ActiveGameInfo()
+        {
+
+        }
         private ServerMessage p_Handle_Action(GameAction ActionMessage)
         {
             ServerMessage ReturnValue = null;
-            m_InternalsMutex.WaitOne();
-            if(!ParticipatingPlayers.ContainsKey(ActionMessage.ConnectionIdentifier))
+            lock(m_InternalsMutex)
             {
-                ReturnValue =new RequestStatusResponse("Connection not present in game");
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
+                if (!ParticipatingPlayers.ContainsKey(ActionMessage.ConnectionIdentifier))
+                {
+                    ReturnValue = new RequestStatusResponse("Connection not present in game");
+                    return (ReturnValue);
+                }
+                int PlayerIndex = ParticipatingPlayers[ActionMessage.ConnectionIdentifier];
+                if (PlayerIndex != ActionMessage.ActionToExecute.PlayerIndex)
+                {
+                    ReturnValue = new RequestStatusResponse("Can't execute actions for your opponent");
+                    return (ReturnValue);
+                }
+                string ErrorString;
+                bool ActionIsValid = m_GameRuleManager.ActionIsValid(ActionMessage.ActionToExecute, out ErrorString);
+                if (!ActionIsValid)
+                {
+                    ReturnValue = new RequestStatusResponse(ErrorString);
+                    return (ReturnValue);
+                }
+                m_GameRuleManager.ExecuteAction(ActionMessage.ActionToExecute);
+                ReturnValue = new RequestStatusResponse("Ok");
             }
-            int PlayerIndex = ParticipatingPlayers[ActionMessage.ConnectionIdentifier];
-            if(PlayerIndex != ActionMessage.ActionToExecute.PlayerIndex)
-            {
-                ReturnValue = new RequestStatusResponse("Can't execute actions for your opponent");
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
-            }
-            string ErrorString;
-            bool ActionIsValid = m_GameRuleManager.ActionIsValid(ActionMessage.ActionToExecute,out ErrorString);
-            if(!ActionIsValid)
-            {
-                ReturnValue = new RequestStatusResponse(ErrorString);
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
-            }
-            m_GameRuleManager.ExecuteAction(ActionMessage.ActionToExecute);
-            m_InternalsMutex.ReleaseMutex();
-            ReturnValue = new RequestStatusResponse("Ok");
             return (ReturnValue);
         }
         ServerMessage p_Handle_ActionPoll(OpponentActionPoll PollMessage)
         {
             ServerMessage ReturnValue = null;
-            m_InternalsMutex.WaitOne();
-            if (!ParticipatingPlayers.ContainsKey(PollMessage.ConnectionIdentifier))
+            lock(m_InternalsMutex)
             {
-                ReturnValue = new RequestStatusResponse("Connection not present in game");
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
+                if (!ParticipatingPlayers.ContainsKey(PollMessage.ConnectionIdentifier))
+                {
+                    ReturnValue = new RequestStatusResponse("Connection not present in game");
+                    return (ReturnValue);
+                }
+                int PlayerIndex = ParticipatingPlayers[PollMessage.ConnectionIdentifier];
+                if (PlayerIndex == PollMessage.OpponentIndex)
+                {
+                    ReturnValue = new RequestStatusResponse("Can't pop your own actions");
+                    return (ReturnValue);
+                }
+                if (PollMessage.OpponentIndex > m_PlayerActions.Count || PollMessage.OpponentIndex < 0)
+                {
+                    ReturnValue = new RequestStatusResponse("Invalid opponent index");
+                    return (ReturnValue);
+                }
+                OpponentAction Response = new OpponentAction();
+                Response.OpponentActions = new List<RuleManager.Action>(m_PlayerActions[PollMessage.OpponentIndex]);
+                m_PlayerActions[PollMessage.OpponentIndex].Clear();
+                ReturnValue = Response;
             }
-            int PlayerIndex = ParticipatingPlayers[PollMessage.ConnectionIdentifier];
-            if(PlayerIndex == PollMessage.OpponentIndex)
-            {
-                ReturnValue = new RequestStatusResponse("Can't pop your own actions");
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
-            }
-            if(PollMessage.OpponentIndex > m_PlayerActions.Count || PollMessage.OpponentIndex < 0)
-            {
-                ReturnValue = new RequestStatusResponse("Invalid opponent index");
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
-            }
-            OpponentAction Response = new OpponentAction();
-            Response.OpponentActions = new List<RuleManager.Action>(m_PlayerActions[PollMessage.OpponentIndex]);
-            m_PlayerActions[PollMessage.OpponentIndex].Clear();
-            m_InternalsMutex.WaitOne();
             return (ReturnValue);
         }
         public ServerMessage HandleMessage(GameMessage MessageToHandle)
@@ -530,6 +531,7 @@ namespace RuleServer
             {
                 NewGame.ParticipatingPlayers.Add(Participant.Key, CurrentPlayerIndex);
                 CurrentPlayerIndex += 1;
+                NewGame.m_PlayerActions.Add(new List<RuleManager.Action>());
             }
             m_ActiveGames.Add(NewGameID, NewGame);
             return (NewGameID);
@@ -678,16 +680,16 @@ namespace RuleServer
         private ServerMessage p_HandleGameMessage(GameMessage ClientMessage)
         {
             ServerMessage ReturnValue = null;
-            m_InternalsMutex.WaitOne();
-            if(!m_ActiveGames.ContainsKey(ClientMessage.GameIdentifier))
+            lock(m_InternalsMutex)
             {
-                ReturnValue = new RequestStatusResponse("Invalid game ID");
-                m_InternalsMutex.ReleaseMutex();
-                return (ReturnValue);
+                if (!m_ActiveGames.ContainsKey(ClientMessage.GameIdentifier))
+                {
+                    ReturnValue = new RequestStatusResponse("Invalid game ID");
+                    return (ReturnValue);
+                }
+                ActiveGameInfo GameInfo = m_ActiveGames[ClientMessage.GameIdentifier];
+                ReturnValue = GameInfo.HandleMessage(ClientMessage);
             }
-            ActiveGameInfo GameInfo = m_ActiveGames[ClientMessage.GameIdentifier];
-            m_InternalsMutex.ReleaseMutex();
-            GameInfo.HandleMessage(ClientMessage);
             return (ReturnValue);
         }
 

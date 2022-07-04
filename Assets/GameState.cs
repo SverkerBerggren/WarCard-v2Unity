@@ -25,8 +25,9 @@ public class GameState : MonoBehaviour
     {
         m_LocalPlayerIndex = NewIndex;
     }
-    int GetLocalPlayerIndex()
+    public int GetLocalPlayerIndex()
     {
+        print("This is the local player index: " + m_LocalPlayerIndex);
         return (m_LocalPlayerIndex);
     }
     public void SetActionRetriever(int PlayerIndex,ActionRetriever NewRetriever)
@@ -45,10 +46,12 @@ public class GameState : MonoBehaviour
         int PlayerIndex = ruleManager.GetPlayerActionIndex();
         if(m_PlayerActionRetrievers.Count <= PlayerIndex)
         {
+            print("Invalid number of action retrievers");
             return;
         }
         if(m_PlayerActionRetrievers[PlayerIndex] == null)
         {
+            print("Invalid action retriever: was null");
             return;
         }
         if(m_PlayerActionRetrievers[PlayerIndex].getAvailableActions() > 0)
@@ -58,6 +61,7 @@ public class GameState : MonoBehaviour
             if(NewAction.PlayerIndex != PlayerIndex)
             {
                 print("Invalid player index, abort");
+                return;
             }
             ruleManager.ExecuteAction(NewAction);
             int CurrentIndex = 0;

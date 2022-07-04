@@ -53,7 +53,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     void Start()
     {
-        ruleManager = FindObjectOfType<GameState>().GetRuleManager();
+        GameState GlobalState = FindObjectOfType<GameState>();
+        ruleManager = GlobalState.GetRuleManager();
+        GlobalState.SetActionRetriever(GlobalState.GetLocalPlayerIndex(), this);
         //    gridManager = FindObjectOfType<GridManager>();
 
         unitCard = GameObject.FindGameObjectWithTag("UnitCard");
