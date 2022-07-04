@@ -297,6 +297,11 @@ namespace RuleManager
         }
 
         //Observers
+        public int GetPlayerActionIndex()
+        {
+            int ReturnValue = 0;
+            return (ReturnValue);
+        }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
             bool ReturnValue = true;

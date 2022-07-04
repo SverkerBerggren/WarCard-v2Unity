@@ -23,6 +23,7 @@ namespace RuleServer
         LobbyEventPoll,
         UpdateLobbyStatus,
         SendLobbyEvent,
+        ClientHandshake
     }
     [Serializable]
     public class ClientMessage : MBJson.JSONDeserializeable, MBJson.JSONTypeConverter
@@ -68,6 +69,10 @@ namespace RuleServer
             {
                 ReturnValue = typeof(SendLobbyEvent);
             }
+            else if(SerializedType == ClientMessageType.ClientHandshake)
+            {
+                ReturnValue = typeof(ClientHandshake);
+            }
             else if(SerializedType == ClientMessageType.Null)
             {
                 throw new Exception("Cant serialize null message");
@@ -83,6 +88,14 @@ namespace RuleServer
             return (new MBJson.DynamicJSONDeserializer(this).Deserialize(ObjectToParse));
         }
         public int ConnectionIdentifier = 0;
+    }
+
+    public class ClientHandshake : ClientMessage
+    {
+        public ClientHandshake() : base(ClientMessageType.ClientHandshake)
+        {
+
+        }
     }
     [Serializable]
     public class GameMessage : ClientMessage
@@ -138,7 +151,8 @@ namespace RuleServer
         OpponentAction,
         RequestStatusResponse,
         RegisterLobbyResponse,
-        LobbyEventResponse
+        LobbyEventResponse,
+        ServerHandshake,
     }
     [Serializable]
     public class ServerMessage : MBJson.JSONDeserializeable, MBJson.JSONTypeConverter
@@ -173,6 +187,10 @@ namespace RuleServer
             {
                 ReturnValue = typeof(LobbyEventResponse);
             }
+            else if(SerializedType == ServerMessageType.ServerHandshake)
+            {
+                ReturnValue = typeof(ServerHandshake);
+            }
             else if(SerializedType == ServerMessageType.Null)
             {
                 throw new Exception("Cant deserizalize null message");
@@ -187,6 +205,14 @@ namespace RuleServer
         {
             return (new MBJson.DynamicJSONDeserializer(this).Deserialize(ObjectToParse));
         }
+    }
+    public class ServerHandshake : ServerMessage
+    {
+        public ServerHandshake() : base(ServerMessageType.ServerHandshake)
+        {
+
+        }
+        public int NewConnectionIdentifier = 0;
     }
     [Serializable]
     public class OpponentAction : ServerMessage
@@ -275,6 +301,7 @@ namespace RuleServer
 
         }
         public int GameID = 0;
+        public int PlayerIndex = 0;
     }
     public class LobbyEvent_StatusUpdated : LobbyEvent
     {
@@ -428,16 +455,23 @@ namespace RuleServer
     {
 
         NetworkStream m_AssociatedStream = null;
+        int m_ConnectionID = 0;
 
         public ClientConnection(string Adress,int Port)
         {
             TcpClient NewClient = new TcpClient(Adress, Port);
             m_AssociatedStream = NewClient.GetStream();
+
+            //Handshake
+            ClientHandshake HandshakeMessage = new ClientHandshake();
+            ServerHandshake Response =(ServerHandshake) SendMessage(HandshakeMessage);
+            m_ConnectionID = Response.NewConnectionIdentifier;
         }
         public ServerMessage SendMessage(ClientMessage MessageToSend)
         {
             ServerMessage ReturnValue = null;
             //throw new Exception(MessageToSend.ToString());
+            MessageToSend.ConnectionIdentifier = m_ConnectionID;
             //throw new Exception(MBJson.JSONObject.SerializeObject(MessageToSend).ToString());
             byte[] BytesToSend = GetMessageData(MBJson.JSONObject.SerializeObject(MessageToSend));
             m_AssociatedStream.Write(BytesToSend,0,BytesToSend.Length);
@@ -485,6 +519,7 @@ namespace RuleServer
         private Dictionary<string, ActiveLobbyInfo> m_ActiveLobbys = new Dictionary<string, ActiveLobbyInfo>();
 
         int CurrentGameID = 1;
+        int m_CurrentConnectionID = 0;
         int p_CreateNewGame(ActiveLobbyInfo AssociatedLobby)
         {
             CurrentGameID += 1;
@@ -546,7 +581,8 @@ namespace RuleServer
                 if(ClientLobbyEvent.EventToSend is LobbyEvent_GameStart)
                 {
                     ActiveLobbyInfo Lobby = m_ActiveLobbys[ClientLobbyEvent.LobbyID];
-                    foreach(KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
+                    ReturnValue = new RequestStatusResponse("Ok");
+                    foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
                     {
                         if(Statuses.Value.Status.Ready == false)
                         {
@@ -556,11 +592,16 @@ namespace RuleServer
                         }
                     }
                     int NewGameID = p_CreateNewGame(Lobby);
+
+                    //arbitrary algorithm to determine who starts
+                    int CurrentPlayerIndex = 0;
                     foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
                     {
                         LobbyEvent_GameStart GameStartEvent = new LobbyEvent_GameStart();
                         GameStartEvent.GameID = NewGameID;
+                        GameStartEvent.PlayerIndex = CurrentPlayerIndex;
                         Statuses.Value.StoredEvents.Add(GameStartEvent);
+                        CurrentPlayerIndex++;
                     }
                     
                 }
@@ -660,6 +701,13 @@ namespace RuleServer
             else if(MessageToHandle is LobbyMessage)
             {
                 ReturnValue = p_HandleLobbyMessage((LobbyMessage) MessageToHandle);
+            }
+            else if(MessageToHandle is ClientHandshake)
+            {
+                m_CurrentConnectionID++;
+                ServerHandshake Response = new ServerHandshake();
+                Response.NewConnectionIdentifier = m_CurrentConnectionID;
+                ReturnValue = Response;
             }
             else
             {

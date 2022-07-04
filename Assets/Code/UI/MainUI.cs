@@ -45,6 +45,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
   //  public GameObject test; 
     // Start is called before the first frame update
+
+    public void SendAction(RuleManager.Action ActionToSend)
+    {
+
+    }
+
     void Start()
     {
         ruleManager = FindObjectOfType<GameState>().GetRuleManager();
@@ -261,7 +267,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                         unitActions.SetActive(false);
                         DestroyMovementRange();
                         AttackActionSelected = false;
-                        print(actionInfo + "det hände");
+                        print(actionInfo + "det hï¿½nde");
                         return;
                     }
 
