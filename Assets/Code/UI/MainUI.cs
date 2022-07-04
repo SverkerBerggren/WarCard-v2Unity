@@ -62,8 +62,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         unitActions.SetActive(false);
 
 
-
-
+        ruleManager.SetEventHandler(this);
+        
         gridManager.SetInputReciever(this);
 
         UIInfo forstaUIInfo = new UIInfo();
@@ -217,8 +217,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                             ExecutedActions.Enqueue(moveAction);
                         }
                         
-
-                        listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
+                        if(!isOnline)
+                        {
+                         //   listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
+                        }
+                      
 
                         //selectedUnit = null;
                         selectedUnit = null;

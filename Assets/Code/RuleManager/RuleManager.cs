@@ -171,7 +171,7 @@ namespace RuleManager
         }
     }
 
-    interface RuleEventHandler
+    public interface RuleEventHandler
     {
         void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition);
         void OnUnitAttack(int AttackerID, int DefenderID);
@@ -193,7 +193,7 @@ namespace RuleManager
 
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
-        void SetEventHandler(RuleEventHandler NewHandler)
+        public void SetEventHandler(RuleEventHandler NewHandler)
         {
             m_EventHandler = NewHandler;
         }
