@@ -13,6 +13,7 @@ public class GameState : MonoBehaviour
     {
         if(m_GlobalGamestate != null)
         {
+            this.gameObject.SetActive(false);
             Destroy(this.gameObject);
         }
         else
@@ -36,7 +37,6 @@ public class GameState : MonoBehaviour
         {
             m_PlayerActionRetrievers.Add(null);
         }
-        print("The opponent index: " + PlayerIndex);
         m_PlayerActionRetrievers[PlayerIndex] = NewRetriever;
     }
 
@@ -70,6 +70,7 @@ public class GameState : MonoBehaviour
             {
                 if(CurrentIndex == PlayerIndex)
                 {
+                    CurrentIndex++;
                     continue;
                 }
                 Retriever.SendAction(NewAction);
