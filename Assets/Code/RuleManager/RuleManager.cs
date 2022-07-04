@@ -16,10 +16,15 @@ namespace RuleManager
           
     }
     [Serializable]
-    public struct Coordinate
+    public class Coordinate
     {
         public int X;
         public int Y;
+        public Coordinate()
+        {
+            X = 0;
+            Y = 0;
+        }
         public Coordinate(int NewX, int NewY)
         {
             X = NewX;

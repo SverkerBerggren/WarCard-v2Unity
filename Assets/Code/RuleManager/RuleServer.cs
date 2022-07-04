@@ -323,7 +323,7 @@ namespace RuleServer
         public ActiveGameInfo()
         {
 
-        }   §
+        }   
         private ServerMessage p_Handle_Action(GameAction ActionMessage)
         {
             ServerMessage ReturnValue = null;

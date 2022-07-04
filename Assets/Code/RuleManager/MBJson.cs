@@ -485,6 +485,12 @@ namespace MBJson
             {
                 return (ReturnValue);
             }
+            ConstructorInfo ConstructorToUse = typeof(T).GetConstructor(Type.EmptyTypes);
+            if(ConstructorToUse == null)
+            {
+                string ErrorString = "Error Deserializing type: no default constructor avaialbe for " + typeof(T).Name;
+                throw new Exception("Error Deserializing type: no default constructor avaialbe for " + typeof(T).Name);
+            }
             ReturnValue = (T)typeof(T).GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
             if(ReturnValue is JSONDeserializeable)
             {
