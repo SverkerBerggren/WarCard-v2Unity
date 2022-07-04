@@ -16,8 +16,12 @@ namespace RuleManager
           
     }
     [Serializable]
-    public class Coordinate
+    public class Coordinate : IEquatable<Coordinate>
     {
+        public bool Equals(Coordinate rhs)
+        {
+            return (rhs.X == X && rhs.Y == Y);
+        }
         public int X;
         public int Y;
         public Coordinate()

@@ -342,12 +342,14 @@ namespace RuleServer
                 }
                 string ErrorString;
                 bool ActionIsValid = m_GameRuleManager.ActionIsValid(ActionMessage.ActionToExecute, out ErrorString);
-                if (!ActionIsValid)
-                {
-                    ReturnValue = new RequestStatusResponse(ErrorString);
-                    return (ReturnValue);
-                }
-                m_GameRuleManager.ExecuteAction(ActionMessage.ActionToExecute);
+                //TEMP AF
+                //if (!ActionIsValid)
+                //{
+                //    ReturnValue = new RequestStatusResponse(ErrorString);
+                //    return (ReturnValue);
+                //}
+                //m_GameRuleManager.ExecuteAction(ActionMessage.ActionToExecute);
+                m_PlayerActions[PlayerIndex].Add(ActionMessage.ActionToExecute);
                 ReturnValue = new RequestStatusResponse("Ok");
             }
             return (ReturnValue);
