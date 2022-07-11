@@ -10,11 +10,156 @@ namespace RuleManager
         Player,
         Unit,
         Tile,
+        Null
     }
+    public enum AbilityType
+    {
+        Continous,
+        Triggered,
+        Activated,
+        Null
+    }
+    public class Effect
+    {
+        int PlayerIndex = 0;
+    }
+
+    public class Effect_DestroyTargets : Effect
+    {
+        TargetRetriever Targets;
+    }
+    public class Effect_DealDamage : Effect
+    {
+        public TargetRetriever Targets;
+        public int Damage;
+    }
+
+    public enum RetrieverType
+    {
+        Index,
+        Choose,
+        Null
+    }
+    public class TargetRetriever
+    {
+        public RetrieverType Type = RetrieverType.Null;
+        protected TargetRetriever(RetrieverType NewType)
+        {
+            Type = NewType;
+        }
+    }
+    public class TargetRetriever_Index : TargetRetriever
+    {
+        public int Index = 0;
+        TargetRetriever_Index() : base(RetrieverType.Index)
+        {
+
+        }
+    }
+    public class TargetRetriever_Choose : TargetRetriever
+    {
+        TargetInfo TargetsToChoose;
+        TargetRetriever_Choose() : base(RetrieverType.Choose)
+        {
+
+        }
+    }
+
+
+    public class Ability
+    {
+        public readonly AbilityType Type = AbilityType.Null;
+        protected Ability(AbilityType NewType)
+        {
+            Type = NewType;
+        }
+    }
+
+    public class Ability_Activated : Ability
+    {
+        public TargetInfo ActivationTargets;
+        public Effect ActivatedEffect;
+
+        public Ability_Activated() : base(AbilityType.Activated)
+        {
+
+        }
+    }
+    public class Ability_Triggered : Ability
+    {
+        public TriggerCondition Condition;
+        public Effect TriggeredEffect;
+        public Ability_Triggered() : base(AbilityType.Triggered)
+        {
+
+        }
+    }
+    public class Ability_Continous : Ability
+    {
+        public Ability_Continous() : base(AbilityType.Continous)
+        {
+
+        }
+    }
+
+
+    public class Target
+    {
+        public readonly TargetType Type = TargetType.Null;
+        protected Target(TargetType TypeToUse)
+        {
+            Type = TypeToUse;
+        }
+
+    }
+    public class Target_Player : Target
+    {
+        public int PlayerIndex = 0;
+        Target_Player() : base(TargetType.Player)
+        {
+
+        }
+    }
+    public class Target_Unit : Target 
+    {
+        public int UnitID = 0;
+        public Target_Unit() : base(TargetType.Unit)
+        {
+
+        }
+    }
+    public class Target_Tile : Target
+    {
+        public Coordinate TargetCoordinate;
+        public Target_Tile() : base(TargetType.Tile)
+        {
+
+        }
+    }
+
+    public class TargetRestriction
+    {
+
+        public virtual bool SatisfiesRestriction(Target TargetToInspect)
+        {
+            return (false);
+        }
+    }
+
     public class TargetInfo
     {
-          
+        bool IsEmpty()
+        {
+            return (false);
+        }
     }
+
+
+    public class TriggerCondition
+    {
+
+    }
+
     [Serializable]
     public class Coordinate : IEquatable<Coordinate>
     {
@@ -108,16 +253,11 @@ namespace RuleManager
     {
        public PassAction() : base(ActionType.Pass) { }
     }
-
-    public enum EffectType
+    public class EffectAction : Action
     {
-        Continous,
-        Triggered,
-        Activated,
-    }
-    public class Effect
-    {
-        public EffectType Type;
+        public List<Target> Targets = new List<Target>();
+        public int UnitID = 0;
+        public int EffectIndex = -1;
     }
 
     public class UnitStats
@@ -149,7 +289,7 @@ namespace RuleManager
         public int PlayerIndex = 0;
         public object OpaqueInteger = null;
         public Coordinate Position = new Coordinate();
-        public List<Effect> Effects = new List<Effect>();
+        public List<Ability> Abilities = new List<Ability>();
         public UnitStats Stats = new UnitStats();
 
         public UnitInfo()
@@ -162,7 +302,7 @@ namespace RuleManager
             UnitID = InfoToCopy.PlayerIndex;
             OpaqueInteger = InfoToCopy.OpaqueInteger;
             Position = InfoToCopy.Position;
-            Effects = InfoToCopy.Effects;
+            Abilities = new List<Ability>(InfoToCopy.Abilities);
             Stats = new UnitStats(InfoToCopy.Stats);
         }
     }
@@ -200,8 +340,20 @@ namespace RuleManager
         private int m_CurrentPlayerTurn = 0;
         private int m_CurrentPlayerPriority = 0;
 
+        class StackEntity
+        {
+            public List<Target> Targets;
+            public Effect EffectToResolve;
+        }
+
+        Stack<StackEntity> m_TheStack = new Stack<StackEntity>();
+        IEnumerator m_CurrentResolution = null;
+
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
+
+        List<Target> m_ChoosenTargets = null;
+        
         public void SetEventHandler(RuleEventHandler NewHandler)
         {
             m_EventHandler = NewHandler;
@@ -232,7 +384,76 @@ namespace RuleManager
 
             return (NewID);
         }
+        IEnumerator p_RetrieveTargets(List<Target> Targets,TargetRetriever Retriever)
+        {
+            if(Retriever is TargetRetriever_Index)
+            {
+                TargetRetriever_Index IndexRetriever = (TargetRetriever_Index)Retriever;
+                List<Target> NewTargets = new List<Target>();
+                NewTargets.Add(Targets[IndexRetriever.Index]);
+                yield return (NewTargets);
+            }
+            else if(Retriever is TargetRetriever_Choose)
+            {
+                yield return null;
+                if(m_ChoosenTargets == null)
+                {
+                    throw new Exception("Targets need to be choosen to continue resolution");
+                }
+                List<Target> Result = m_ChoosenTargets;
+                m_ChoosenTargets = null;
+                yield return (Result);
+            }
+            yield break;
+        }
+        IEnumerator p_ResolveEffect(List<Target> Targets,Effect EffectToResolve)
+        {
+            if (EffectToResolve is Effect_DealDamage)
+            {
+                Effect_DealDamage DamageEffect = (Effect_DealDamage)EffectToResolve;
+                IEnumerator RetrievedTargets = p_RetrieveTargets(Targets, DamageEffect.Targets);
+                RetrievedTargets.MoveNext();
+                while(RetrievedTargets.Current == null)
+                {
+                    yield return null;
+                    RetrievedTargets.MoveNext();
+                }
+                foreach(Target CurrentTarget in (List<Target>) RetrievedTargets.Current)
+                {
+                    if(CurrentTarget.Type != TargetType.Unit)
+                    {
+                        throw new Exception("Can only damage units");
+                    }
+                    Target_Unit Unit = (Target_Unit)CurrentTarget;
+                    if(m_UnitInfos.ContainsKey(Unit.UnitID) == false)
+                    {
+                        throw new Exception("Invalid UnitID for target");
+                    }
+                    UnitInfo UnitToDamage = m_UnitInfos[Unit.UnitID];
+                    UnitToDamage.Stats.HP -= DamageEffect.Damage;
+                }
+            }
+            yield break;
+        }
+        IEnumerator p_ResolveTopOfStack()
+        {
+            if(m_TheStack.Count == 0)
+            {
+                throw new Exception("Can't resolve empty stack");
+            }
+            StackEntity TopOfStack = m_TheStack.Peek();
 
+            IEnumerator ResolveEnumerator = p_ResolveEffect(TopOfStack.Targets, TopOfStack.EffectToResolve);
+            while(ResolveEnumerator.MoveNext() == true)
+            {
+                yield return null;
+            }
+            m_TheStack.Pop();
+
+            //state based actions
+
+            yield break;
+        }
 
         //Assumes valid UnitID
         void p_DestroyUnit(int UnitID)
@@ -299,6 +520,17 @@ namespace RuleManager
                     }
                 }
             }
+            else if(ActionToExecute is EffectAction)
+            {
+                EffectAction EffectToExecute = (EffectAction)ActionToExecute;
+                UnitInfo UnitWithEffect = m_UnitInfos[EffectToExecute.UnitID];
+                Ability_Activated AbilityToActivate =(Ability_Activated) UnitWithEffect.Abilities[EffectToExecute.EffectIndex];
+                StackEntity NewEntity = new StackEntity();
+                NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
+                NewEntity.Targets = EffectToExecute.Targets;
+                m_TheStack.Push(NewEntity);
+
+            }
             else
             {
                 throw new ArgumentException("Invalid Action type");
@@ -306,6 +538,13 @@ namespace RuleManager
         }
 
         //Observers
+
+        public IEnumerable<Target> GetPossibleTargets(TargetInfo InfoToInspect)
+        {
+            List<Target> ReturnValue = null;
+
+            return (ReturnValue);
+        }
         public int GetPlayerActionIndex()
         {
             int ReturnValue = 0;
