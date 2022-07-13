@@ -51,9 +51,13 @@ namespace RuleManager
     public class TargetRetriever_Index : TargetRetriever
     {
         public int Index = 0;
-        TargetRetriever_Index() : base(RetrieverType.Index)
+        public TargetRetriever_Index() : base(RetrieverType.Index)
         {
 
+        }
+        public TargetRetriever_Index(int NewIndex) : base(RetrieverType.Index)
+        {
+            Index = NewIndex;
         }
     }
     public class TargetRetriever_Choose : TargetRetriever
@@ -115,17 +119,21 @@ namespace RuleManager
     public class Target_Player : Target
     {
         public int PlayerIndex = 0;
-        Target_Player() : base(TargetType.Player)
+        public Target_Player() : base(TargetType.Player)
         {
 
         }
     }
-    public class Target_Unit : Target 
+    public class Target_Unit : Target
     {
         public int UnitID = 0;
         public Target_Unit() : base(TargetType.Unit)
         {
 
+        }
+        public Target_Unit(int NewID) : base(TargetType.Unit)
+        {
+            UnitID = NewID;
         }
     }
     public class Target_Tile : Target
@@ -148,10 +156,34 @@ namespace RuleManager
 
     public class TargetInfo
     {
-        bool IsEmpty()
+        public virtual bool IsEmpty()
         {
             return (false);
         }
+    }
+    public class TargetInfo_List  : TargetInfo
+    {
+        public List<TargetCondition> Targets = new List<TargetCondition>();
+        public override bool IsEmpty() 
+        {
+            return (Targets.Count == 0);
+        }
+    }
+    public class TargetCondition
+    {
+
+    }
+    public class TargetCondition_Type : TargetCondition
+    {
+        public TargetType ValidType = TargetType.Null;
+        public TargetCondition_Type(TargetType TypeToUse)
+        {
+            ValidType = TypeToUse;
+        }
+    }
+    public class TargetCondition_And : TargetCondition
+    {
+        public List<TargetCondition> Conditions = new List<TargetCondition>();
     }
 
 
@@ -454,6 +486,84 @@ namespace RuleManager
 
             yield break;
         }
+        bool p_VerifyTarget(Target TargetToVerify)
+        {
+            bool ReturnValue = true;
+            if(TargetToVerify is Target_Unit)
+            {
+                Target_Unit UnitTarget = (Target_Unit)TargetToVerify;
+                if(!m_UnitInfos.ContainsKey(UnitTarget.UnitID))
+                {
+                    return (false);
+                }
+            }
+            else if(TargetToVerify is Target_Tile)
+            {
+                Target_Tile TileTarget = (Target_Tile)TargetToVerify;
+                if ((TileTarget.TargetCoordinate.Y >= m_Tiles.Count || TileTarget.TargetCoordinate.Y < 0) || (TileTarget.TargetCoordinate.X >= m_Tiles[0].Count || TileTarget.TargetCoordinate.X < 0))
+                {
+                    return (false);
+                }
+            }
+            else if(TargetToVerify is Target_Player)
+            {
+                Target_Player PlayerTarget = (Target_Player)TargetToVerify;
+                if(PlayerTarget.PlayerIndex < 0 ||  PlayerTarget.PlayerIndex >= m_PlayerCount)
+                {
+                    return (false);
+                }
+            }
+            return (ReturnValue);
+        }
+
+        bool p_VerifyTarget(TargetCondition Condition,Target TargetToVerify)
+        {
+            bool ReturnValue = true;
+            if(!p_VerifyTarget(TargetToVerify))
+            {
+                return (false);
+            }
+            if(Condition is TargetCondition_Type)
+            {
+                TargetCondition_Type TypeCondition = (TargetCondition_Type)Condition;
+                ReturnValue = TypeCondition.ValidType == TargetToVerify.Type;
+            }
+            else if(Condition is TargetCondition_And)
+            {
+                TargetCondition_And AndCondition = (TargetCondition_And)Condition;
+                foreach(TargetCondition AndClause in AndCondition.Conditions)
+                {
+                    if(!p_VerifyTarget(AndClause,TargetToVerify))
+                    {
+                        ReturnValue = false;
+                        break;
+                    }
+                }
+            }
+            return (ReturnValue);
+        }
+
+        bool p_VerifyTargets(TargetInfo Info,List<Target> TargetsToVerify)
+        {
+            bool ReturnValue = true;
+            if(Info is TargetInfo_List)
+            {
+                TargetInfo_List ListToVerify = (TargetInfo_List)Info;
+                if(ListToVerify.Targets.Count != ListToVerify.Targets.Count)
+                {
+                    ReturnValue = false;
+                    return (ReturnValue);
+                }
+                for(int i = 0; i < ListToVerify.Targets.Count;i++)
+                {
+                    if(!p_VerifyTarget(ListToVerify.Targets[i], TargetsToVerify[i]))
+                    {
+                        return (false);
+                    }
+                }
+            }
+            return (ReturnValue);
+        }
 
         //Assumes valid UnitID
         void p_DestroyUnit(int UnitID)
@@ -462,6 +572,40 @@ namespace RuleManager
             TileInfo UnitToRemoveTile = m_Tiles[UnitToRemoveInfo.Position.Y][UnitToRemoveInfo.Position.X];
             m_UnitInfos.Remove(UnitID);
             UnitToRemoveTile.StandingUnitID = 0;
+        }
+
+        void p_ChangeTurn()
+        {
+            m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
+            m_CurrentTurn += 1;
+            m_CurrentPlayerPriority = m_CurrentPlayerTurn;
+            if (m_EventHandler != null)
+            {
+                m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
+            }
+        }
+
+        void p_PassPriority()
+        {
+            m_CurrentPlayerPriority += 1;
+            m_CurrentPlayerPriority %= m_PlayerCount;
+
+            if(m_CurrentPlayerTurn == m_CurrentPlayerPriority)
+            {
+                if(m_TheStack.Count > 0)
+                {
+                    IEnumerator ResolveResult = p_ResolveTopOfStack();
+                    bool NotFinished = ResolveResult.MoveNext();
+                    if (NotFinished)
+                    {
+                        m_CurrentResolution = ResolveResult;
+                    }
+                }
+                else
+                {
+                    //p_ChangeTurn();
+                }
+            }
         }
 
         //Modifiers
@@ -486,6 +630,8 @@ namespace RuleManager
                 {
                     m_EventHandler.OnUnitMove(MoveToExecute.UnitID, OldPosition, MoveToExecute.NewPosition);
                 }
+
+                p_PassPriority();
             }
             else if(ActionToExecute is AttackAction)
             {
@@ -505,20 +651,11 @@ namespace RuleManager
                     }
                     p_DestroyUnit(DefenderInfo.UnitID);
                 }
+                p_PassPriority();
             }
             else if(ActionToExecute is PassAction)
             {
-                m_CurrentPlayerPriority += 1;
-                m_CurrentPlayerPriority %= m_PlayerCount;
-                if(m_CurrentPlayerPriority == 0)
-                {
-                    m_CurrentPlayerTurn = (m_CurrentPlayerTurn+1)%m_PlayerCount;
-                    m_CurrentTurn += 1;
-                    if(m_EventHandler != null)
-                    {
-                        m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
-                    }
-                }
+                p_PassPriority();
             }
             else if(ActionToExecute is EffectAction)
             {
@@ -530,6 +667,7 @@ namespace RuleManager
                 NewEntity.Targets = EffectToExecute.Targets;
                 m_TheStack.Push(NewEntity);
 
+                p_PassPriority();
             }
             else
             {
@@ -538,11 +676,52 @@ namespace RuleManager
         }
 
         //Observers
-
+        IEnumerator<Target> p_TotalTargetIterator()
+        {
+            for(int i = 0; i < m_PlayerCount;i++)
+            {
+                Target_Player PlayerTarget = new Target_Player();
+                PlayerTarget.PlayerIndex = i;
+                yield return PlayerTarget;
+            }
+            for(int i = 0; i < m_Tiles.Count; i++)
+            {
+                for(int j = 0; j < m_Tiles[0].Count;j++)
+                {
+                    Target_Tile TileTarget = new Target_Tile();
+                    TileTarget.TargetCoordinate = new Coordinate(j, i);
+                    yield return TileTarget;
+                }
+            }
+            foreach (KeyValuePair<int, UnitInfo> Unit in m_UnitInfos)
+            {
+                Target_Unit UnitTarget = new Target_Unit();
+                UnitTarget.UnitID = Unit.Key;
+                yield return (UnitTarget);
+            }
+            yield break;
+        }
         public IEnumerable<Target> GetPossibleTargets(TargetInfo InfoToInspect)
         {
-            List<Target> ReturnValue = null;
+            List<Target> ReturnValue = new List<Target>();
 
+            if(InfoToInspect is TargetInfo_List)
+            {
+                TargetInfo_List ListInfo = (TargetInfo_List)InfoToInspect;
+                if(ListInfo.Targets.Count == 1)
+                {
+                    IEnumerator<Target> TargetEnumerator = p_TotalTargetIterator();
+                    while (TargetEnumerator.MoveNext())
+                    {
+                        List<Target> TargetList = new List<Target>();
+                        TargetList.Add(TargetEnumerator.Current);
+                        if(p_VerifyTargets(InfoToInspect,TargetList))
+                        {
+                            ReturnValue.Add(TargetEnumerator.Current);
+                        }
+                    }
+                }
+            }
             return (ReturnValue);
         }
         public int GetPlayerActionIndex()
@@ -552,6 +731,12 @@ namespace RuleManager
         }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
+
+            if(m_CurrentResolution != null)
+            {
+                OutInfo = "Cant execute action during resolution, appropriate targets must be specified to continue";
+                return (false);
+            }
             bool ReturnValue = true;
             string ErrorString = "";
             if(ActionToCheck.PlayerIndex != m_CurrentPlayerPriority)
@@ -604,6 +789,47 @@ namespace RuleManager
             else if (ActionToCheck is PassAction)
             {
                 //always true at this point
+            }
+            else if(ActionToCheck is EffectAction)
+            {
+                EffectAction EffectToCheck = (EffectAction)ActionToCheck;
+                if(m_UnitInfos.ContainsKey(EffectToCheck.UnitID) == false)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can't activate effect of unit that doesn't exist";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                UnitInfo AssociatedUnit = m_UnitInfos[EffectToCheck.UnitID];
+                if(AssociatedUnit.PlayerIndex != EffectToCheck.PlayerIndex)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can't activate the effect of opponents units";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if(AssociatedUnit.Abilities.Count <= EffectToCheck.EffectIndex)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Invalid effect index for unit";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if(AssociatedUnit.Abilities[EffectToCheck.EffectIndex].Type != AbilityType.Activated)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only activate activated abilities";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                Ability_Activated AbilityToActive =(Ability_Activated ) AssociatedUnit.Abilities[EffectToCheck.EffectIndex];
+                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,EffectToCheck.Targets))
+                {
+                    ReturnValue = false;
+                    ErrorString = "Invalid targets for ability";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
             }
             else
             {
