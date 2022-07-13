@@ -358,6 +358,19 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
     }
 
+    private void CreateAbility()
+    {
+
+    }
+
+    private void ExecuteAbility(RuleManager.TargetInfo Info)
+    {
+        RuleManager.TargetInfo targetInfo = Info; 
+
+
+     //   if()
+    }
+
     public void CreateFriendlyUnitInformation()
     {
 
