@@ -4,22 +4,44 @@ using UnityEngine;
 
 public class AbilityButton : MonoBehaviour
 {
-    public RuleManager.Ability_Activated abilityInfo;
+    public List<RuleManager.TargetCondition> whichTargets = null;
     public MainUI mainUI; 
     RuleManager.RuleManager ruleManager;
+
+    public bool activatedAbility = false; 
+
+    public int abilityIndex = -1;
     // Start is called before the first frame update
     void Start()
     {
-       // ruleManager.GetPossibleTargets(abilityInfo.ActivationTargets).;
 
-        foreach( RuleManager.Target target in ruleManager.GetPossibleTargets(abilityInfo.ActivationTargets))
+        mainUI = GameObject.Find("UI").GetComponent<MainUI>();
+
+        
+        
+    // ruleManager.GetPossibleTargets(abilityInfo.ActivationTargets).;
+
+    //     foreach( RuleManager.Target target in ruleManager.GetPossibleTargets(abilityInfo.ActivationTargets))
+    //     {
+    //         //target.
+    //         if(target.Type == RuleManager.TargetType.Unit)
+    //         {
+    //             
+    //         }
+    //
+    //     }
+    }   
+
+
+    public void AbilityButtonClick()
+    {
+        mainUI.abilitySelectionStarted = true;
+
+        mainUI.selectedAbilityIndex = abilityIndex;
+
+        if(whichTargets != null)
         {
-            //target.
-            if(target.Type == RuleManager.TargetType.Unit)
-            {
-                
-            }
-
+            mainUI.requiredAbilityTargets = whichTargets; 
         }
     }
 

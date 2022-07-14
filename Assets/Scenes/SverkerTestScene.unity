@@ -554,6 +554,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4322243138323611720, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4665449774012896317, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_Name
@@ -576,13 +581,19 @@ PrefabInstance:
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: isOnline
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: gridManager
       value: 
       objectReference: {fileID: 1868169915}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: genericAbilityButton
+      value: 
+      objectReference: {fileID: 5536026639596192028, guid: 02b16227bbdf53e45b82cc1a8b162b7f,
+        type: 3}
     - target: {fileID: 3212706685785821691, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: m_RootOrder
