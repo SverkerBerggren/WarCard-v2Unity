@@ -186,6 +186,21 @@ namespace RuleManager
         public List<TargetCondition> Conditions = new List<TargetCondition>();
     }
 
+    public class EffectSource
+    {
+        protected EffectSource()
+        {
+
+        }
+    }
+    public class EffectSource_Unit : EffectSource
+    {
+        public int UnitID = 0;
+    }
+    public class EffectSource_Player : EffectSource
+    {
+        public int PlayerIndex = 0;
+    }
 
     public class TriggerCondition
     {
