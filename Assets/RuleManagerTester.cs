@@ -49,6 +49,11 @@ public class RuleManagerTester : MonoBehaviour
             m_ManagerToTest.ExecuteAction(MoveAction);
             ActionExecuted = true;
         }
+        if(Input.GetKeyDown(KeyCode.S))
+        {
+            m_ManagerToTest.ExecuteAction(new RuleManager.PassAction(PlayerIndex));
+            ActionExecuted = true;
+        }
         if(Input.GetKeyDown(KeyCode.A))
         {
             RuleManager.EffectAction ActionToExecute = new RuleManager.EffectAction();
@@ -61,6 +66,18 @@ public class RuleManagerTester : MonoBehaviour
 
             ActionExecuted = true;
         }
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            RuleManager.EffectAction ActionToExecute = new RuleManager.EffectAction();
+            ActionToExecute.PlayerIndex = PlayerIndex;
+            ActionToExecute.UnitID = Player1;
+            ActionToExecute.EffectIndex = 1;
+            ActionToExecute.Targets.Add(new RuleManager.Target_Unit(Player1));
+
+            m_ManagerToTest.ExecuteAction(ActionToExecute);
+
+            ActionExecuted = true;
+        }
         if (ActionExecuted)
         {
             print("Player1 position: " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Position.X + " " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Position.Y);
@@ -68,6 +85,9 @@ public class RuleManagerTester : MonoBehaviour
 
             print("Player1 HP: " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Stats.HP);
             print("Player2 HP: " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Stats.HP);
+
+            print("Player1 HP: " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Stats.Damage);
+            print("Player2 HP: " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Stats.Damage);
         }
     }
 }

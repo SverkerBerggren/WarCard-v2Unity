@@ -24,16 +24,49 @@ namespace RuleManager
         int PlayerIndex = 0;
     }
 
-    public class Effect_DestroyTargets : Effect
-    {
-        TargetRetriever Targets;
-    }
+    //public class Effect_DestroyTargets : Effect
+    //{
+    //    TargetRetriever Targets;
+    //}
     public class Effect_DealDamage : Effect
     {
         public TargetRetriever Targets;
-        public int Damage;
+        public int Damage = 0;
+    }
+    public class Effect_MoveUnit : Effect
+    {
+        public TargetRetriever UnitToMove;
+        public TargetRetriever TargetPosition;
     }
 
+    public class Effect_RegisterContinousAbility : Effect
+    {
+        public TargetRetriever OptionalAffectedTarget;
+        public TargetCondition ContinousCondition = new TargetCondition_True();
+        public Effect ContinousEffect;
+    }
+    public class Effect_RegisterTrigger : Effect
+    {
+        public bool IsOneshot = false;
+        public bool IsEndOfTurn = false;
+        public TargetRetriever OptionalAffectedTarget;
+        public TriggerCondition Condition;
+        public Effect TriggerEffect;
+    }
+    public class Effect_DamageArea : Effect
+    {
+        public TargetRetriever Origin;
+        public int Range = 0;
+        public int Damage = 0;
+    }
+    public class Effect_IncreaseDamage : Effect
+    {
+        public int DamageIncrease = 0;
+        public Effect_IncreaseDamage(int NewDamage)
+        {
+            DamageIncrease = NewDamage;
+        }
+    }
     public enum RetrieverType
     {
         Index,
@@ -100,6 +133,8 @@ namespace RuleManager
     }
     public class Ability_Continous : Ability
     {
+        public TargetCondition AffectedEntities = new TargetCondition_True();
+        public Effect EffectToApply;
         public Ability_Continous() : base(AbilityType.Continous)
         {
 
@@ -110,6 +145,11 @@ namespace RuleManager
     public class Target
     {
         public readonly TargetType Type = TargetType.Null;
+
+        public virtual bool Equals(Target OtherTarget)
+        {
+            return (false);
+        }
         protected Target(TargetType TypeToUse)
         {
             Type = TypeToUse;
@@ -123,6 +163,10 @@ namespace RuleManager
         {
 
         }
+        public override bool Equals(Target obj)
+        {
+            return (obj.Type == Type && ((Target_Player)obj).PlayerIndex == PlayerIndex);
+        }
     }
     public class Target_Unit : Target
     {
@@ -135,6 +179,10 @@ namespace RuleManager
         {
             UnitID = NewID;
         }
+        public override bool Equals(Target obj)
+        {
+            return (obj.Type == Type && ((Target_Unit)obj).UnitID == UnitID);
+        }
     }
     public class Target_Tile : Target
     {
@@ -143,11 +191,15 @@ namespace RuleManager
         {
 
         }
+
         public Target_Tile(Coordinate cord) : base(TargetType.Tile)
         {
             TargetCoordinate = cord;
         }
-
+        public override bool Equals(Target obj)
+        {
+            return (obj.Type == Type && ((Target_Tile)obj).TargetCoordinate.Equals(TargetCoordinate));
+        }
     }
 
     public class TargetRestriction
@@ -169,6 +221,15 @@ namespace RuleManager
     public class TargetInfo_List  : TargetInfo
     {
         public List<TargetCondition> Targets = new List<TargetCondition>();
+
+        public TargetInfo_List()
+        {
+
+        }
+        public TargetInfo_List(params TargetCondition[] Arguments)
+        {
+            Targets = new List<TargetCondition>(Arguments);
+        }
         public override bool IsEmpty() 
         {
             return (Targets.Count == 0);
@@ -176,7 +237,6 @@ namespace RuleManager
     }
     public class TargetCondition
     {
-
     }
     public class TargetCondition_Type : TargetCondition
     {
@@ -186,11 +246,35 @@ namespace RuleManager
             ValidType = TypeToUse;
         }
     }
+    public class TargetCondition_Range : TargetCondition
+    {
+        public int Range = 0;
+        public TargetCondition_Range(int RangeToUse)
+        {
+            Range = RangeToUse;
+        }
+    }
+    public class TargetCondition_Target : TargetCondition
+    {
+        public Target NeededTarget;
+        public TargetCondition_Target(Target TargetToStore)
+        {
+            NeededTarget = TargetToStore;
+        }
+    }
     public class TargetCondition_And : TargetCondition
     {
         public List<TargetCondition> Conditions = new List<TargetCondition>();
-    }
 
+        public TargetCondition_And(params TargetCondition[] NewConditions)
+        {
+            Conditions = new List<TargetCondition>(NewConditions);
+        }
+    }
+    public class TargetCondition_True : TargetCondition
+    {
+
+    }
     public class EffectSource
     {
         protected EffectSource()
@@ -198,9 +282,17 @@ namespace RuleManager
 
         }
     }
+    public class EffectSource_Empty : EffectSource
+    {
+
+    }
     public class EffectSource_Unit : EffectSource
     {
         public int UnitID = 0;
+        public EffectSource_Unit(int NewUnitID)
+        {
+            UnitID = NewUnitID;
+        }
     }
     public class EffectSource_Player : EffectSource
     {
@@ -230,6 +322,13 @@ namespace RuleManager
         {
             X = NewX;
             Y = NewY;
+        }
+        public static Coordinate operator+(Coordinate LHS,Coordinate RHS)
+        {
+            Coordinate ReturnValue = new Coordinate();
+            ReturnValue.X = LHS.X + RHS.X;
+            ReturnValue.Y = LHS.Y + RHS.Y;
+            return (ReturnValue);
         }
         public static int Distance(Coordinate LeftCoordinate, Coordinate RightCoordinate)
         {
@@ -303,6 +402,10 @@ namespace RuleManager
     [Serializable]
     public class PassAction : Action
     {
+       public PassAction(int NewPlayerIndex)
+       {
+            PlayerIndex = NewPlayerIndex;
+       }
        public PassAction() : base(ActionType.Pass) { }
     }
     public class EffectAction : Action
@@ -374,13 +477,20 @@ namespace RuleManager
 
     public interface RuleEventHandler
     {
+        void OnStackPush(StackEntity NewEntity);
+        void OnStackPop(StackEntity PoppedEntity);
         void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition);
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
         void OnUnitCreate(UnitInfo NewUnit);
     }
-
+    public class StackEntity
+    {
+        public List<Target> Targets;
+        public EffectSource Source;
+        public Effect EffectToResolve;
+    }
     public class RuleManager
     {
         //retunrs UnitInfo with invalid UnitID on error, that is to say UnitID = 0
@@ -392,11 +502,43 @@ namespace RuleManager
         private int m_CurrentPlayerTurn = 0;
         private int m_CurrentPlayerPriority = 0;
 
-        class StackEntity
+        private bool m_EndOfTurnPass = false;
+
+        class RegisteredContinousEffect
         {
-            public List<Target> Targets;
-            public Effect EffectToResolve;
+            public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
+            public EffectSource AbilitySource;
+            public TargetCondition AffectedEntities;
+            public Effect EffectToApply;
         }
+        class RegisteredTrigger
+        {
+            public bool IsOneShot = false;//hacky, but encapsulates important and very common functionality
+            public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
+            public TriggerCondition TriggerCondition;
+            public EffectSource TriggerSource;
+            public Effect TriggerEffect;
+        }
+        int m_CurrentTriggerID = 1000; 
+        int p_RegisterTrigger(RegisteredTrigger Trigger)
+        {
+            int ReturnValue = m_CurrentTriggerID;
+            m_RegisteredTriggeredAbilities.Add(m_CurrentTriggerID, Trigger);
+            m_CurrentTriggerID += 1;
+            return (ReturnValue);
+        }
+        int m_CurrentContinousID = 1000000;
+        int p_RegisterContinousEffect(RegisteredContinousEffect ContinousEffect)
+        {
+            int ReturnValue = m_CurrentContinousID;
+            m_RegisteredContinousAbilities.Add(ReturnValue, ContinousEffect);
+            m_CurrentContinousID += 1;
+            return (m_CurrentContinousID);
+        }
+
+        Dictionary<int, int> m_UnitRegisteredContinousAbilityMap = new Dictionary<int, int>();
+        Dictionary<int, RegisteredContinousEffect> m_RegisteredContinousAbilities = new Dictionary<int, RegisteredContinousEffect>();
+        Dictionary<int, RegisteredTrigger> m_RegisteredTriggeredAbilities = new Dictionary<int, RegisteredTrigger>();
 
         Stack<StackEntity> m_TheStack = new Stack<StackEntity>();
         IEnumerator m_CurrentResolution = null;
@@ -441,6 +583,17 @@ namespace RuleManager
 
             return (NewID);
         }
+
+        bool p_MoveUnit(int UnitID, Coordinate TilePosition)
+        {
+            bool ReturnValue = true;
+            UnitInfo AssociatedInfo = m_UnitInfos[UnitID];
+            m_Tiles[AssociatedInfo.Position.Y][AssociatedInfo.Position.X].StandingUnitID = 0;
+            AssociatedInfo.Position = TilePosition;
+            m_Tiles[TilePosition.Y][TilePosition.X].StandingUnitID = UnitID;
+            return (ReturnValue);
+        }
+
         IEnumerator p_RetrieveTargets(List<Target> Targets,TargetRetriever Retriever)
         {
             if(Retriever is TargetRetriever_Index)
@@ -463,7 +616,7 @@ namespace RuleManager
             }
             yield break;
         }
-        IEnumerator p_ResolveEffect(List<Target> Targets,Effect EffectToResolve)
+        IEnumerator p_ResolveEffect(List<Target> Targets,EffectSource Source,Effect EffectToResolve)
         {
             if (EffectToResolve is Effect_DealDamage)
             {
@@ -490,6 +643,127 @@ namespace RuleManager
                     UnitToDamage.Stats.HP -= DamageEffect.Damage;
                 }
             }
+            else if(EffectToResolve is Effect_MoveUnit)
+            {
+                Effect_MoveUnit MoveEffect = (Effect_MoveUnit)EffectToResolve;
+                IEnumerator RetrievedMoveTargets = p_RetrieveTargets(Targets, MoveEffect.UnitToMove);
+                RetrievedMoveTargets.MoveNext();
+                while (RetrievedMoveTargets.Current == null)
+                {
+                    yield return null;
+                    RetrievedMoveTargets.MoveNext();
+                }
+                List<Target> MoveTargets = (List<Target>)RetrievedMoveTargets.Current;
+                if(MoveTargets.Count != 1)
+                {
+                    throw new Exception("Can only move 1 unit to a tile");
+                }
+                if(MoveTargets[0].Type != TargetType.Unit)
+                {
+                    throw new Exception("Can only move a unit");
+                }
+                Target_Unit UnitToMove = (Target_Unit)MoveTargets[0];
+
+
+                IEnumerator RetrievedTileTargets = p_RetrieveTargets(Targets, MoveEffect.TargetPosition);
+                RetrievedMoveTargets.MoveNext();
+                while(RetrievedMoveTargets.Current == null)
+                {
+                    yield return null;
+                    RetrievedMoveTargets.MoveNext();
+                }
+                List<Target> TileTargets = (List<Target>) RetrievedMoveTargets.Current;
+                if(TileTargets.Count != 1)
+                {
+                    throw new Exception("Cannot target multiple tiles for move");
+                }
+                if(TileTargets[0].Type != TargetType.Tile)
+                {
+                    throw new Exception("Can only move to a tile target");
+                }
+                Target_Tile TileToMoveTo = (Target_Tile)TileTargets[0];
+
+                bool Result = p_MoveUnit(UnitToMove.UnitID, TileToMoveTo.TargetCoordinate);
+            }
+            else if (EffectToResolve is Effect_RegisterTrigger)
+            {
+                Effect_RegisterTrigger TriggerEffect = (Effect_RegisterTrigger)EffectToResolve;
+                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets,TriggerEffect.OptionalAffectedTarget);
+                RetrievedAffectedTargets.MoveNext();
+                while (RetrievedAffectedTargets.Current == null)
+                {
+                    yield return null;
+                    RetrievedAffectedTargets.MoveNext();
+                }
+                List<Target> AffectedTargets = (List<Target>)RetrievedAffectedTargets.Current;
+                TriggerCondition ConditionToAdd = TriggerEffect.Condition;
+                if(AffectedTargets.Count != 0)
+                {
+
+                }
+                RegisteredTrigger TriggerToRegister = new RegisteredTrigger();
+                TriggerToRegister.TriggerCondition = ConditionToAdd;
+                TriggerToRegister.TriggerEffect = TriggerEffect.TriggerEffect;
+                TriggerToRegister.TriggerSource = Source;
+                TriggerToRegister.IsOneShot= TriggerEffect.IsOneshot;
+                TriggerToRegister.IsEndOfTurn = TriggerEffect.IsEndOfTurn;
+                p_RegisterTrigger(TriggerToRegister);
+            }
+            else if(EffectToResolve is Effect_RegisterContinousAbility)
+            {
+                Effect_RegisterContinousAbility ContinousEffect = (Effect_RegisterContinousAbility)EffectToResolve;
+                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets, ContinousEffect.OptionalAffectedTarget);
+                RetrievedAffectedTargets.MoveNext();
+                while (RetrievedAffectedTargets.Current == null)
+                {
+                    yield return null;
+                    RetrievedAffectedTargets.MoveNext();
+                }
+                List<Target> AffectedTargets = (List<Target>)RetrievedAffectedTargets.Current;
+                TargetCondition ConditionToAdd = ContinousEffect.ContinousCondition;
+                if (AffectedTargets.Count != 0)
+                {
+                    ConditionToAdd = new TargetCondition_And(ConditionToAdd, new TargetCondition_Target(AffectedTargets[0]));
+                }
+                RegisteredContinousEffect ContinousEffectToRegister = new RegisteredContinousEffect();
+                ContinousEffectToRegister.AbilitySource = Source;
+                ContinousEffectToRegister.AffectedEntities = ConditionToAdd;
+                ContinousEffectToRegister.EffectToApply = ContinousEffect.ContinousEffect;
+                ContinousEffectToRegister.IsEndOfTurn = true;
+                p_RegisterContinousEffect(ContinousEffectToRegister);
+            }
+            else if(EffectToResolve is Effect_DamageArea)
+            {
+                Effect_DamageArea AreaDamageEffect = (Effect_DamageArea)EffectToResolve;
+                IEnumerator RetrievedOrigin = p_RetrieveTargets(Targets, AreaDamageEffect.Origin);
+                RetrievedOrigin.MoveNext();
+                while (RetrievedOrigin.Current == null)
+                {
+                    yield return null;
+                    RetrievedOrigin.MoveNext();
+                }
+                List<Target> Origins = (List<Target>)RetrievedOrigin.Current;
+                if(Origins.Count != 1)
+                {
+                    throw new Exception("Need exactly 1 origin to resolve DamageArea");
+                }
+                if(Origins[0].Type != TargetType.Tile)
+                {
+                    throw new Exception("Can only target Tile for damage area");
+                }
+                Coordinate TargetTile = ((Target_Tile)Origins[0]).TargetCoordinate;
+                for(int i = -AreaDamageEffect.Range; i <= AreaDamageEffect.Range;i++)
+                {
+                    for(int j = (AreaDamageEffect.Range - i); j < AreaDamageEffect.Range-i;j++)
+                    {
+                        Coordinate CurrentTile = TargetTile + new Coordinate(i, j);
+                        if(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID != 0)
+                        {
+                            p_DealDamage(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID, AreaDamageEffect.Damage);
+                        }
+                    }
+                }
+            }
             yield break;
         }
         IEnumerator p_ResolveTopOfStack()
@@ -500,12 +774,16 @@ namespace RuleManager
             }
             StackEntity TopOfStack = m_TheStack.Peek();
 
-            IEnumerator ResolveEnumerator = p_ResolveEffect(TopOfStack.Targets, TopOfStack.EffectToResolve);
+            IEnumerator ResolveEnumerator = p_ResolveEffect(TopOfStack.Targets,TopOfStack.Source, TopOfStack.EffectToResolve);
             while(ResolveEnumerator.MoveNext() == true)
             {
                 yield return null;
             }
             m_TheStack.Pop();
+            if(m_EventHandler != null)
+            {
+                m_EventHandler.OnStackPop(TopOfStack);
+            }
 
             //state based actions
 
@@ -541,7 +819,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        public bool p_VerifyTarget(TargetCondition Condition,Target TargetToVerify)
+        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,Target TargetToVerify)
         {
             bool ReturnValue = true;
             if(!p_VerifyTarget(TargetToVerify))
@@ -553,22 +831,66 @@ namespace RuleManager
                 TargetCondition_Type TypeCondition = (TargetCondition_Type)Condition;
                 ReturnValue = TypeCondition.ValidType == TargetToVerify.Type;
             }
+            else if(Condition is TargetCondition_Range)
+            {
+                TargetCondition_Range RangeCondition = (TargetCondition_Range)Condition;
+                Coordinate SourceCoordinate = null;
+                if(Source is EffectSource_Unit)
+                {
+                    SourceCoordinate = m_UnitInfos[((EffectSource_Unit)Source).UnitID].Position;
+                }
+                else
+                {
+                    throw new Exception("Source of range condition has to be Unit");
+                }
+                Coordinate TargetCoordinate = null;
+                if(TargetToVerify is Target_Unit)
+                {
+                    TargetCoordinate = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].Position;
+                }
+                else if(TargetToVerify is Target_Tile)
+                {
+                    TargetCoordinate = ((Target_Tile)TargetToVerify).TargetCoordinate;
+                }
+                else
+                {
+                    throw new Exception("Target condition only applies to targets of type Unit and Tile");
+                }
+                if(!(Coordinate.Distance(SourceCoordinate,TargetCoordinate) <= RangeCondition.Range))
+                {
+                    ReturnValue = false;
+                }
+
+            }
+            else if(Condition is TargetCondition_Target)
+            {
+                TargetCondition_Target TargetCondition = (TargetCondition_Target)Condition;
+                return (TargetCondition.NeededTarget.Equals(TargetToVerify));
+            }
             else if(Condition is TargetCondition_And)
             {
                 TargetCondition_And AndCondition = (TargetCondition_And)Condition;
                 foreach(TargetCondition AndClause in AndCondition.Conditions)
                 {
-                    if(!p_VerifyTarget(AndClause,TargetToVerify))
+                    if(!p_VerifyTarget(AndClause,Source,TargetToVerify))
                     {
                         ReturnValue = false;
                         break;
                     }
                 }
             }
+            else if(Condition is TargetCondition_True)
+            {
+                return (true);
+            }
+            else
+            {
+                throw new Exception("Invalid target condition type: "+Condition.GetType().Name);
+            }
             return (ReturnValue);
         }
 
-        public bool p_VerifyTargets(TargetInfo Info,List<Target> TargetsToVerify)
+        public bool p_VerifyTargets(TargetInfo Info,EffectSource Source,List<Target> TargetsToVerify)
         {
             bool ReturnValue = true;
             if(Info is TargetInfo_List)
@@ -581,7 +903,7 @@ namespace RuleManager
                 }
                 for(int i = 0; i < ListToVerify.Targets.Count;i++)
                 {
-                    if(!p_VerifyTarget(ListToVerify.Targets[i], TargetsToVerify[i]))
+                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source, TargetsToVerify[i]))
                     {
                         return (false);
                     }
@@ -598,7 +920,10 @@ namespace RuleManager
             m_UnitInfos.Remove(UnitID);
             UnitToRemoveTile.StandingUnitID = 0;
         }
-
+        void p_DealDamage(int UnitID, int Damage)
+        {
+            m_UnitInfos[UnitID].Stats.HP -= Damage;
+        }
         void p_ChangeTurn()
         {
             m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
@@ -607,6 +932,30 @@ namespace RuleManager
             if (m_EventHandler != null)
             {
                 m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
+            }
+            List<int> ContinousEffectsToRemove = new List<int>();
+            foreach(KeyValuePair<int,RegisteredContinousEffect> RegisteredEffect in m_RegisteredContinousAbilities)
+            {
+                if (RegisteredEffect.Value.IsEndOfTurn)
+                {
+                    ContinousEffectsToRemove.Add(RegisteredEffect.Key);
+                }
+            }
+            foreach(int EffectToRemove in ContinousEffectsToRemove)
+            {
+                m_RegisteredContinousAbilities.Remove(EffectToRemove);
+            }
+            List<int> RegisteredEffectsToRemove = new List<int>();
+            foreach (KeyValuePair<int, RegisteredTrigger> RegisteredEffect in m_RegisteredTriggeredAbilities)
+            {
+                if (RegisteredEffect.Value.IsEndOfTurn)
+                {
+                    RegisteredEffectsToRemove.Add(RegisteredEffect.Key);
+                }
+            }
+            foreach (int EffectToRemove in RegisteredEffectsToRemove)
+            {
+                m_RegisteredContinousAbilities.Remove(EffectToRemove);
             }
         }
 
@@ -626,9 +975,9 @@ namespace RuleManager
                         m_CurrentResolution = ResolveResult;
                     }
                 }
-                else
+                else if(m_EndOfTurnPass)
                 {
-                    //p_ChangeTurn();
+                    p_ChangeTurn();
                 }
             }
         }
@@ -641,6 +990,7 @@ namespace RuleManager
             {
                 throw new ArgumentException("Invalid action to execute: "+Error);
             }
+            bool EndOfTurnPass = false;
             if(ActionToExecute is  MoveAction)
             {
                 MoveAction MoveToExecute = (MoveAction)ActionToExecute;
@@ -680,6 +1030,7 @@ namespace RuleManager
             }
             else if(ActionToExecute is PassAction)
             {
+                EndOfTurnPass = true;
                 p_PassPriority();
             }
             else if(ActionToExecute is EffectAction)
@@ -690,14 +1041,19 @@ namespace RuleManager
                 StackEntity NewEntity = new StackEntity();
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
                 NewEntity.Targets = EffectToExecute.Targets;
+                NewEntity.Source = new EffectSource_Unit(EffectToExecute.UnitID);
                 m_TheStack.Push(NewEntity);
-
+                if(m_EventHandler != null)
+                {
+                    m_EventHandler.OnStackPush(NewEntity);
+                }
                 p_PassPriority();
             }
             else
             {
                 throw new ArgumentException("Invalid Action type");
             }
+            m_EndOfTurnPass = EndOfTurnPass;
         }
 
         //Observers
@@ -740,7 +1096,7 @@ namespace RuleManager
                     {
                         List<Target> TargetList = new List<Target>();
                         TargetList.Add(TargetEnumerator.Current);
-                        if(p_VerifyTargets(InfoToInspect,TargetList))
+                        if(p_VerifyTargets(InfoToInspect,new EffectSource_Empty(),TargetList))
                         {
                             ReturnValue.Add(TargetEnumerator.Current);
                         }
@@ -848,7 +1204,7 @@ namespace RuleManager
                     return (ReturnValue);
                 }
                 Ability_Activated AbilityToActive =(Ability_Activated ) AssociatedUnit.Abilities[EffectToCheck.EffectIndex];
-                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,EffectToCheck.Targets))
+                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(AssociatedUnit.UnitID),EffectToCheck.Targets))
                 {
                     ReturnValue = false;
                     ErrorString = "Invalid targets for ability";
@@ -878,12 +1234,39 @@ namespace RuleManager
 
             return (ReturnValue);
         }
+
+        void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier)
+        {
+            if(Modifier is Effect_IncreaseDamage)
+            {
+                InfoToModify.Stats.Damage += ((Effect_IncreaseDamage)Modifier).DamageIncrease;
+            }
+            else
+            {
+                throw new Exception("Invalid continous modifier");
+            }
+        }
+
+        private UnitInfo p_GetProcessedUnitInfo(int ID)
+        {
+            UnitInfo ReturnValue = new UnitInfo(m_UnitInfos[ID]);
+            foreach(KeyValuePair<int,RegisteredContinousEffect> ContinousEffect in m_RegisteredContinousAbilities)
+            {
+                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource, new Target_Unit(ID)))
+                {
+                    p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply);
+                }
+            }
+
+            return (ReturnValue);
+        }
+
         public UnitInfo GetUnitInfo(int ID)
         {
             UnitInfo ReturnValue = null;
             if(m_UnitInfos.ContainsKey(ID))
             {
-                ReturnValue = m_UnitInfos[ID];
+                ReturnValue = p_GetProcessedUnitInfo(ID);
             }
             return (ReturnValue);
         }

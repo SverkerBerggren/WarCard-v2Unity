@@ -173,6 +173,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
+    public void OnStackPop(RuleManager.StackEntity PoppedEntity)
+    {
+
+    }
+    public void OnStackPush(RuleManager.StackEntity PushedEntity)
+    {
+
+    }
+
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
     {
@@ -228,13 +237,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             bool targetWasCorrect = false;
             print(currentTargetToSelect);
             //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
-            if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], targetTile) )
+            if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Empty(), targetTile) )
             {
                 currentTargetToSelect += 1;
                 targetWasCorrect = true; 
                 selectedTargetsForAbilityExecution.Add(targetTile);
             }
-            if(ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], targetUnit) && !targetWasCorrect)
+            if(ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Empty(), targetUnit) && !targetWasCorrect)
             {
                 currentTargetToSelect += 1;
                 targetWasCorrect = true;

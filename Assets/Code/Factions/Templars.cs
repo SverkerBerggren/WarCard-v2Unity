@@ -4,6 +4,18 @@ using System.Collections.Generic;
 
 public class Templars 
 {
+    static RuleManager.Ability IncreaseDamage()
+    {
+        RuleManager.Ability_Activated ReturnValue = new RuleManager.Ability_Activated();
+        RuleManager.Effect_RegisterContinousAbility EffectResult = new RuleManager.Effect_RegisterContinousAbility();
+        EffectResult.ContinousEffect = new RuleManager.Effect_IncreaseDamage(50);
+        EffectResult.OptionalAffectedTarget = new RuleManager.TargetRetriever_Index(0);
+        
+        ReturnValue.ActivatedEffect = EffectResult;
+        ReturnValue.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
+
+        return (ReturnValue);
+    }
     static public RuleManager.UnitInfo GetKnight()
     {
         RuleManager.UnitInfo ReturnValue = new RuleManager.UnitInfo();
@@ -22,10 +34,13 @@ public class Templars
         
         RuleManager.TargetInfo_List AbilityTargetInfo = new RuleManager.TargetInfo_List();
         AbilityTargetInfo.Targets.Add(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
-        
         ActivatedAbility.ActivationTargets = AbilityTargetInfo;
 
+
+
+
         ReturnValue.Abilities.Add(ActivatedAbility);
+        ReturnValue.Abilities.Add(IncreaseDamage());
         return (ReturnValue);
     }
     public static RuleManager.UnitInfo GetPriest()

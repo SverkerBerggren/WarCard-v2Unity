@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using RuleManager;
-public class GridManager : MonoBehaviour,RuleManager.RuleEventHandler
+public class GridManager : MonoBehaviour
 {
 
     public GameObject TileObject;
