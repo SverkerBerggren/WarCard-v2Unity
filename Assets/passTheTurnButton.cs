@@ -26,23 +26,11 @@ public class passTheTurnButton : MonoBehaviour
 
     public void PassTheTurnButtonClick()
     {
-        if(currentPlayer == mainUI.m_playerid)
-        {
-           if(currentPlayer == 0)
-            {
-                currentPlayer = 1;
-                mainUI.SwitchPlayerPriority();
-               
-            }
-           else
-            {
-                currentPlayer = 0;
-                mainUI.SwitchPlayerPriority();
-                //  mainUI.m_playerid = 0;
-            }
+
+        mainUI.SwitchPlayerPriority();
 
             currentPlayerText.text = "Current PLayer: " + currentPlayer;
 
-        }
+        
     }
 }

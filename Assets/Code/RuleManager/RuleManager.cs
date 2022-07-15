@@ -4,7 +4,7 @@ using System;
 using System.Reflection;
 
 namespace RuleManager
-{
+{   
     public enum TargetType
     {
         Player,
@@ -143,6 +143,11 @@ namespace RuleManager
         {
 
         }
+        public Target_Tile(Coordinate cord) : base(TargetType.Tile)
+        {
+            TargetCoordinate = cord;
+        }
+
     }
 
     public class TargetRestriction
@@ -405,6 +410,11 @@ namespace RuleManager
         {
             m_EventHandler = NewHandler;
         }
+
+        public int getPlayerPriority()
+        {
+            return m_CurrentPlayerPriority; 
+        }
         public RuleManager(uint Width,uint Height)
         {
             m_Tiles = new List<List<TileInfo>>((int)Height);
@@ -501,7 +511,7 @@ namespace RuleManager
 
             yield break;
         }
-        bool p_VerifyTarget(Target TargetToVerify)
+        public bool p_VerifyTarget(Target TargetToVerify)
         {
             bool ReturnValue = true;
             if(TargetToVerify is Target_Unit)
@@ -531,7 +541,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        bool p_VerifyTarget(TargetCondition Condition,Target TargetToVerify)
+        public bool p_VerifyTarget(TargetCondition Condition,Target TargetToVerify)
         {
             bool ReturnValue = true;
             if(!p_VerifyTarget(TargetToVerify))
@@ -558,7 +568,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        bool p_VerifyTargets(TargetInfo Info,List<Target> TargetsToVerify)
+        public bool p_VerifyTargets(TargetInfo Info,List<Target> TargetsToVerify)
         {
             bool ReturnValue = true;
             if(Info is TargetInfo_List)
