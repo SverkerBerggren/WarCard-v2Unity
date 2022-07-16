@@ -2729,6 +2729,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: GenericAbilityButton
       objectReference: {fileID: 0}
+    - target: {fileID: 5536026639596192028, guid: 02b16227bbdf53e45b82cc1a8b162b7f,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 02b16227bbdf53e45b82cc1a8b162b7f, type: 3}
 --- !u!224 &8271294248311474314 stripped
