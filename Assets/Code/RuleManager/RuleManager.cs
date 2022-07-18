@@ -37,6 +37,16 @@ namespace RuleManager
     {
         public TargetRetriever UnitToMove;
         public TargetRetriever TargetPosition;
+        
+        public Effect_MoveUnit()
+        {
+
+        }
+        public Effect_MoveUnit(TargetRetriever Unit,TargetRetriever Position)
+        {
+            UnitToMove = Unit;
+            TargetPosition = Position;
+        }
     }
 
     public class Effect_RegisterContinousAbility : Effect
@@ -44,6 +54,17 @@ namespace RuleManager
         public TargetRetriever OptionalAffectedTarget;
         public TargetCondition ContinousCondition = new TargetCondition_True();
         public Effect ContinousEffect;
+
+        public Effect_RegisterContinousAbility()
+        {
+
+        }
+        public Effect_RegisterContinousAbility(TargetRetriever Retriever,TargetCondition Condition,Effect NewEffect)
+        {
+            OptionalAffectedTarget = Retriever;
+            ContinousCondition = Condition;
+            ContinousEffect = NewEffect;
+        }
     }
     public class Effect_RegisterTrigger : Effect
     {
@@ -52,12 +73,41 @@ namespace RuleManager
         public TargetRetriever OptionalAffectedTarget;
         public TriggerCondition Condition;
         public Effect TriggerEffect;
+
+        public Effect_RegisterTrigger()
+        {
+
+        }
+        public Effect_RegisterTrigger(bool OneShot,bool EndOfTurn,TargetRetriever Targets,TriggerCondition NewCondition,Effect EffectToResolve)
+        {
+            IsOneshot = OneShot;
+            IsEndOfTurn = EndOfTurn;
+            OptionalAffectedTarget = Targets;
+            Condition = NewCondition;
+            TriggerEffect = EffectToResolve;
+        }
     }
     public class Effect_DamageArea : Effect
     {
         public TargetRetriever Origin;
         public int Range = 0;
         public int Damage = 0;
+
+        public Effect_DamageArea()
+        {
+
+        }
+        public Effect_DamageArea(TargetRetriever NewOrigin,int RangeToUse,int DamageToDeal)
+        {
+            Origin = NewOrigin;
+            Range = RangeToUse;
+            Damage = DamageToDeal;
+        }
+    }
+    public class Effect_AttackUnit : Effect
+    {
+        public TargetRetriever Attacker;
+        public TargetRetriever Defender;
     }
     public class Effect_IncreaseDamage : Effect
     {
@@ -67,18 +117,36 @@ namespace RuleManager
             DamageIncrease = NewDamage;
         }
     }
+    public class Effect_IncreaseMovement : Effect
+    {
+        public int MovementIncrease = 0;
+        public Effect_IncreaseMovement(int Increase)
+        {
+            MovementIncrease = Increase;
+        }
+        public Effect_IncreaseMovement()
+        {
+
+        }
+    }
     public enum RetrieverType
     {
         Index,
         Choose,
+        Literal,
         Null
     }
     public class TargetRetriever
     {
+
         public RetrieverType Type = RetrieverType.Null;
         protected TargetRetriever(RetrieverType NewType)
         {
             Type = NewType;
+        }
+        public TargetRetriever()
+        {
+
         }
     }
     public class TargetRetriever_Index : TargetRetriever
@@ -101,7 +169,25 @@ namespace RuleManager
 
         }
     }
+    public class TargetRetriever_Literal : TargetRetriever
+    {
+        public List<Target> Targets = new List<Target>();
+        public TargetRetriever_Literal() : base(RetrieverType.Literal)
+        {
 
+        }
+        public TargetRetriever_Literal(IEnumerable<Target> NewTargets) : base(RetrieverType.Literal)
+        {
+            foreach(Target NewTarget in NewTargets)
+            {
+                Targets.Add(NewTarget);
+            }
+        }
+        public TargetRetriever_Literal(Target NewTarget) : base(RetrieverType.Literal)
+        {
+            Targets.Add(NewTarget);
+        }
+    }
 
     public class Ability
     {
@@ -109,6 +195,10 @@ namespace RuleManager
         protected Ability(AbilityType NewType)
         {
             Type = NewType;
+        }
+        public Ability()
+        {
+
         }
     }
 
@@ -119,7 +209,12 @@ namespace RuleManager
 
         public Ability_Activated() : base(AbilityType.Activated)
         {
-
+            
+        }
+        public Ability_Activated(TargetInfo Targets, Effect EffectToUse) : base(AbilityType.Activated)
+        {
+            ActivationTargets = Targets;
+            ActivatedEffect = EffectToUse;
         }
     }
     public class Ability_Triggered : Ability
@@ -202,15 +297,6 @@ namespace RuleManager
         }
     }
 
-    public class TargetRestriction
-    {
-
-        public virtual bool SatisfiesRestriction(Target TargetToInspect)
-        {
-            return (false);
-        }
-    }
-
     public class TargetInfo
     {
         public virtual bool IsEmpty()
@@ -248,10 +334,21 @@ namespace RuleManager
     }
     public class TargetCondition_Range : TargetCondition
     {
+        //hacky af, -1 means the source, otherwise range from appropriate target is used
+        public int TargetIndex = -1;
         public int Range = 0;
+        public TargetCondition_Range()
+        {
+
+        }
         public TargetCondition_Range(int RangeToUse)
         {
             Range = RangeToUse;
+        }
+        public TargetCondition_Range(int Index,int NewRange)
+        {
+            TargetIndex = Index;
+            Range = NewRange;
         }
     }
     public class TargetCondition_Target : TargetCondition
@@ -271,12 +368,25 @@ namespace RuleManager
             Conditions = new List<TargetCondition>(NewConditions);
         }
     }
+    public class TargetCondition_UnitTag : TargetCondition
+    {
+        public string TagToContain = "";
+        public TargetCondition_UnitTag()
+        {
+
+        }
+        public TargetCondition_UnitTag(string TagToUse)
+        {
+            TagToContain = TagToUse;
+        }
+    }
     public class TargetCondition_True : TargetCondition
     {
 
     }
     public class EffectSource
     {
+        public int PlayerIndex = -1;
         protected EffectSource()
         {
 
@@ -296,13 +406,64 @@ namespace RuleManager
     }
     public class EffectSource_Player : EffectSource
     {
-        public int PlayerIndex = 0;
+    }
+
+    public enum TriggerType
+    {
+        BattleroundBegin,
+        BattleroundEnd,
+        Null
+    }
+
+    public class TriggerEvent
+    {
+        public readonly TriggerType Type = TriggerType.Null;
+        public TriggerEvent()
+        {
+
+        }
+        protected TriggerEvent(TriggerType TypeToUse)
+        {
+            Type = TypeToUse;
+        }
+    }
+    public class TriggerEvent_RoundBegin : TriggerEvent
+    {
+        public TriggerEvent_RoundBegin() : base(TriggerType.BattleroundBegin)
+        {
+
+        }
     }
 
     public class TriggerCondition
     {
 
     }
+    public class TriggerCondition_And : TriggerCondition
+    {
+        public List<TriggerCondition> ConditionsToSatisfy = new List<TriggerCondition>();
+        public TriggerCondition_And()
+        {
+
+        }
+        public TriggerCondition_And(params TriggerCondition[] Conditions)
+        {
+            ConditionsToSatisfy = new List<TriggerCondition>(Conditions);
+        }
+    }
+    public class TriggerCondition_Type : TriggerCondition
+    {
+        public TriggerType ApplicableType = TriggerType.Null;
+        public TriggerCondition_Type()
+        {
+            
+        }
+        public TriggerCondition_Type(TriggerType NewType)
+        {
+            ApplicableType = NewType;
+        }
+    }
+
 
     [Serializable]
     public class Coordinate : IEquatable<Coordinate>
@@ -446,6 +607,7 @@ namespace RuleManager
         public Coordinate Position = new Coordinate();
         public List<Ability> Abilities = new List<Ability>();
         public UnitStats Stats = new UnitStats();
+        public HashSet<string> Tags = new HashSet<string>();
 
         public UnitInfo()
         {
@@ -517,6 +679,7 @@ namespace RuleManager
             public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
             public TriggerCondition TriggerCondition;
             public EffectSource TriggerSource;
+            public TargetRetriever AffectedEntities;
             public Effect TriggerEffect;
         }
         int m_CurrentTriggerID = 1000; 
@@ -548,6 +711,80 @@ namespace RuleManager
 
         List<Target> m_ChoosenTargets = null;
         
+
+        bool p_TriggerIsTriggered(TriggerEvent Event,TriggerCondition ConditionToVerify)
+        {
+            bool ReturnValue = true;
+            if(ConditionToVerify is TriggerCondition_And)
+            {
+                TriggerCondition_And AndCondition = (TriggerCondition_And)ConditionToVerify;
+                foreach(TriggerCondition SubCondition in AndCondition.ConditionsToSatisfy)
+                {
+                    if(!p_TriggerIsTriggered(Event,SubCondition))
+                    {
+                        ReturnValue = false;
+                        break;
+                    }
+                }
+            }
+            else if(ConditionToVerify is TriggerCondition_Type)
+            {
+                TriggerCondition_Type TypeCondition = (TriggerCondition_Type)ConditionToVerify;
+                if(TypeCondition.ApplicableType != Event.Type)
+                {
+                    ReturnValue = false;
+                }
+            }
+            else
+            {
+                throw new Exception("Invalid trigger condition type");
+            }
+            return (ReturnValue);
+        }
+        IEnumerator p_AddTriggers(TriggerEvent NewEvent)
+        {
+            List<int> TriggersToRemove = new List<int>();
+            foreach(KeyValuePair<int,RegisteredTrigger> Trigger in m_RegisteredTriggeredAbilities)
+            {
+                if(p_TriggerIsTriggered(NewEvent,Trigger.Value.TriggerCondition))
+                {
+                    IEnumerator TriggerTargetsRetriever = p_RetrieveTargets(new List<Target>(), Trigger.Value.AffectedEntities);
+                    while(TriggerTargetsRetriever.MoveNext())
+                    {
+                        if(TriggerTargetsRetriever.Current == null)
+                        {
+                            yield return null;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    List<Target> Targets = (List<Target>)TriggerTargetsRetriever.Current;
+                    StackEntity NewEntity = new StackEntity();
+                    NewEntity.EffectToResolve = Trigger.Value.TriggerEffect;
+                    NewEntity.Source = Trigger.Value.TriggerSource;
+                    NewEntity.Targets = Targets;
+
+                    m_TheStack.Push(NewEntity);
+                    if(m_EventHandler != null)
+                    {
+                        m_EventHandler.OnStackPush(NewEntity);
+                    }
+                    if(Trigger.Value.IsOneShot)
+                    {
+                        TriggersToRemove.Add(Trigger.Key);
+                    }
+                }
+            }
+            foreach(int TriggerKey in TriggersToRemove)
+            {
+                m_RegisteredTriggeredAbilities.Remove(TriggerKey);
+            }
+            yield break;
+        }   
+
+
         public void SetEventHandler(RuleEventHandler NewHandler)
         {
             m_EventHandler = NewHandler;
@@ -697,11 +934,11 @@ namespace RuleManager
                 }
                 List<Target> AffectedTargets = (List<Target>)RetrievedAffectedTargets.Current;
                 TriggerCondition ConditionToAdd = TriggerEffect.Condition;
+                RegisteredTrigger TriggerToRegister = new RegisteredTrigger();
                 if(AffectedTargets.Count != 0)
                 {
-
+                    TriggerToRegister.AffectedEntities = new TargetRetriever_Literal(AffectedTargets);
                 }
-                RegisteredTrigger TriggerToRegister = new RegisteredTrigger();
                 TriggerToRegister.TriggerCondition = ConditionToAdd;
                 TriggerToRegister.TriggerEffect = TriggerEffect.TriggerEffect;
                 TriggerToRegister.TriggerSource = Source;
@@ -924,7 +1161,7 @@ namespace RuleManager
         {
             m_UnitInfos[UnitID].Stats.HP -= Damage;
         }
-        void p_ChangeTurn()
+        IEnumerator p_ChangeTurn()
         {
             m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
             m_CurrentTurn += 1;
@@ -933,6 +1170,16 @@ namespace RuleManager
             {
                 m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
             }
+            TriggerEvent_RoundBegin RoundBegin = new TriggerEvent_RoundBegin();
+            IEnumerator TriggersEnumerator = p_AddTriggers(RoundBegin);
+            while(TriggersEnumerator.MoveNext())
+            {
+                yield return null;
+            }
+
+
+
+
             List<int> ContinousEffectsToRemove = new List<int>();
             foreach(KeyValuePair<int,RegisteredContinousEffect> RegisteredEffect in m_RegisteredContinousAbilities)
             {
@@ -957,6 +1204,7 @@ namespace RuleManager
             {
                 m_RegisteredContinousAbilities.Remove(EffectToRemove);
             }
+            yield break;
         }
 
         void p_PassPriority()
@@ -1042,6 +1290,7 @@ namespace RuleManager
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
                 NewEntity.Targets = EffectToExecute.Targets;
                 NewEntity.Source = new EffectSource_Unit(EffectToExecute.UnitID);
+                NewEntity.Source.PlayerIndex = ActionToExecute.PlayerIndex;
                 m_TheStack.Push(NewEntity);
                 if(m_EventHandler != null)
                 {
