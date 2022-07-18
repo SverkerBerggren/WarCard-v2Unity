@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class Militarium 
 {
 
-    public RuleManager.UnitInfo GetFootSoldier()
+    public static RuleManager.UnitInfo GetFootSoldier()
     {
         RuleManager.UnitInfo NewUnitInfo = new RuleManager.UnitInfo();
         NewUnitInfo.Stats.Movement = 6;
@@ -15,7 +15,7 @@ public class Militarium
         return (NewUnitInfo);
     }
 
-    public RuleManager.UnitInfo GetMeleeSoldier()
+    public static RuleManager.UnitInfo GetMeleeSoldier()
     {
         RuleManager.UnitInfo NewUnitInfo = new RuleManager.UnitInfo();
         NewUnitInfo.Stats.Movement = 7;
@@ -26,7 +26,7 @@ public class Militarium
         return (NewUnitInfo);
     }
 
-    public RuleManager.UnitInfo GetArtillery()
+    public static RuleManager.UnitInfo GetArtillery()
     {
         RuleManager.UnitInfo NewUnitInfo = new RuleManager.UnitInfo();
         NewUnitInfo.Stats.Movement = 4;
@@ -45,7 +45,7 @@ public class Militarium
         return (NewUnitInfo);
     }
 
-    public RuleManager.UnitInfo GetOfficer()
+    public static RuleManager.UnitInfo GetOfficer()
     {
         RuleManager.UnitInfo ReturnValue = new RuleManager.UnitInfo();
         ReturnValue.Stats.HP = 80;

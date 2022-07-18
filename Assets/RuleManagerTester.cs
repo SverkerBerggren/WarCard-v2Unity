@@ -22,6 +22,36 @@ public class RuleManagerTester : MonoBehaviour
 
         m_Player1ID = m_ManagerToTest.RegisterUnit(Player1Knight, 0);
         m_Player2ID = m_ManagerToTest.RegisterUnit(Player2Knight, 1);
+
+
+
+        print("Statik tests");
+
+        RuleManager.RuleManager StaticTestManager = new RuleManager.RuleManager(42,30);
+        RuleManager.UnitInfo Player1SoldierInfo = Militarium.GetFootSoldier();
+        RuleManager.UnitInfo Player1OfficerInfo = Militarium.GetOfficer();
+        RuleManager.UnitInfo Player1ArilleryInfos = Militarium.GetArtillery();
+
+        RuleManager.UnitInfo Player2SoldierInfo = Militarium.GetFootSoldier();
+        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 0);
+        StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
+        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 1);
+        StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
+        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 2);
+        StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
+        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 3);
+        StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
+        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 4);
+
+        Player1SoldierInfo.Position = new RuleManager.Coordinate(0, 0);
+        int Player1Soldier = StaticTestManager.RegisterUnit(Player1SoldierInfo, 0);
+        Player1OfficerInfo.Position = new RuleManager.Coordinate(0, 1);
+        int Player1Officer = StaticTestManager.RegisterUnit(Player1OfficerInfo, 0);
+        Player1ArilleryInfos.Position = new RuleManager.Coordinate(0, 2);
+        int Player1Artillery = StaticTestManager.RegisterUnit(Player1ArilleryInfos, 0);
+
+        print("Soldier attack: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.HP);
+        StaticTestManager.ExecuteAction(new RuleManager.EffectAction());
     }
 
     // Update is called once per frame
