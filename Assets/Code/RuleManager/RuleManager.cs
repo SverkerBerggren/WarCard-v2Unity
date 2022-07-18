@@ -616,7 +616,7 @@ namespace RuleManager
         public UnitInfo(UnitInfo InfoToCopy)
         {
             UnitID = InfoToCopy.UnitID;
-            UnitID = InfoToCopy.PlayerIndex;
+            PlayerIndex = InfoToCopy.PlayerIndex;
             OpaqueInteger = InfoToCopy.OpaqueInteger;
             Position = InfoToCopy.Position;
             Abilities = new List<Ability>(InfoToCopy.Abilities);

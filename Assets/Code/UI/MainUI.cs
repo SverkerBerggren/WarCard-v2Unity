@@ -58,10 +58,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private List<RuleManager.Target> selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
 
-    public int selectedAbilityIndex = -1; 
+    public int selectedAbilityIndex = -1;
+
+    private List<GameObject> stackObjectsToDestroy = new List<GameObject>();
 
     //  public GameObject test; 
     // Start is called before the first frame update
+
+    private Stack<RuleManager.StackEntity> localStack = new Stack<RuleManager.StackEntity>();
+
+    public GameObject imageStackAbility;
+
+    public int stackPadding = 40; 
 
     public void SendAction(RuleManager.Action ActionToSend)
     {
@@ -144,7 +152,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         andraUnit.Position = new RuleManager.Coordinate(2, 0);
 
-        andraUnit.OpaqueInteger = 1; 
+        andraUnit.OpaqueInteger = 1;
+
+        andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
 
       //  print("unit id andsra  " + andraUnit.UnitID);
         unitTva = ruleManager.RegisterUnit(andraUnit, 1);
@@ -175,11 +185,62 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnStackPop(RuleManager.StackEntity PoppedEntity)
     {
+        localStack.Pop();
 
+        DestroyStackUI();
+
+        if(localStack.Count != 0)
+        {
+            CreateStackUI();
+        }
     }
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
+        localStack.Push(PushedEntity);
 
+        CreateStackUI();
+        
+ 
+    }
+    private void CreateStackUI()
+    {
+        int originalPadding = stackPadding;
+        int increasingPadding = originalPadding;
+        int amountOfItems = localStack.Count;
+        int firstItemPosition;
+
+        RectTransform canvas = GameObject.Find("Canvas").GetComponent<RectTransform>();
+        if(amountOfItems %2 == 0)
+        {
+            firstItemPosition = stackPadding * ((amountOfItems / 2));//Screen.width - (stackPadding * (amountOfItems / 2)) ;
+        }
+        else
+        {
+            firstItemPosition = stackPadding * ((amountOfItems / 2) - 1);//Screen.width - (stackPadding * (amountOfItems / 2)) + (stackPadding/2);
+        }
+
+
+        foreach (RuleManager.StackEntity entity in localStack)
+        {
+            print("Hur manga saker i stacken " + localStack.Count);
+            GameObject createdImage = Instantiate(imageStackAbility,new Vector3() , new Quaternion());
+          
+
+            createdImage.GetComponent<ImageAbilityStackScript>().descriptionText.text = "Filler";
+            stackObjectsToDestroy.Add(createdImage);
+            createdImage.transform.parent = FindObjectOfType<Canvas>().gameObject.transform;
+
+            createdImage.GetComponent<RectTransform>().position = new Vector3((canvas.rect.width/2) - (firstItemPosition - originalPadding + increasingPadding), canvas.rect.height/2);
+            increasingPadding += originalPadding;
+        }
+    }
+
+    private void DestroyStackUI()
+    {
+        foreach (GameObject obj in stackObjectsToDestroy)
+        {
+            Destroy(obj);
+        }
     }
 
 
@@ -205,7 +266,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
     {     
-        if(abilitySelectionStarted)
+        if(abilitySelectionStarted &&  selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
         {
             if(requiredAbilityTargets.Count == 0)
             {
@@ -223,7 +284,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             }
         }
 
-        if(abilitySelectionStarted)
+        if(abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
         {
             RuleManager.Target_Tile targetTile = new RuleManager.Target_Tile(cord);
 
@@ -402,8 +463,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             }
      
             AttackActionSelected = false;
+            if(selectedUnit != null)
+            {
+                if (!abilitySelectionStarted && unitInfo.UnitID != selectedUnit.UnitID)
+                {
+                    foreach (GameObject obj in buttonDestroyList)
+                    {
+                        obj.SetActive(false);
+                    }
+                }
+            }
 
             selectedUnit = unitInfo;
+
+            
            
             unitCard.SetActive(true);
 
@@ -534,28 +607,28 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
-    private void ExecuteAbility(RuleManager.TargetInfo Info)
-    {
-        RuleManager.TargetInfo targetInfo = Info; 
-
-        
-
-        if(targetInfo is RuleManager.TargetInfo_List)
-        {
-            RuleManager.TargetInfo_List targetInfoList = (RuleManager.TargetInfo_List)targetInfo;
-
-            if(targetInfoList.Targets.Count == 1)
-            {
-                RuleManager.TargetCondition targetType = targetInfoList.Targets[0];        
-
-
-            }
-        }
-
-        
-
-     //   if()
-    }
+//   private void ExecuteAbility(RuleManager.TargetInfo Info)
+//   {
+//       RuleManager.TargetInfo targetInfo = Info; 
+//
+//       
+//
+//       if(targetInfo is RuleManager.TargetInfo_List)
+//       {
+//           RuleManager.TargetInfo_List targetInfoList = (RuleManager.TargetInfo_List)targetInfo;
+//
+//           if(targetInfoList.Targets.Count == 1)
+//           {
+//               RuleManager.TargetCondition targetType = targetInfoList.Targets[0];        
+//
+//
+//           }
+//       }
+//
+//       
+//
+//    //   if()
+//   }
 
     public void CreateFriendlyUnitInformation()
     {
@@ -626,7 +699,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         abilitySelectionStarted = false;
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
-    }
+    } 
 }
 
 
