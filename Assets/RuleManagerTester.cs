@@ -40,7 +40,7 @@ public class RuleManagerTester : MonoBehaviour
         Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 2);
         StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
         Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 3);
-        StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
+        int EnemySoldier = StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
         Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 4);
 
         Player1SoldierInfo.Position = new RuleManager.Coordinate(0, 0);
@@ -50,8 +50,43 @@ public class RuleManagerTester : MonoBehaviour
         Player1ArilleryInfos.Position = new RuleManager.Coordinate(0, 2);
         int Player1Artillery = StaticTestManager.RegisterUnit(Player1ArilleryInfos, 0);
 
-        print("Soldier attack: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.HP);
-        StaticTestManager.ExecuteAction(new RuleManager.EffectAction());
+        print("Soldier attack: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Damage);
+        StaticTestManager.ExecuteAction(new RuleManager.EffectAction(new RuleManager.Target_Unit(Player1Soldier),Player1Officer,1));
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        print("Soldier attack: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Damage);
+
+        print("Soldier movement: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Movement);
+        StaticTestManager.ExecuteAction(new RuleManager.EffectAction(new RuleManager.Target_Unit(Player1Soldier), Player1Officer, 0));
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        print("Soldier movement: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Movement);
+
+        print("Soldier position: " + StaticTestManager.GetUnitInfo(Player1Soldier).Position);
+        StaticTestManager.ExecuteAction(new RuleManager.EffectAction(
+            new RuleManager.Target[] { new RuleManager.Target_Unit(Player1Soldier), new RuleManager.Target_Tile(new RuleManager.Coordinate(0, 3))}, Player1Officer, 2));
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        print("Soldier position: " + StaticTestManager.GetUnitInfo(Player1Soldier).Position);
+
+        print("Enemy soldier hp: " + StaticTestManager.GetUnitInfo(EnemySoldier).Stats.HP);
+        StaticTestManager.ExecuteAction(new RuleManager.EffectAction(
+                new RuleManager.Target_Tile( new RuleManager.Coordinate(10,4)),Player1Artillery,0)
+            );
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        //Still player 1 turn, pass 2 times on empty stack to end turn
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        print("Enemy soldier hp: " + StaticTestManager.GetUnitInfo(EnemySoldier).Stats.HP);
+
+        //resolve trigger
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        StaticTestManager.ExecuteAction(new RuleManager.PassAction());
+        print("Soldier HP: " + StaticTestManager.GetUnitInfo(EnemySoldier).Stats.HP);
+        //now the temporary effects should have worn of
+        print("Soldier Damage: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Damage);
+        print("Soldier Movement: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Movement);
     }
 
     // Update is called once per frame

@@ -495,6 +495,11 @@ namespace RuleManager
         {
             return (Math.Abs(LeftCoordinate.X - RightCoordinate.X) + Math.Abs(LeftCoordinate.Y - RightCoordinate.Y));
         }
+
+        public override string ToString()
+        {
+            return ("X: " + X + " Y: " + Y);
+        }
     }
     public enum ActionType
     {
@@ -574,6 +579,23 @@ namespace RuleManager
         public List<Target> Targets = new List<Target>();
         public int UnitID = 0;
         public int EffectIndex = -1;
+
+        public EffectAction()
+        {
+
+        }
+        public EffectAction(IEnumerable<Target> NewTargets,int NewUnitID,int NewEffectIndex)
+        {
+            Targets = new List<Target>(NewTargets);
+            UnitID = NewUnitID;
+            EffectIndex = NewEffectIndex;
+        }
+        public EffectAction(Target NewTarget, int NewUnitID, int NewEffectIndex)
+        {
+            Targets.Add(NewTarget);
+            UnitID = NewUnitID;
+            EffectIndex = NewEffectIndex;
+        }
     }
 
     public class UnitStats
@@ -851,6 +873,15 @@ namespace RuleManager
                 m_ChoosenTargets = null;
                 yield return (Result);
             }
+            else if(Retriever is TargetRetriever_Literal)
+            {
+                TargetRetriever_Literal Literal = (TargetRetriever_Literal)Retriever;
+                yield return Literal.Targets;
+            }
+            else
+            {
+                throw new Exception("Invalid target retriever type");
+            }
             yield break;
         }
         IEnumerator p_ResolveEffect(List<Target> Targets,EffectSource Source,Effect EffectToResolve)
@@ -903,13 +934,13 @@ namespace RuleManager
 
 
                 IEnumerator RetrievedTileTargets = p_RetrieveTargets(Targets, MoveEffect.TargetPosition);
-                RetrievedMoveTargets.MoveNext();
-                while(RetrievedMoveTargets.Current == null)
+                RetrievedTileTargets.MoveNext();
+                while(RetrievedTileTargets.Current == null)
                 {
                     yield return null;
-                    RetrievedMoveTargets.MoveNext();
+                    RetrievedTileTargets.MoveNext();
                 }
-                List<Target> TileTargets = (List<Target>) RetrievedMoveTargets.Current;
+                List<Target> TileTargets = (List<Target>)RetrievedTileTargets.Current;
                 if(TileTargets.Count != 1)
                 {
                     throw new Exception("Cannot target multiple tiles for move");
@@ -991,7 +1022,7 @@ namespace RuleManager
                 Coordinate TargetTile = ((Target_Tile)Origins[0]).TargetCoordinate;
                 for(int i = -AreaDamageEffect.Range; i <= AreaDamageEffect.Range;i++)
                 {
-                    for(int j = (AreaDamageEffect.Range - i); j < AreaDamageEffect.Range-i;j++)
+                    for(int j = -(AreaDamageEffect.Range - Math.Abs(i)); j <= AreaDamageEffect.Range- Math.Abs(i); j++)
                     {
                         Coordinate CurrentTile = TargetTile + new Coordinate(i, j);
                         if(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID != 0)
@@ -1209,36 +1240,44 @@ namespace RuleManager
 
         void p_PassPriority()
         {
-            m_CurrentPlayerPriority += 1;
-            m_CurrentPlayerPriority %= m_PlayerCount;
-
-            if(m_CurrentPlayerTurn == m_CurrentPlayerPriority)
+            if (m_TheStack.Count > 0 && m_PriorityTabled && m_CurrentPlayerPriority == m_TheStack.Peek().Source.PlayerIndex)
             {
-                if(m_TheStack.Count > 0)
+                IEnumerator ResolveResult = p_ResolveTopOfStack();
+                bool NotFinished = ResolveResult.MoveNext();
+                if (NotFinished)
                 {
-                    IEnumerator ResolveResult = p_ResolveTopOfStack();
-                    bool NotFinished = ResolveResult.MoveNext();
-                    if (NotFinished)
-                    {
-                        m_CurrentResolution = ResolveResult;
-                    }
-                }
-                else if(m_EndOfTurnPass)
-                {
-                    p_ChangeTurn();
+                    m_CurrentResolution = ResolveResult;
                 }
             }
+            else if (m_EndOfTurnPass && m_CurrentPlayerTurn != m_CurrentPlayerPriority)
+            {
+                IEnumerator EndEnumerator = p_ChangeTurn();
+                EndEnumerator.MoveNext();
+            }
+            else
+            {
+                m_CurrentPlayerPriority += 1;
+                m_CurrentPlayerPriority %= m_PlayerCount;
+                
+            }
         }
+
+        bool m_PriorityTabled = false;
 
         //Modifiers
         public void ExecuteAction(Action ActionToExecute)
         {
             string Error;
-            if(!ActionIsValid(ActionToExecute,out Error))
+            if (ActionToExecute.PlayerIndex == -1)
+            {
+                ActionToExecute.PlayerIndex = m_CurrentPlayerPriority;
+            }
+            if (!ActionIsValid(ActionToExecute,out Error))
             {
                 throw new ArgumentException("Invalid action to execute: "+Error);
             }
             bool EndOfTurnPass = false;
+            bool PriorityTabled = false;
             if(ActionToExecute is  MoveAction)
             {
                 MoveAction MoveToExecute = (MoveAction)ActionToExecute;
@@ -1278,8 +1317,18 @@ namespace RuleManager
             }
             else if(ActionToExecute is PassAction)
             {
-                EndOfTurnPass = true;
+                if (m_TheStack.Count != 0 && m_CurrentPlayerPriority != m_TheStack.Peek().Source.PlayerIndex)
+                {
+                    PriorityTabled = true;
+                    m_PriorityTabled = true;
+                }
+                if (m_TheStack.Count == 0 && m_CurrentPlayerTurn == m_CurrentPlayerPriority)
+                {
+                    EndOfTurnPass = true;
+                    m_EndOfTurnPass = true;
+                }
                 p_PassPriority();
+
             }
             else if(ActionToExecute is EffectAction)
             {
@@ -1303,6 +1352,7 @@ namespace RuleManager
                 throw new ArgumentException("Invalid Action type");
             }
             m_EndOfTurnPass = EndOfTurnPass;
+            m_PriorityTabled = PriorityTabled;
         }
 
         //Observers
@@ -1361,7 +1411,10 @@ namespace RuleManager
         }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
-
+            if(ActionToCheck.PlayerIndex == -1)
+            {
+                ActionToCheck.PlayerIndex = m_CurrentPlayerPriority;
+            }
             if(m_CurrentResolution != null)
             {
                 OutInfo = "Cant execute action during resolution, appropriate targets must be specified to continue";
@@ -1489,6 +1542,10 @@ namespace RuleManager
             if(Modifier is Effect_IncreaseDamage)
             {
                 InfoToModify.Stats.Damage += ((Effect_IncreaseDamage)Modifier).DamageIncrease;
+            }
+            else if(Modifier is Effect_IncreaseMovement)
+            {
+                InfoToModify.Stats.Movement += ((Effect_IncreaseMovement)Modifier).MovementIncrease;
             }
             else
             {
