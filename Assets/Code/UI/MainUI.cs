@@ -69,8 +69,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public GameObject imageStackAbility;
 
-    public int stackPadding = 40; 
+    public int stackPadding = 40;
 
+    public int unitPerformingAbility; 
     public void SendAction(RuleManager.Action ActionToSend)
     {
 
@@ -156,18 +157,24 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
 
-      //  print("unit id andsra  " + andraUnit.UnitID);
+      //  print("unit id ancdsra  " + andraUnit.UnitID);
         unitTva = ruleManager.RegisterUnit(andraUnit, 1);
 
         GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
         listOfImages.Add(unitTva, andraUnitPaKartan);
         andraUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[1];
 
-        
-    
+
+        RuleManager.UnitInfo officer = Militarium.GetOfficer();
+        officer.Position = new RuleManager.Coordinate(3, 3);
+        int officerInt = -1;
+        officerInt = ruleManager.RegisterUnit(officer, 0);
+
+        GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
+        listOfImages.Add(officerInt, officerObj);
+        officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
 
 
-    
     }
 
     // Update is called once per frame
@@ -197,6 +204,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
         localStack.Push(PushedEntity);
+
+        DestroyStackUI();
 
         CreateStackUI();
         
@@ -265,83 +274,110 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
-    {     
-        if(abilitySelectionStarted &&  selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
+    {   if(selectedUnit != null)
         {
-            if(requiredAbilityTargets.Count == 0)
+            if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
+            {   
+                if (requiredAbilityTargets.Count == 0)
+                {
+
+                    print("laggs abilities till med tom lista");
+                    RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
+
+                    abilityToExecute.EffectIndex = selectedAbilityIndex;
+                    abilityToExecute.PlayerIndex = ruleManager.getPlayerPriority();
+                    abilityToExecute.Targets = new List<RuleManager.Target>();
+
+                    abilityToExecute.UnitID = selectedUnit.UnitID;
+
+                    
+
+                    ruleManager.ExecuteAction(abilityToExecute);
+
+
+
+                    resetSelection();
+
+                    return; 
+                }
+            }
+
+            if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
             {
-                RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
+                RuleManager.Target_Tile targetTile = new RuleManager.Target_Tile(cord);
+             //   print();
+                RuleManager.Target_Unit targetUnit = new RuleManager.Target_Unit();
 
-                abilityToExecute.EffectIndex = selectedAbilityIndex;
-                abilityToExecute.PlayerIndex = ruleManager.getPlayerPriority(); 
-                abilityToExecute.Targets = new List<RuleManager.Target>();
+                if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+                {
+                    targetUnit = new RuleManager.Target_Unit(ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID).UnitID);
+                }
 
-                abilityToExecute.UnitID = selectedUnit.UnitID;
+                bool targetWasCorrect = false;
+            //    print(currentTargetToSelect);
+                //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
+                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), targetTile))
+                {
+                    currentTargetToSelect += 1;
+                    targetWasCorrect = true;
+                    selectedTargetsForAbilityExecution.Add(targetTile);
+                }
+                if(currentTargetToSelect < requiredAbilityTargets.Count)
+                {
+                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), targetUnit) && !targetWasCorrect)
+                    {
+                        currentTargetToSelect += 1;
+                        targetWasCorrect = true;
+                        selectedTargetsForAbilityExecution.Add(targetUnit);
+                    }
 
-                ruleManager.ExecuteAction(abilityToExecute);
+                }
 
-                resetSelection();
+                if (requiredAbilityTargets.Count == currentTargetToSelect)
+                {
+
+                 //   print("Executas ability");
+
+                    RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
+
+                    abilityToExecute.EffectIndex = selectedAbilityIndex;
+                    abilityToExecute.PlayerIndex = ruleManager.getPlayerPriority(); ;
+
+                    List<RuleManager.Target> argumentList = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
+
+                    abilityToExecute.Targets = argumentList;
+
+                    abilityToExecute.UnitID = selectedUnit.UnitID;
+
+                    ruleManager.ExecuteAction(abilityToExecute);
+
+                    resetSelection();
+
+                    print("den gor abiliten");
+                    currentTargetToSelect = 0;
+                    //
+                    return;
+                    // abilityToExecute.
+
+                }
+
+                if(targetWasCorrect)
+                {
+                    return; 
+                }
+
+                if (!targetWasCorrect)
+                {
+                    resetSelection();
+                    return;
+                }
+
+
+               // return; 
+                //List )
             }
         }
-
-        if(abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-        {
-            RuleManager.Target_Tile targetTile = new RuleManager.Target_Tile(cord);
-
-            RuleManager.Target_Unit targetUnit = new RuleManager.Target_Unit();
-
-            if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
-            {
-                targetUnit = new RuleManager.Target_Unit(ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID).UnitID);
-            }
-
-            bool targetWasCorrect = false;
-            print(currentTargetToSelect);
-            //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
-            if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Empty(), targetTile) )
-            {
-                currentTargetToSelect += 1;
-                targetWasCorrect = true; 
-                selectedTargetsForAbilityExecution.Add(targetTile);
-            }
-            if(ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Empty(), targetUnit) && !targetWasCorrect)
-            {
-                currentTargetToSelect += 1;
-                targetWasCorrect = true;
-                selectedTargetsForAbilityExecution.Add(targetUnit);
-            }
-
-            if(requiredAbilityTargets.Count == currentTargetToSelect)
-            {
-
-                print("Executas ability");
-
-                RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
-
-                abilityToExecute.EffectIndex = selectedAbilityIndex;
-                abilityToExecute.PlayerIndex = ruleManager.getPlayerPriority(); ;
-                abilityToExecute.Targets = selectedTargetsForAbilityExecution;
-                
-                abilityToExecute.UnitID = selectedUnit.UnitID;
-
-                ruleManager.ExecuteAction(abilityToExecute);
-
-                resetSelection();
-
-                return;
-                // abilityToExecute.
-                
-            }
-
-            if(!targetWasCorrect)
-            {
-                resetSelection();
-            }
-
-            
     
-            //List )
-        }
      //   int unitId = ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID;
      //   print(" vad blir ubnit id et " + unitId);
      //   if(unitId != 0)
@@ -368,7 +404,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 AttackActionSelected = false;
                 //  bool isActionValid = false; 
-                print(ruleManager.PossibleMoves(selectedUnit.UnitID));
+             //   print(ruleManager.PossibleMoves(selectedUnit.UnitID));
                 foreach (RuleManager.Coordinate cords in ruleManager.PossibleMoves(selectedUnit.UnitID))
                 {
                     if (cords.X == cord.X && cords.Y == cord.Y)
@@ -403,9 +439,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                         foreach(GameObject obj in buttonDestroyList)
                         {
-                            obj.SetActive(false);
-                        }
+                            Destroy(obj); // obj.SetActive(false);
 
+                            
+                        }
+                        buttonDestroyList.Clear();
                         DestroyMovementRange();
                         return;
                     }
@@ -454,7 +492,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                         DestroyMovementRange();
                         AttackActionSelected = false;
-                        print(actionInfo + "det hnde");
+                     //   print(actionInfo + "det hnde");
                         return;
                     }
 
@@ -489,8 +527,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitCardInformation.ActivationCostText.text = unitInfo.Stats.ActivationCost.ToString();
             unitCardInformation.MovementText.text = unitInfo.Stats.Movement.ToString();
             unitCardInformation.RangeText.text = unitInfo.Stats.Range.ToString();
-            int padding = 120;
-
+            int padding = 150;
+            int ogPadding = padding; 
             int index = 0;
 
             print(padding);
@@ -503,7 +541,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 print("gar den igenom abilities");
 
                  GameObject newButton =  Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding,attackButton.transform.position.y), new Quaternion());
-
+                padding += ogPadding;
                 newButton.transform.parent = GameObject.Find("UnitActions").transform;
 
                 AbilityButton abilityButton = newButton.GetComponent<AbilityButton>();
@@ -532,7 +570,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 index += 1; 
                 
             }
-
+            index = 0; 
             
 
             ConstructMovementRange(unitInfo);
@@ -544,13 +582,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             selectedUnit = null; 
             unitCard.SetActive(false);
             unitActions.SetActive(false);
-            foreach (GameObject obj in buttonDestroyList)
-            {
-                obj.SetActive(false);
-            }
+            DestroyButtons();
 
             DestroyMovementRange();
         }
+    }
+
+    private void DestroyButtons()
+    {
+        foreach(GameObject obj in buttonDestroyList)
+        {
+            Destroy(obj);
+            
+        }
+        buttonDestroyList.Clear();
     }
     private void ConstructMovementRange(RuleManager.UnitInfo info)
     {   
@@ -685,10 +730,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         selectedUnit = null;
         unitCard.SetActive(false);
         unitActions.SetActive(false);
-        foreach (GameObject obj in buttonDestroyList)
-        {
-            obj.SetActive(false);
-        }
+        DestroyButtons();
 
         DestroyMovementRange();
 

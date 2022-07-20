@@ -41,7 +41,7 @@ public class AbilityButton : MonoBehaviour
 
         if(whichTargets != null)
         {
-            mainUI.requiredAbilityTargets = whichTargets; 
+            mainUI.requiredAbilityTargets =  new List<RuleManager.TargetCondition>(whichTargets); 
         }
     }
 
