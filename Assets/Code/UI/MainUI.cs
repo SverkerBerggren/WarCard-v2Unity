@@ -71,6 +71,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public int stackPadding = 40;
 
+    private TextMeshProUGUI initiativeText;
+
+    public TextMeshProUGUI currentPlayerTurnText;
+
+    public TextMeshProUGUI currentPlayerPriority;
+    public TextMeshProUGUI currentTurnText;
+    public TextMeshProUGUI initiativePlayer0;
+    public TextMeshProUGUI initiativePlayer1;
+
+
     public int unitPerformingAbility; 
     public void SendAction(RuleManager.Action ActionToSend)
     {
@@ -79,12 +89,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     void Start()
     {
-
-
+      //  initiativeText = GameObject.Find("InitiativeText").GetComponent<TextMeshProUGUI>();
+      //  print(initiativeText);
 
         GameState GlobalState = FindObjectOfType<GameState>();
         ruleManager = GlobalState.GetRuleManager();
         GlobalState.SetActionRetriever(GlobalState.GetLocalPlayerIndex(), this);
+
+
         //    gridManager = FindObjectOfType<GridManager>();
 
         unitCard = GameObject.FindGameObjectWithTag("UnitCard");
@@ -149,7 +161,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         andraUnit.Stats.ActivationCost = 1;
         andraUnit.Stats.Damage = 10;
 
-        
+       
 
         andraUnit.Position = new RuleManager.Coordinate(2, 0);
 
@@ -201,6 +213,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             CreateStackUI();
         }
     }
+
+    public void OnPlayerPassPriority(string currentPlayerString)
+    {
+        currentPlayerPriority.text = "Current Player priority: " + currentPlayerString;
+    }
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
         localStack.Push(PushedEntity);
@@ -235,7 +252,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GameObject createdImage = Instantiate(imageStackAbility,new Vector3() , new Quaternion());
           
 
-            createdImage.GetComponent<ImageAbilityStackScript>().descriptionText.text = "Filler";
+            createdImage.GetComponent<ImageAbilityStackScript>().descriptionText.text = entity.EffectToResolve.GetText();
             stackObjectsToDestroy.Add(createdImage);
             createdImage.transform.parent = FindObjectOfType<Canvas>().gameObject.transform;
 
@@ -265,7 +282,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
+        currentPlayerTurnText.text = "Current Player: " + CurrentPlayerTurnIndex;
 
+        currentTurnText.text = "Turn: " + CurrentTurnCount;
     }
 
     public void OnUnitCreate(RuleManager.UnitInfo NewUnit)
@@ -548,6 +567,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 abilityButton.abilityIndex = index;
 
+                abilityButton.abilityFlavour = ability.GetFlavourText();
+
+                abilityButton.abilityDescription = ability.GetFlavourText();
+
+
+
                 if(ability is RuleManager.Ability_Activated)
                 {
                     RuleManager.Ability_Activated activatedAbility = (RuleManager.Ability_Activated)ability;
@@ -596,6 +621,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             
         }
         buttonDestroyList.Clear();
+    }
+
+    public void OnInitiativeChange(int newIntitiative, int whichPlayer)
+    {
+      //  currentInitiative.text = "Current Initiative " + newIntitiative + "/15";
+
+        if(whichPlayer == 0)
+        {
+            initiativePlayer0.text = "Player 0 Initiative " + newIntitiative + "/15";
+        }
+        if (whichPlayer == 1)
+        {
+            initiativePlayer1.text = "Player 1 Initiative " + newIntitiative + "/15";
+        }
     }
     private void ConstructMovementRange(RuleManager.UnitInfo info)
     {   

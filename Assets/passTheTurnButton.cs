@@ -29,7 +29,7 @@ public class passTheTurnButton : MonoBehaviour
 
         mainUI.SwitchPlayerPriority();
 
-            currentPlayerText.text = "Current PLayer: " + currentPlayer;
+       //     currentPlayerText.text = "Current PLayer: " + currentPlayer;
 
         
     }

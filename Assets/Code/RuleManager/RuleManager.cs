@@ -22,6 +22,11 @@ namespace RuleManager
     public class Effect
     {
         int PlayerIndex = 0;
+
+        public virtual string GetText()
+        {
+            return "test";
+        }
     }
 
     //public class Effect_DestroyTargets : Effect
@@ -192,6 +197,7 @@ namespace RuleManager
     public class Ability
     {
         public readonly AbilityType Type = AbilityType.Null;
+
         protected Ability(AbilityType NewType)
         {
             Type = NewType;
@@ -199,6 +205,19 @@ namespace RuleManager
         public Ability()
         {
 
+        }
+
+        public virtual string GetName()
+        {
+            return "TestNamn";
+        }
+        public virtual string GetFlavourText()
+        {
+            return "TestFlavour";
+        }
+        public virtual string GetDescription()
+        {
+            return "Test description";
         }
     }
 
@@ -668,6 +687,14 @@ namespace RuleManager
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
         void OnUnitCreate(UnitInfo NewUnit);
+
+        void OnInitiativeChange(int newInitiativen, int whichPlayer ); 
+
+        void OnPlayerPassPriority(string currentPlayerString);
+
+
+
+
     }
     public class StackEntity
     {
