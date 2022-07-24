@@ -214,9 +214,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
     }
 
-    public void OnPlayerPassPriority(string currentPlayerString)
+    public void OnPlayerPassPriority(int currentPlayerString)
     {
-        currentPlayerPriority.text = "Current Player priority: " + currentPlayerString;
+        currentPlayerPriority.text = "Current Player priority: " + (currentPlayerString+1);
     }
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
@@ -333,9 +333,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 }
 
                 bool targetWasCorrect = false;
-            //    print(currentTargetToSelect);
+                //    print(currentTargetToSelect);
                 //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
-                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), targetTile))
+
+                //FIX ME
+                List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>();
+                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), EmptyTargets, targetTile))
                 {
                     currentTargetToSelect += 1;
                     targetWasCorrect = true;
@@ -343,7 +346,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 }
                 if(currentTargetToSelect < requiredAbilityTargets.Count)
                 {
-                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), targetUnit) && !targetWasCorrect)
+                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), EmptyTargets, targetUnit) && !targetWasCorrect)
                     {
                         currentTargetToSelect += 1;
                         targetWasCorrect = true;

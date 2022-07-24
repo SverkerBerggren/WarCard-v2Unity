@@ -41,6 +41,10 @@ public class Militarium
                         new RuleManager.Effect_DamageArea(new RuleManager.TargetRetriever_Index(0),2,50)
                     )
             );
+
+        BarrageAbility.SetName("Creeping barrage");
+        BarrageAbility.SetFlavour("Shooty shooty");
+        BarrageAbility.SetDescription("Target a tile within 30 tiles: Deal 25 damage to all units within 2 tiles of that tile at the beginning of the next turn. Activate only as the first ability each turn");
         NewUnitInfo.Abilities.Add(BarrageAbility);
         return (NewUnitInfo);
     }
@@ -73,6 +77,18 @@ public class Militarium
                 new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(6))),
                 new RuleManager.Effect_RegisterContinousAbility(new RuleManager.TargetRetriever_Index(0), new RuleManager.TargetCondition_True(),new RuleManager.Effect_IncreaseMovement(5))
             );
+
+        IncreaseMovement.SetName("Move Move Move!");
+        IncreaseMovement.SetDescription("Target a friendly infantry within 6 tiles: Make it Move Move Move");
+        IncreaseMovement.SetFlavour("In the grimn dark future, moving is important");
+
+        IncreaseDamage.SetName("First rank second rank");
+        IncreaseDamage.SetDescription("Target a friendly unit within 6 tiles: Increase it's damage with 50 until end of turn");
+        IncreaseDamage.SetFlavour("People need to be told of to shoot efficiently");
+
+        MoveAbility.SetName("Move");
+        MoveAbility.SetDescription("Target a friendly unit within 6 tiles: Move it 3 tiles. Spell speed 2");
+        MoveAbility.SetFlavour("Move but instant");
 
         ReturnValue.Abilities.Add(IncreaseMovement);
         ReturnValue.Abilities.Add(IncreaseDamage);

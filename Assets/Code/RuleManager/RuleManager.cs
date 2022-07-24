@@ -22,10 +22,14 @@ namespace RuleManager
     public class Effect
     {
         int PlayerIndex = 0;
-
+        string m_Text = "test";
         public virtual string GetText()
         {
-            return "test";
+            return m_Text;
+        }
+        public void SetText(string NewText)
+        {
+            m_Text = NewText;
         }
     }
 
@@ -33,10 +37,48 @@ namespace RuleManager
     //{
     //    TargetRetriever Targets;
     //}
+    
+    public class Effect_List : Effect
+    {
+        public List<Effect> EffectsToExecute = new List<Effect>();
+
+        public Effect_List()
+        {
+
+        }
+        public Effect_List(params Effect[] Effects)
+        {
+            EffectsToExecute = new List<Effect>(Effects);
+        }
+    }
+
+    public class Effect_GainInitiative : Effect
+    {
+        public int InitiativeGain = 0;
+        public Effect_GainInitiative()
+        {
+
+        }
+        public Effect_GainInitiative(int NewInitiative) 
+        {
+            InitiativeGain = NewInitiative;
+        }
+    }
+
     public class Effect_DealDamage : Effect
     {
         public TargetRetriever Targets;
         public int Damage = 0;
+
+        public Effect_DealDamage()
+        {
+            
+        }
+        public Effect_DealDamage(TargetRetriever TargetsToUse,int NewDamage)
+        {
+            Targets = TargetsToUse;
+            Damage = NewDamage;
+        }
     }
     public class Effect_MoveUnit : Effect
     {
@@ -92,6 +134,14 @@ namespace RuleManager
             TriggerEffect = EffectToResolve;
         }
     }
+    public class Effect_DestroyUnits : Effect
+    {
+        public TargetRetriever TargetsToDestroy;
+        public Effect_DestroyUnits(TargetRetriever Targets)
+        {
+            TargetsToDestroy = Targets;
+        }
+    }
     public class Effect_DamageArea : Effect
     {
         public TargetRetriever Origin;
@@ -139,6 +189,7 @@ namespace RuleManager
         Index,
         Choose,
         Literal,
+        Empty,
         Null
     }
     public class TargetRetriever
@@ -154,6 +205,15 @@ namespace RuleManager
 
         }
     }
+    public class TargetRetriever_Empty : TargetRetriever
+    {
+        public TargetRetriever_Empty () : base(RetrieverType.Empty)
+        {
+            
+        }
+
+    }
+
     public class TargetRetriever_Index : TargetRetriever
     {
         public int Index = 0;
@@ -207,17 +267,33 @@ namespace RuleManager
 
         }
 
+        string m_Name = "TestNamn";
+        string m_Flavor = "TestFlavour";
+        string m_Description = "TestDescription";
+
         public virtual string GetName()
         {
-            return "TestNamn";
+            return m_Name;
         }
         public virtual string GetFlavourText()
         {
-            return "TestFlavour";
+            return m_Flavor;
         }
         public virtual string GetDescription()
         {
-            return "Test description";
+            return m_Description;
+        }
+        public void SetName(string NewName)
+        {
+            m_Name = NewName;
+        }
+        public void SetFlavour(string NewFlavour)
+        {
+            m_Flavor = NewFlavour;
+        }
+        public void SetDescription(string NewDescription)
+        {
+            m_Description = NewDescription;
         }
     }
 
@@ -485,8 +561,30 @@ namespace RuleManager
 
 
     [Serializable]
-    public class Coordinate : IEquatable<Coordinate>
+    public class Coordinate : IEquatable<Coordinate>, IComparable<Coordinate>
     {
+
+        public int CompareTo(Coordinate rhs)
+        {
+            int ReturnvValue = 1;
+            if(X < rhs.X)
+            {
+                ReturnvValue = -1;
+            }
+            else if(X == rhs.X)
+            {
+                if(Y < rhs.Y)
+                {
+                    ReturnvValue = -1;
+                }
+                else if(Y == rhs.Y)
+                {
+                    ReturnvValue = 0; 
+                }
+            }
+            return (ReturnvValue);
+        }
+
         public bool Equals(Coordinate rhs)
         {
             return (rhs.X == X && rhs.Y == Y);
@@ -650,6 +748,10 @@ namespace RuleManager
         public UnitStats Stats = new UnitStats();
         public HashSet<string> Tags = new HashSet<string>();
 
+        public bool IsActivated = false;
+        public bool HasMoved = false;
+        public bool HasAttacked = false;
+
         public UnitInfo()
         {
 
@@ -662,12 +764,15 @@ namespace RuleManager
             Position = InfoToCopy.Position;
             Abilities = new List<Ability>(InfoToCopy.Abilities);
             Stats = new UnitStats(InfoToCopy.Stats);
+            IsActivated =   InfoToCopy.IsActivated;
+            HasMoved    =   InfoToCopy.HasMoved   ;
+            HasAttacked =   InfoToCopy.HasAttacked;
         }
     }
     public class TileInfo
     {
         public int StandingUnitID = 0;
-
+        public bool HasObjective = false;
         public TileInfo()
         {
 
@@ -690,7 +795,7 @@ namespace RuleManager
 
         void OnInitiativeChange(int newInitiativen, int whichPlayer ); 
 
-        void OnPlayerPassPriority(string currentPlayerString);
+        void OnPlayerPassPriority(int currentPlayerString);
 
 
 
@@ -749,6 +854,12 @@ namespace RuleManager
         }
 
         Dictionary<int, int> m_UnitRegisteredContinousAbilityMap = new Dictionary<int, int>();
+
+        const int m_PlayerMaxInitiative = 150;
+        const int m_PlayerTurnInitiativeGain = 100;
+        const int m_PlayerInitiativeRetain = 40;
+
+        List<int> m_PlayerIntitiative = new List<int>();
         Dictionary<int, RegisteredContinousEffect> m_RegisteredContinousAbilities = new Dictionary<int, RegisteredContinousEffect>();
         Dictionary<int, RegisteredTrigger> m_RegisteredTriggeredAbilities = new Dictionary<int, RegisteredTrigger>();
 
@@ -856,6 +967,11 @@ namespace RuleManager
                 m_Tiles.Add(NewList);
             }
             m_UnitInfos = new Dictionary<int, UnitInfo>();
+            m_PlayerIntitiative = new List<int>(m_PlayerCount);
+            for(int i = 0; i < m_PlayerCount;i++)
+            {
+                m_PlayerIntitiative.Add(m_PlayerTurnInitiativeGain);
+            }
         }
         public int RegisterUnit(UnitInfo NewUnit,int PlayerIndex)
         {
@@ -874,9 +990,14 @@ namespace RuleManager
         {
             bool ReturnValue = true;
             UnitInfo AssociatedInfo = m_UnitInfos[UnitID];
+            Coordinate PrevPos = new Coordinate(AssociatedInfo.Position.X, AssociatedInfo.Position.Y);
             m_Tiles[AssociatedInfo.Position.Y][AssociatedInfo.Position.X].StandingUnitID = 0;
             AssociatedInfo.Position = TilePosition;
             m_Tiles[TilePosition.Y][TilePosition.X].StandingUnitID = UnitID;
+            if(m_EventHandler != null)
+            {
+                m_EventHandler.OnUnitMove(UnitID, PrevPos, TilePosition);
+            }
             return (ReturnValue);
         }
 
@@ -904,6 +1025,10 @@ namespace RuleManager
             {
                 TargetRetriever_Literal Literal = (TargetRetriever_Literal)Retriever;
                 yield return Literal.Targets;
+            }
+            else if(Retriever is TargetRetriever_Empty)
+            {
+                yield return new List<Target>();
             }
             else
             {
@@ -1059,6 +1184,40 @@ namespace RuleManager
                     }
                 }
             }
+            else if(EffectToResolve is Effect_List)
+            {
+                Effect_List ListToResolve = (Effect_List)EffectToResolve;
+                foreach(Effect NewEffect in ListToResolve.EffectsToExecute)
+                {
+                    p_ResolveEffect(Targets, Source, EffectToResolve);
+                }
+            }
+            else if (EffectToResolve is Effect_GainInitiative)
+            {
+                Effect_GainInitiative InitiativeToResolve = (Effect_GainInitiative)EffectToResolve;
+                m_PlayerIntitiative[Source.PlayerIndex] += InitiativeToResolve.InitiativeGain;
+            }
+            else if(EffectToResolve is Effect_DestroyUnits)
+            {
+                Effect_DestroyUnits DestroyToResolve = (Effect_DestroyUnits)EffectToResolve;
+                IEnumerator RetrievedOrigin = p_RetrieveTargets(Targets, DestroyToResolve.TargetsToDestroy);
+                RetrievedOrigin.MoveNext();
+                while (RetrievedOrigin.Current == null)
+                {
+                    yield return null;
+                    RetrievedOrigin.MoveNext();
+                }
+                List<Target> UnitsToDestroy = (List<Target>)RetrievedOrigin.Current;
+                foreach(Target CurrentTarget in UnitsToDestroy)
+                {
+                    if(CurrentTarget.Type != TargetType.Unit)
+                    {
+                        throw new Exception("Can only destroy units");
+                    }
+                    Target_Unit UnitToDestroy = (Target_Unit)CurrentTarget;
+                    p_DestroyUnit(UnitToDestroy.UnitID);
+                }
+            }
             yield break;
         }
         IEnumerator p_ResolveTopOfStack()
@@ -1114,7 +1273,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,Target TargetToVerify)
+        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,List<Target> CurrentTargets,Target TargetToVerify)
         {
             bool ReturnValue = true;
             if(!p_VerifyTarget(TargetToVerify))
@@ -1130,13 +1289,21 @@ namespace RuleManager
             {
                 TargetCondition_Range RangeCondition = (TargetCondition_Range)Condition;
                 Coordinate SourceCoordinate = null;
-                if(Source is EffectSource_Unit)
+                if(RangeCondition.TargetIndex == -1)
                 {
                     SourceCoordinate = m_UnitInfos[((EffectSource_Unit)Source).UnitID].Position;
                 }
                 else
                 {
-                    throw new Exception("Source of range condition has to be Unit");
+                    Target PreviousTarget = CurrentTargets[RangeCondition.TargetIndex];
+                    if(PreviousTarget is Target_Unit)
+                    {
+                        SourceCoordinate = m_UnitInfos[((Target_Unit)PreviousTarget).UnitID].Position;
+                    }
+                    else if(PreviousTarget is Target_Tile)
+                    {
+                        SourceCoordinate = ((Target_Tile)PreviousTarget).TargetCoordinate;
+                    }
                 }
                 Coordinate TargetCoordinate = null;
                 if(TargetToVerify is Target_Unit)
@@ -1167,7 +1334,7 @@ namespace RuleManager
                 TargetCondition_And AndCondition = (TargetCondition_And)Condition;
                 foreach(TargetCondition AndClause in AndCondition.Conditions)
                 {
-                    if(!p_VerifyTarget(AndClause,Source,TargetToVerify))
+                    if(!p_VerifyTarget(AndClause,Source,CurrentTargets,TargetToVerify))
                     {
                         ReturnValue = false;
                         break;
@@ -1196,12 +1363,14 @@ namespace RuleManager
                     ReturnValue = false;
                     return (ReturnValue);
                 }
+                List<Target> CurrentTargets = new List<Target>();
                 for(int i = 0; i < ListToVerify.Targets.Count;i++)
                 {
-                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source, TargetsToVerify[i]))
+                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source,CurrentTargets, TargetsToVerify[i]))
                     {
                         return (false);
                     }
+                    CurrentTargets.Add(TargetsToVerify[i]);
                 }
             }
             return (ReturnValue);
@@ -1213,6 +1382,10 @@ namespace RuleManager
             UnitInfo UnitToRemoveInfo = m_UnitInfos[UnitID];
             TileInfo UnitToRemoveTile = m_Tiles[UnitToRemoveInfo.Position.Y][UnitToRemoveInfo.Position.X];
             m_UnitInfos.Remove(UnitID);
+            if(m_EventHandler != null)
+            {
+                m_EventHandler.OnUnitDestroyed(UnitID);
+            }
             UnitToRemoveTile.StandingUnitID = 0;
         }
         void p_DealDamage(int UnitID, int Damage)
@@ -1228,6 +1401,24 @@ namespace RuleManager
             {
                 m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
             }
+
+            for(int i = 0; i < m_PlayerCount;i++)
+            {
+                m_PlayerIntitiative[i] = Math.Min(Math.Min(m_PlayerIntitiative[i], m_PlayerInitiativeRetain) + m_PlayerTurnInitiativeGain, m_PlayerMaxInitiative);
+                if(m_EventHandler != null)
+                {
+                    m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[i], i);
+                }
+            }
+
+            foreach(KeyValuePair<int,UnitInfo> Units in m_UnitInfos)
+            {
+                Units.Value.IsActivated = false;
+                Units.Value.HasMoved = false;
+                Units.Value.HasMoved = false;
+            }
+
+
             TriggerEvent_RoundBegin RoundBegin = new TriggerEvent_RoundBegin();
             IEnumerator TriggersEnumerator = p_AddTriggers(RoundBegin);
             while(TriggersEnumerator.MoveNext())
@@ -1285,7 +1476,22 @@ namespace RuleManager
             {
                 m_CurrentPlayerPriority += 1;
                 m_CurrentPlayerPriority %= m_PlayerCount;
-                
+            }
+            if(m_EventHandler != null)
+            {
+                //m_EventHandler.OnPlayerPassPriority();
+                m_EventHandler.OnPlayerPassPriority(m_CurrentPlayerPriority);
+            }
+        }
+
+        void p_CheckStateBasedAction()
+        {
+            foreach(KeyValuePair<int,UnitInfo> Unit in m_UnitInfos)
+            {
+                if(Unit.Value.Stats.HP < 0)
+                {
+                    p_DestroyUnit(Unit.Key);
+                }
             }
         }
 
@@ -1305,6 +1511,7 @@ namespace RuleManager
             }
             bool EndOfTurnPass = false;
             bool PriorityTabled = false;
+
             if(ActionToExecute is  MoveAction)
             {
                 MoveAction MoveToExecute = (MoveAction)ActionToExecute;
@@ -1319,7 +1526,16 @@ namespace RuleManager
                 {
                     m_EventHandler.OnUnitMove(MoveToExecute.UnitID, OldPosition, MoveToExecute.NewPosition);
                 }
-
+                if(UnitToMove.IsActivated == false)
+                {
+                    UnitToMove.IsActivated = true;
+                    m_PlayerIntitiative[UnitToMove.PlayerIndex] -= UnitToMove.Stats.ActivationCost;
+                    if (m_EventHandler != null)
+                    {
+                        m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[UnitToMove.PlayerIndex], UnitToMove.PlayerIndex);
+                    }
+                }
+                UnitToMove.HasMoved = true;
                 p_PassPriority();
             }
             else if(ActionToExecute is AttackAction)
@@ -1331,15 +1547,17 @@ namespace RuleManager
                 {
                     m_EventHandler.OnUnitAttack(AttackToExecute.AttackerID, AttackToExecute.DefenderID);
                 }
-                DefenderInfo.Stats.HP = AttackerInfo.Stats.Damage;
-                if(DefenderInfo.Stats.HP <= 0)
+                DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
+                if (AttackerInfo.IsActivated == false)
                 {
-                    if(m_EventHandler != null)
+                    AttackerInfo.IsActivated = true;
+                    m_PlayerIntitiative[AttackerInfo.PlayerIndex] -= AttackerInfo.Stats.ActivationCost;
+                    if (m_EventHandler != null)
                     {
-                        m_EventHandler.OnUnitDestroyed(DefenderInfo.Stats.HP);
+                        m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[AttackerInfo.PlayerIndex], AttackerInfo.PlayerIndex);
                     }
-                    p_DestroyUnit(DefenderInfo.UnitID);
                 }
+                AttackerInfo.HasAttacked = true;
                 p_PassPriority();
             }
             else if(ActionToExecute is PassAction)
@@ -1372,6 +1590,16 @@ namespace RuleManager
                 {
                     m_EventHandler.OnStackPush(NewEntity);
                 }
+                if (UnitWithEffect.IsActivated == false)
+                {
+                    UnitWithEffect.IsActivated = true;
+                    m_PlayerIntitiative[UnitWithEffect.PlayerIndex] -= UnitWithEffect.Stats.ActivationCost;
+                    if (m_EventHandler != null)
+                    {
+                        m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[UnitWithEffect.PlayerIndex], UnitWithEffect.PlayerIndex);
+                    }
+                }
+                UnitWithEffect.HasAttacked = true;
                 p_PassPriority();
             }
             else
@@ -1474,6 +1702,21 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
+                UnitInfo AssociatedUnit = m_UnitInfos[MoveToCheck.UnitID];
+                if(AssociatedUnit.HasMoved)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only move unit once per activation";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if (AssociatedUnit.IsActivated == false && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[MoveToCheck.PlayerIndex])
+                {
+                    ReturnValue = false;
+                    ErrorString = "Not enough initiative to activate unit";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
 
             }
             else if(ActionToCheck is AttackAction)
@@ -1492,6 +1735,21 @@ namespace RuleManager
                 {
                     ReturnValue = false;
                     ErrorString = "Defender out of range for attacker";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+
+                if(AttackerInfo.HasAttacked)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only attack once per activation";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if (AttackerInfo.IsActivated == false && AttackerInfo.Stats.ActivationCost >= m_PlayerIntitiative[AttackToCheck.PlayerIndex])
+                {
+                    ReturnValue = false;
+                    ErrorString = "Not enough initiative to activate unit";
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
@@ -1540,6 +1798,13 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
+                if (AssociatedUnit.IsActivated == false && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[AssociatedUnit.PlayerIndex])
+                {
+                    ReturnValue = false;
+                    ErrorString = "Not enough initiative to activate unit";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
             }
             else
             {
@@ -1548,19 +1813,54 @@ namespace RuleManager
             OutInfo = ErrorString;
             return (ReturnValue);
         }
+
+        void p_PossibleMoves(Coordinate CurrentCoord,int CurrentMovement,List<Coordinate> OutPossibleMoves)
+        {
+            if(CurrentMovement == 0)
+            {
+                return;
+            }
+            foreach(Coordinate CurrentDiff in new Coordinate[] {new Coordinate(1,0),new Coordinate(0,1),new Coordinate(-1,0),new Coordinate(0,-1)})
+            {
+                Coordinate NewCoord = CurrentCoord + CurrentDiff;
+                if((NewCoord.Y >= m_Tiles.Count || NewCoord.Y < 0) || (NewCoord.X >= m_Tiles[0].Count || NewCoord.X < 0))
+                {
+                    continue;
+                }
+                if(m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != 0 || m_Tiles[NewCoord.Y][NewCoord.X].HasObjective)
+                {
+                    continue;
+                }
+                OutPossibleMoves.Add(NewCoord);
+                p_PossibleMoves(NewCoord, CurrentMovement - 1, OutPossibleMoves);
+            }
+        }
+        List<Coordinate> p_NormalizeMoves(List<Coordinate> MovesToNormalize)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            MovesToNormalize.Sort();
+            for(int i = 0; i < MovesToNormalize.Count-1;i++)
+            {
+                if(MovesToNormalize[i].Equals(MovesToNormalize[i+1]) == false)
+                {
+                    ReturnValue.Add(MovesToNormalize[i]);
+                }
+            }
+            ReturnValue.Add(MovesToNormalize[MovesToNormalize.Count - 1]);
+            return (ReturnValue);
+        }
         public List<Coordinate> PossibleMoves(int UnitID)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
 
-            for(int i = 0; i < m_Tiles.Count; i++)
+            if(m_UnitInfos.ContainsKey(UnitID) == false)
             {
-                for(int j = 0; j < m_Tiles[0].Count; j++)
-                {
-                    ReturnValue.Add(new Coordinate(j, i));
-                }
+                throw new Exception("Need valid unit to check possible moves");
             }
-
-
+            UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
+            ReturnValue.Add(UnitToMove.Position);
+            p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue);
+            ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);
         }
 
@@ -1583,9 +1883,10 @@ namespace RuleManager
         private UnitInfo p_GetProcessedUnitInfo(int ID)
         {
             UnitInfo ReturnValue = new UnitInfo(m_UnitInfos[ID]);
+            List<Target> EmptyTargets = new List<Target>();
             foreach(KeyValuePair<int,RegisteredContinousEffect> ContinousEffect in m_RegisteredContinousAbilities)
             {
-                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource, new Target_Unit(ID)))
+                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource,EmptyTargets, new Target_Unit(ID)))
                 {
                     p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply);
                 }
