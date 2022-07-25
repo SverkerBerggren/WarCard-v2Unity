@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System; 
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
 
@@ -82,6 +83,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
     public int unitPerformingAbility; 
+
+    public List<UnitInArmy> firstPlayerArmy;
+    public List<UnitInArmy> secondPlayerArmy;
+
+ 
+
+    [Serializable]
+    public struct UnitInArmy
+    {
+        public Unit unit;
+
+        public RuleManager.Coordinate cord; 
+    }
+
     public void SendAction(RuleManager.Action ActionToSend)
     {
 
@@ -109,83 +124,85 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
         gridManager.SetInputReciever(this);
 
-        UIInfo forstaUIInfo = new UIInfo();
-        forstaUIInfo.WhichImage = theSprites[0];
-        UIInfo andraUIInfo = new UIInfo();
-        forstaUIInfo.WhichImage = theSprites[1];
-        opaqueIntegerUIInfo.Add(0, forstaUIInfo);
-        opaqueIntegerUIInfo.Add(1, andraUIInfo);
+   //     UIInfo forstaUIInfo = new UIInfo();
+   //     forstaUIInfo.WhichImage = theSprites[0];
+   //     UIInfo andraUIInfo = new UIInfo();
+   //     forstaUIInfo.WhichImage = theSprites[1];
+   //     opaqueIntegerUIInfo.Add(0, forstaUIInfo);
+   //     opaqueIntegerUIInfo.Add(1, andraUIInfo);
+   //
+   //     
+   //
+   //     RuleManager.UnitInfo forstaUnit = new RuleManager.UnitInfo();
+   //
+   //     forstaUnit.Stats.HP = 100;
+   //
+   //     forstaUnit.Stats.Movement = 5;
+   //
+   //     forstaUnit.Stats.Range = 3;
+   //     forstaUnit.Stats.ActivationCost = 1;
+   //     forstaUnit.Stats.Damage = 10;
+   //
+   //     forstaUnit.Position = new RuleManager.Coordinate(0, 0);
+   //
+   //     UIInfo UIForsta = new UIInfo();
+   //
+   //     UIForsta.WhichImage = theSprites[0];
+   //
+   //     forstaUnit.OpaqueInteger = 0;
+   //     forstaUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
+   //     unitEtt = ruleManager.RegisterUnit(forstaUnit, 0);
+   //
+   //    
+   //
+   //
+   //     GameObject forstaUnitPaKartan =  Instantiate(prefabToInstaniate, gridManager.GetTilePosition(forstaUnit.Position), new Quaternion());
+   //     listOfImages.Add(unitEtt, forstaUnitPaKartan);
+   //     forstaUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+   //
+// //       print("unit id forsta  " + forstaUnit.UnitID);
+   //
+   //     //    test.transform.position = gridManager.GetTilePosition(forstaUnit.Position);
+   //
+   //
+   //     RuleManager.UnitInfo andraUnit = new RuleManager.UnitInfo();
+   //
+   //
+   //     andraUnit.Stats.HP = 1000;
+   //
+   //     andraUnit.Stats.Movement = 5;
+   //
+   //     andraUnit.Stats.Range = 3;
+   //     andraUnit.Stats.ActivationCost = 1;
+   //     andraUnit.Stats.Damage = 10;
+   //
+   //    
+   //
+   //     andraUnit.Position = new RuleManager.Coordinate(2, 0);
+   //
+   //     andraUnit.OpaqueInteger = 1;
+   //
+   //     andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
+   //
+   //   //  print("unit id ancdsra  " + andraUnit.UnitID);
+   //     unitTva = ruleManager.RegisterUnit(andraUnit, 1);
+   //
+   //     GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
+   //     listOfImages.Add(unitTva, andraUnitPaKartan);
+   //     andraUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[1];
+   //
+   //
+   //     RuleManager.UnitInfo officer = Militarium.GetOfficer();
+   //     officer.Position = new RuleManager.Coordinate(3, 3);
+   //     int officerInt = -1;
+   //     officerInt = ruleManager.RegisterUnit(officer, 0);
+   //
+   //     GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
+   //     listOfImages.Add(officerInt, officerObj);
+   //     officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
 
-        
 
-        RuleManager.UnitInfo forstaUnit = new RuleManager.UnitInfo();
-
-        forstaUnit.Stats.HP = 100;
-
-        forstaUnit.Stats.Movement = 5;
-
-        forstaUnit.Stats.Range = 3;
-        forstaUnit.Stats.ActivationCost = 1;
-        forstaUnit.Stats.Damage = 10;
-
-        forstaUnit.Position = new RuleManager.Coordinate(0, 0);
-
-        UIInfo UIForsta = new UIInfo();
-
-        UIForsta.WhichImage = theSprites[0];
-
-        forstaUnit.OpaqueInteger = 0;
-        forstaUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
-        unitEtt = ruleManager.RegisterUnit(forstaUnit, 0);
-
-       
-
-
-        GameObject forstaUnitPaKartan =  Instantiate(prefabToInstaniate, gridManager.GetTilePosition(forstaUnit.Position), new Quaternion());
-        listOfImages.Add(unitEtt, forstaUnitPaKartan);
-        forstaUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[0];
-
-//        print("unit id forsta  " + forstaUnit.UnitID);
-
-        //    test.transform.position = gridManager.GetTilePosition(forstaUnit.Position);
-
-
-        RuleManager.UnitInfo andraUnit = new RuleManager.UnitInfo();
-
-
-        andraUnit.Stats.HP = 1000;
-
-        andraUnit.Stats.Movement = 5;
-
-        andraUnit.Stats.Range = 3;
-        andraUnit.Stats.ActivationCost = 1;
-        andraUnit.Stats.Damage = 10;
-
-       
-
-        andraUnit.Position = new RuleManager.Coordinate(2, 0);
-
-        andraUnit.OpaqueInteger = 1;
-
-        andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
-
-      //  print("unit id ancdsra  " + andraUnit.UnitID);
-        unitTva = ruleManager.RegisterUnit(andraUnit, 1);
-
-        GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
-        listOfImages.Add(unitTva, andraUnitPaKartan);
-        andraUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[1];
-
-
-        RuleManager.UnitInfo officer = Militarium.GetOfficer();
-        officer.Position = new RuleManager.Coordinate(3, 3);
-        int officerInt = -1;
-        officerInt = ruleManager.RegisterUnit(officer, 0);
-
-        GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
-        listOfImages.Add(officerInt, officerObj);
-        officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
-
+        CreateArmies();
 
     }
 
@@ -309,9 +326,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                     abilityToExecute.UnitID = selectedUnit.UnitID;
 
-                    
-
-                    ruleManager.ExecuteAction(abilityToExecute);
+                    //
+                    if(isOnline)
+                    {
+                        ruleManager.ExecuteAction(abilityToExecute);
+                    }
+                    else
+                    {
+                        ExecutedActions.Enqueue(abilityToExecute);
+                    }
 
 
 
@@ -337,7 +360,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
 
                 //FIX ME
-                List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>();
+                List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
                 if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), EmptyTargets, targetTile))
                 {
                     currentTargetToSelect += 1;
@@ -371,7 +394,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                     abilityToExecute.UnitID = selectedUnit.UnitID;
 
-                    ruleManager.ExecuteAction(abilityToExecute);
+                    
+
+                    if(isOnline)
+                    {
+                        ExecutedActions.Enqueue(abilityToExecute);
+                    }
+                    else
+                    {
+                        ruleManager.ExecuteAction(abilityToExecute);
+                    }
 
                     resetSelection();
 
@@ -533,6 +565,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                     }
                 }
             }
+
+            resetSelection();
 
             selectedUnit = unitInfo;
 
@@ -784,6 +818,55 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
     } 
+
+
+    private void CreateArmies()
+    {
+        foreach(UnitInArmy unitFromList in firstPlayerArmy)
+        {
+  
+            RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
+          
+    
+
+
+            unitToCreate.Position = unitFromList.cord;
+           
+         
+
+            int unitInt = ruleManager.RegisterUnit(unitToCreate, 0);
+
+            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            listOfImages.Add(unitInt, unitToCreateVisualObject);
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitFromList.unit.GetUnitSprite();
+
+        }
+        foreach (UnitInArmy unitFromList in secondPlayerArmy)
+        {
+            RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
+
+            unitToCreate.Position = unitFromList.cord;
+
+            int unitInt = ruleManager.RegisterUnit(unitToCreate, 1);
+
+            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            listOfImages.Add(unitInt, unitToCreateVisualObject);
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitFromList.unit.GetUnitSprite();
+
+        }
+
+        //   RuleManager.UnitInfo officer = Militarium.GetOfficer();
+        //   officer.Position = new RuleManager.Coordinate(3, 3);
+        //   int officerInt = -1;
+        //   officerInt = ruleManager.RegisterUnit(officer, 0);
+        //
+        //   GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
+        //   listOfImages.Add(officerInt, officerObj); 
+        //   officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+
+    }
+
+
 }
 
 

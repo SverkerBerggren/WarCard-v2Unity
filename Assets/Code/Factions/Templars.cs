@@ -24,6 +24,7 @@ public class Templars
         ReturnValue.Stats.Damage = 100;
         ReturnValue.Stats.HP = 300;
         ReturnValue.Stats.Range = 2;
+        ReturnValue.Stats.Movement = 12; 
 
         RuleManager.Ability_Activated ActivatedAbility = new RuleManager.Ability_Activated();
         RuleManager.Effect_DealDamage DamageEffect = new RuleManager.Effect_DealDamage();
@@ -31,7 +32,7 @@ public class Templars
         DamageEffect.Targets = new RuleManager.TargetRetriever_Index(0);
         
         ActivatedAbility.ActivatedEffect = DamageEffect;
-
+        ActivatedAbility.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
 
         ReturnValue.Abilities.Add(ActivatedAbility);
         return (ReturnValue);
