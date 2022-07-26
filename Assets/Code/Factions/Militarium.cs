@@ -12,6 +12,7 @@ public class Militarium
         NewUnitInfo.Stats.Range = 6;
         NewUnitInfo.Stats.HP = 100;
         NewUnitInfo.Stats.ActivationCost = 15;
+        NewUnitInfo.Stats.ObjectiveControll = 10;
         return (NewUnitInfo);
     }
     public static RuleManager.UnitInfo GetHeavyWeapons()
@@ -45,6 +46,7 @@ public class Militarium
         NewUnitInfo.Stats.Range = 30;
         NewUnitInfo.Stats.HP = 200;
         NewUnitInfo.Stats.ActivationCost = 30;
+        NewUnitInfo.Stats.ObjectiveControll = 5;
 
         RuleManager.Ability_Activated BarrageAbility = new RuleManager.Ability_Activated(
                 new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Tile),new RuleManager.TargetCondition_Range(30))),
@@ -68,6 +70,8 @@ public class Militarium
         ReturnValue.Stats.Movement = 6;
         ReturnValue.Stats.Range = 8;
         ReturnValue.Stats.ActivationCost = 15;
+        ReturnValue.Stats.ObjectiveControll = 5;
+
 
         RuleManager.Ability_Activated MoveAbility = new RuleManager.Ability_Activated();
         MoveAbility.ActivationTargets = 

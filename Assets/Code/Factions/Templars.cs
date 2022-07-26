@@ -44,11 +44,10 @@ public class Templars
         ReturnValue.Stats = new RuleManager.UnitStats();
         ReturnValue.Stats.ActivationCost = 40;
         ReturnValue.Stats.Damage = 10;
-        ReturnValue.Stats.HP = 300;
-        ReturnValue.Stats.Range = 2;
-        ReturnValue.Stats.Movement = 6;
-        
-
+        ReturnValue.Stats.HP = 100;
+        ReturnValue.Stats.Range = 4;
+        ReturnValue.Stats.Movement = 7;
+        ReturnValue.Stats.ObjectiveControll = 20;
 
 
         return (ReturnValue);
@@ -59,9 +58,9 @@ public class Templars
         ReturnValue.Stats = new RuleManager.UnitStats();
         ReturnValue.Stats.ActivationCost = 40;
         ReturnValue.Stats.Damage = 10;
-        ReturnValue.Stats.HP = 300;
+        ReturnValue.Stats.HP = 200;
         ReturnValue.Stats.Range = 2;
-        ReturnValue.Stats.Movement = 6;
+        ReturnValue.Stats.Movement = 7;
         ReturnValue.Stats.ObjectiveControll = 10;
 
         ReturnValue.Abilities.Add(
