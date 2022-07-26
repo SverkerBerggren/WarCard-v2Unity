@@ -1664,6 +1664,7 @@ namespace RuleManager
                 Ability_Activated AbilityToActivate =(Ability_Activated) UnitWithEffect.Abilities[EffectToExecute.EffectIndex];
                 StackEntity NewEntity = new StackEntity();
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
+                NewEntity.EffectToResolve.SetText(AbilityToActivate.GetDescription());
                 NewEntity.Targets = EffectToExecute.Targets;
                 NewEntity.Source = new EffectSource_Unit(EffectToExecute.UnitID);
                 NewEntity.Source.PlayerIndex = ActionToExecute.PlayerIndex;
