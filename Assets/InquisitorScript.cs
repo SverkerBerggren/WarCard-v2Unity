@@ -26,7 +26,7 @@ public class InquisitorScript : Unit
     }
     public override RuleManager.UnitInfo CreateUnitInfo()
     {
-        return Templars.GetKnight();
+        return Templars.GetInquisitor();
     }
 
     // Update is called once per frame

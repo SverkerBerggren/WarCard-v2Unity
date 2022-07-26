@@ -1040,7 +1040,7 @@ namespace RuleManager
             }
             else
             {
-                throw new Exception("Invalid target retriever type");
+                throw new Exception("Invalid target retriever type " + Retriever.GetType().Name);
             }
             yield break;
         }
