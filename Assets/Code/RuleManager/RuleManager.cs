@@ -989,6 +989,8 @@ namespace RuleManager
             NewUnit.UnitID = NewID;
             NewUnit.PlayerIndex = PlayerIndex;
             m_UnitInfos[NewID] = NewUnit;
+
+            
             m_Tiles[NewUnit.Position.Y][NewUnit.Position.X].StandingUnitID = NewID;
 
             return (NewID);
