@@ -40,8 +40,8 @@ public class LobbyTest : MonoBehaviour
     bool LoadGameScene = false;
     void LobbyServerConnector()
     {
-        //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("192.168.0.16", 11337);
-        RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("mrboboget.se", 443);
+        RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("192.168.0.16", 11337);
+        //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("mrboboget.se", 443);
         //RuleServer.ClientConnection Connection = new RuleServer.ClientConnection("127.0.0.1", 11337);
         while(!LoadGameScene)
         {
