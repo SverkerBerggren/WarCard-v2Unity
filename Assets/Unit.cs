@@ -16,9 +16,10 @@ public class Unit : MonoBehaviour
         return null;
     }
 
-    public virtual Sprite GetUnitSprite()
+    public virtual UnitSprites GetUnitSidewaySprite()
     {
-    return null;
+        UnitSprites hej = new UnitSprites(); 
+        return hej;
     }
 
      

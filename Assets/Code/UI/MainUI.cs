@@ -15,7 +15,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public Sprite[] theSprites;
 
-    private Dictionary<int, GameObject> listOfImages = new Dictionary<int, GameObject>();
+    private Dictionary<int, UnitSprites> listOfImages = new Dictionary<int, UnitSprites>();
 
     private Dictionary<int, UIInfo> opaqueIntegerUIInfo = new Dictionary<int, UIInfo>();
 
@@ -53,6 +53,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public bool abilitySelectionStarted = false;
 
+    public GameObject errorMessage;
+
     private int currentTargetToSelect = 0; 
 
     public List<RuleManager.TargetCondition> requiredAbilityTargets = new List<RuleManager.TargetCondition>();
@@ -86,8 +88,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public List<UnitInArmy> firstPlayerArmy;
     public List<UnitInArmy> secondPlayerArmy;
+    public List<RuleManager.Coordinate> listOfObjectives;
 
- 
+    private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
+
 
     [Serializable]
     public struct UnitInArmy
@@ -124,84 +128,87 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
         gridManager.SetInputReciever(this);
 
-   //     UIInfo forstaUIInfo = new UIInfo();
-   //     forstaUIInfo.WhichImage = theSprites[0];
-   //     UIInfo andraUIInfo = new UIInfo();
-   //     forstaUIInfo.WhichImage = theSprites[1];
-   //     opaqueIntegerUIInfo.Add(0, forstaUIInfo);
-   //     opaqueIntegerUIInfo.Add(1, andraUIInfo);
-   //
-   //     
-   //
-   //     RuleManager.UnitInfo forstaUnit = new RuleManager.UnitInfo();
-   //
-   //     forstaUnit.Stats.HP = 100;
-   //
-   //     forstaUnit.Stats.Movement = 5;
-   //
-   //     forstaUnit.Stats.Range = 3;
-   //     forstaUnit.Stats.ActivationCost = 1;
-   //     forstaUnit.Stats.Damage = 10;
-   //
-   //     forstaUnit.Position = new RuleManager.Coordinate(0, 0);
-   //
-   //     UIInfo UIForsta = new UIInfo();
-   //
-   //     UIForsta.WhichImage = theSprites[0];
-   //
-   //     forstaUnit.OpaqueInteger = 0;
-   //     forstaUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
-   //     unitEtt = ruleManager.RegisterUnit(forstaUnit, 0);
-   //
-   //    
-   //
-   //
-   //     GameObject forstaUnitPaKartan =  Instantiate(prefabToInstaniate, gridManager.GetTilePosition(forstaUnit.Position), new Quaternion());
-   //     listOfImages.Add(unitEtt, forstaUnitPaKartan);
-   //     forstaUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[0];
-   //
-// //       print("unit id forsta  " + forstaUnit.UnitID);
-   //
-   //     //    test.transform.position = gridManager.GetTilePosition(forstaUnit.Position);
-   //
-   //
-   //     RuleManager.UnitInfo andraUnit = new RuleManager.UnitInfo();
-   //
-   //
-   //     andraUnit.Stats.HP = 1000;
-   //
-   //     andraUnit.Stats.Movement = 5;
-   //
-   //     andraUnit.Stats.Range = 3;
-   //     andraUnit.Stats.ActivationCost = 1;
-   //     andraUnit.Stats.Damage = 10;
-   //
-   //    
-   //
-   //     andraUnit.Position = new RuleManager.Coordinate(2, 0);
-   //
-   //     andraUnit.OpaqueInteger = 1;
-   //
-   //     andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
-   //
-   //   //  print("unit id ancdsra  " + andraUnit.UnitID);
-   //     unitTva = ruleManager.RegisterUnit(andraUnit, 1);
-   //
-   //     GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
-   //     listOfImages.Add(unitTva, andraUnitPaKartan);
-   //     andraUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[1];
-   //
-   //
-   //     RuleManager.UnitInfo officer = Militarium.GetOfficer();
-   //     officer.Position = new RuleManager.Coordinate(3, 3);
-   //     int officerInt = -1;
-   //     officerInt = ruleManager.RegisterUnit(officer, 0);
-   //
-   //     GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
-   //     listOfImages.Add(officerInt, officerObj);
-   //     officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+        errorMessage = GameObject.Find("ErrorMessage");
+        errorMessage.SetActive(false);
 
+        //     UIInfo forstaUIInfo = new UIInfo();
+        //     forstaUIInfo.WhichImage = theSprites[0];
+        //     UIInfo andraUIInfo = new UIInfo();
+        //     forstaUIInfo.WhichImage = theSprites[1];
+        //     opaqueIntegerUIInfo.Add(0, forstaUIInfo);
+        //     opaqueIntegerUIInfo.Add(1, andraUIInfo);
+        //
+        //     
+        //
+        //     RuleManager.UnitInfo forstaUnit = new RuleManager.UnitInfo();
+        //
+        //     forstaUnit.Stats.HP = 100;
+        //
+        //     forstaUnit.Stats.Movement = 5;
+        //
+        //     forstaUnit.Stats.Range = 3;
+        //     forstaUnit.Stats.ActivationCost = 1;
+        //     forstaUnit.Stats.Damage = 10;
+        //
+        //     forstaUnit.Position = new RuleManager.Coordinate(0, 0);
+        //
+        //     UIInfo UIForsta = new UIInfo();
+        //
+        //     UIForsta.WhichImage = theSprites[0];
+        //
+        //     forstaUnit.OpaqueInteger = 0;
+        //     forstaUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
+        //     unitEtt = ruleManager.RegisterUnit(forstaUnit, 0);
+        //
+        //    
+        //
+        //
+        //     GameObject forstaUnitPaKartan =  Instantiate(prefabToInstaniate, gridManager.GetTilePosition(forstaUnit.Position), new Quaternion());
+        //     listOfImages.Add(unitEtt, forstaUnitPaKartan);
+        //     forstaUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+        //
+        // //       print("unit id forsta  " + forstaUnit.UnitID);
+        //
+        //     //    test.transform.position = gridManager.GetTilePosition(forstaUnit.Position);
+        //
+        //
+        //     RuleManager.UnitInfo andraUnit = new RuleManager.UnitInfo();
+        //
+        //
+        //     andraUnit.Stats.HP = 1000;
+        //
+        //     andraUnit.Stats.Movement = 5;
+        //
+        //     andraUnit.Stats.Range = 3;
+        //     andraUnit.Stats.ActivationCost = 1;
+        //     andraUnit.Stats.Damage = 10;
+        //
+        //    
+        //
+        //     andraUnit.Position = new RuleManager.Coordinate(2, 0);
+        //
+        //     andraUnit.OpaqueInteger = 1;
+        //
+        //     andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
+        //
+        //   //  print("unit id ancdsra  " + andraUnit.UnitID);
+        //     unitTva = ruleManager.RegisterUnit(andraUnit, 1);
+        //
+        //     GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
+        //     listOfImages.Add(unitTva, andraUnitPaKartan);
+        //     andraUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[1];
+        //
+        //
+        //     RuleManager.UnitInfo officer = Militarium.GetOfficer();
+        //     officer.Position = new RuleManager.Coordinate(3, 3);
+        //     int officerInt = -1;
+        //     officerInt = ruleManager.RegisterUnit(officer, 0);
+        //
+        //     GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
+        //     listOfImages.Add(officerInt, officerObj);
+        //     officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
 
+        CreateMovementObjects();
         CreateArmies();
 
     }
@@ -214,8 +221,77 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnUnitMove(int UnitID, RuleManager.Coordinate PreviousPosition, RuleManager.Coordinate NewPosition)
     {
-        listOfImages[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
+        //    listOfImages[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
 
+        GameObject visualObject = listOfImages[UnitID].objectInScene;
+        SpriteRenderer spriteRenderer = visualObject.GetComponent<SpriteRenderer>();
+        UnitSprites unitSprites = listOfImages[UnitID];
+
+
+        int xChange = NewPosition.X - PreviousPosition.X;
+
+        int yChange = NewPosition.Y - PreviousPosition.Y;
+
+        if(Mathf.Abs(xChange) > 3 && Mathf.Abs(yChange) < 3)
+        {
+            if(xChange > 0)
+            {
+                spriteRenderer.sprite = unitSprites.sidewaySprite;
+                spriteRenderer.flipX = false;
+                
+            }
+            else
+            {
+                spriteRenderer.sprite = unitSprites.sidewaySprite;
+                spriteRenderer.flipX = true;
+            }
+        }
+
+        if (Mathf.Abs(yChange) > 3 && Mathf.Abs(xChange) < 3)
+        {
+            if (yChange > 0)
+            {
+                spriteRenderer.sprite = unitSprites.backwardSprite;
+            
+            }
+            else
+            {
+                spriteRenderer.sprite = unitSprites.forwardSprite;
+                
+            }
+        }
+        bool xChangeIsBigEnough = Mathf.Abs(xChange) > 3;
+        bool yChangeIsBigEnough = Mathf.Abs(yChange) > 3;
+        bool xChangeIsBigger = Mathf.Abs(xChange) > Mathf.Abs(yChange) ;
+
+        if(xChangeIsBigger && xChangeIsBigEnough)
+        {
+            if (xChange > 0)
+            {
+                spriteRenderer.sprite = unitSprites.sidewaySprite;
+                spriteRenderer.flipX = false;
+            }
+            else
+            {
+                spriteRenderer.sprite = unitSprites.sidewaySprite;
+                spriteRenderer.flipX = true;
+            }
+        }
+        else if(yChangeIsBigEnough)
+        {
+            if (yChange > 0)
+            {
+                spriteRenderer.sprite = unitSprites.backwardSprite;
+
+            }
+            else
+            {
+                spriteRenderer.sprite = unitSprites.forwardSprite;
+
+            }
+        }
+
+        visualObject.transform.position  = gridManager.GetTilePosition(NewPosition);
 
     }
 
@@ -294,7 +370,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnUnitDestroyed(int UnitID)
     {
-        listOfImages[UnitID].SetActive(false);
+        listOfImages[UnitID].objectInScene.SetActive(false);
     }
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
@@ -326,14 +402,30 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                     abilityToExecute.UnitID = selectedUnit.UnitID;
 
-                    //
-                    if(isOnline)
+
+                    string errorMessageText = "";
+
+                    if (!ruleManager.ActionIsValid(abilityToExecute, out errorMessageText))
                     {
-                        ruleManager.ExecuteAction(abilityToExecute);
+                        ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
+                        script.timer = script.originalTimer;
+
+                        script.errorMessageTextMesh.text = errorMessageText;
+
+                        errorMessage.SetActive(true);
+
+
                     }
                     else
                     {
-                        ExecutedActions.Enqueue(abilityToExecute);
+                        if (!isOnline)
+                        {
+                            ruleManager.ExecuteAction(abilityToExecute);
+                        }
+                        else
+                        {
+                            ExecutedActions.Enqueue(abilityToExecute);
+                        }
                     }
 
 
@@ -394,17 +486,32 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                     abilityToExecute.UnitID = selectedUnit.UnitID;
 
-                    
 
-                    if(isOnline)
+                    string errorMessageText = "";
+
+                    if (!ruleManager.ActionIsValid(abilityToExecute, out errorMessageText))
                     {
-                        ExecutedActions.Enqueue(abilityToExecute);
+                        ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
+                        script.timer = script.originalTimer;
+
+                        script.errorMessageTextMesh.text = errorMessageText;
+
+                        errorMessage.SetActive(true);
+
+
                     }
                     else
                     {
-                        ruleManager.ExecuteAction(abilityToExecute);
+                        if (!isOnline)
+                        {
+                            ruleManager.ExecuteAction(abilityToExecute);
+                        }
+                        else
+                        {
+                            ExecutedActions.Enqueue(abilityToExecute);
+                         
+                        }
                     }
-
                     resetSelection();
 
                     print("den gor abiliten");
@@ -469,16 +576,34 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                         moveAction.PlayerIndex = selectedUnit.PlayerIndex;
                         moveAction.UnitID = selectedUnit.UnitID;
                         MoveActionSelected = false;
-
-                        print("excecutas move");
-                        if(!isOnline)
+                        string errorMessageText = ""; 
+                   
+                        if(!ruleManager.ActionIsValid(moveAction,out errorMessageText))
                         {
-                            ruleManager.ExecuteAction(moveAction);
+                            ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
+                            script.timer = script.originalTimer;
+
+                            script.errorMessageTextMesh.text = errorMessageText;
+
+                            errorMessage.SetActive(true);
+
+                            
                         }
                         else
                         {
-                            ExecutedActions.Enqueue(moveAction);
+                            if (!isOnline)
+                            {
+                                ruleManager.ExecuteAction(moveAction);
+                            }
+                            else
+                            {
+                                ExecutedActions.Enqueue(moveAction);
+                            }
                         }
+
+
+
+                  
                         
                         if(!isOnline)
                         {
@@ -499,6 +624,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                         }
                         buttonDestroyList.Clear();
                         DestroyMovementRange();
+
+                        resetSelection();
                         return;
                     }
                 }
@@ -527,15 +654,31 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                     if (ruleManager.ActionIsValid(attackAction, out actionInfo) && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
                     {
-                        if(!isOnline)
+                        string errorMessageText = "";
+
+                        if (!ruleManager.ActionIsValid(attackAction, out errorMessageText))
                         {
-                            ruleManager.ExecuteAction(attackAction);
+                            ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
+                            script.timer = script.originalTimer;
+
+                            script.errorMessageTextMesh.text = errorMessageText;
+
+                            errorMessage.SetActive(true);
+
+
                         }
                         else
                         {
-                            ExecutedActions.Enqueue(attackAction);
+                            if (!isOnline)
+                            {
+                                ruleManager.ExecuteAction(attackAction);
+                            }
+                            else
+                            {
+                                ExecutedActions.Enqueue(attackAction);
+                            }
                         }
-                        
+
                         selectedUnit = null;
                         unitCard.SetActive(false);
                         unitActions.SetActive(false);
@@ -606,8 +749,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 abilityButton.abilityFlavour = ability.GetFlavourText();
 
-                abilityButton.abilityDescription = ability.GetFlavourText();
+                abilityButton.abilityDescription = ability.GetDescription();
 
+                print("vad returnerar getName " + ability.GetName());
+
+                abilityButton.abilityName = ability.GetName();
 
 
                 if(ability is RuleManager.Ability_Activated)
@@ -685,10 +831,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         foreach(RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
         {
-            GameObject newObject = Instantiate(MovementRange);
+            //   GameObject newObject = Instantiate(MovementRange);
+            //
+            //   newObject.transform.position = gridManager.GetTilePosition(cord);
+            //   CreatedMovementRange.Add(newObject);
+            movementIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
+           // movementIndicatorObjectDictionary[cord].SetActive(true);
 
-            newObject.transform.position = gridManager.GetTilePosition(cord);
-            CreatedMovementRange.Add(newObject);
         }
          
 
@@ -713,14 +862,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
     private void DestroyMovementRange()
-    {
-        if(CreatedMovementRange.Count != 0)
-        {
-            foreach(GameObject obj in CreatedMovementRange)
+    {   
+      
+            foreach(List<GameObject> obj in movementIndicatorObjectDictionary)
             {
-                Destroy(obj);
+                //obj.SetActive(false);
+
+                foreach(GameObject ob in obj)
+                {
+                    ob.SetActive(false);
+                }
             }
-        }
+        
     }
 
     private void CreateAbility()
@@ -772,25 +925,41 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
         passAction.PlayerIndex = ruleManager.getPlayerPriority();
-   //   if(m_playerid == 0)
-   //   {
-   //       passAction.PlayerIndex = 0;
-   //       m_playerid = 1; 
-   //   }
-   //   else
-   //   {
-   //       passAction.PlayerIndex = 1;
-   //       m_playerid = 0;
-   //   }
-        if(!isOnline)
+        //   if(m_playerid == 0)
+        //   {
+        //       passAction.PlayerIndex = 0;
+        //       m_playerid = 1; 
+        //   }
+        //   else
+        //   {
+        //       passAction.PlayerIndex = 1;
+        //       m_playerid = 0;
+        //   }
+        string errorMessageText = "";
+
+        if (!ruleManager.ActionIsValid(passAction, out errorMessageText))
         {
-            ruleManager.ExecuteAction(passAction);
+            ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
+            script.timer = script.originalTimer;
+
+            script.errorMessageTextMesh.text = errorMessageText;
+
+            errorMessage.SetActive(true);
+
+
         }
         else
         {
-            ExecutedActions.Enqueue(passAction);
+            if (!isOnline)
+            {
+                ruleManager.ExecuteAction(passAction);
+            }
+            else
+            {
+                ExecutedActions.Enqueue(passAction);
+            }
         }
-        
+
     }
     public RuleManager.Action PopAction()
     {
@@ -835,10 +1004,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
          
 
             int unitInt = ruleManager.RegisterUnit(unitToCreate, 0);
+            UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
 
             GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
-            listOfImages.Add(unitInt, unitToCreateVisualObject);
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitFromList.unit.GetUnitSprite();
+
+            unitSprites.objectInScene = unitToCreateVisualObject;
+
+            listOfImages.Add(unitInt, unitSprites);
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
 
         }
         foreach (UnitInArmy unitFromList in secondPlayerArmy)
@@ -849,12 +1022,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             int unitInt = ruleManager.RegisterUnit(unitToCreate, 1);
 
+            UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
+
             GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
-            listOfImages.Add(unitInt, unitToCreateVisualObject);
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitFromList.unit.GetUnitSprite();
+
+            unitSprites.objectInScene = unitToCreateVisualObject;
+
+            listOfImages.Add(unitInt, unitSprites);
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
 
         }
 
+
+        foreach(RuleManager.Coordinate cord in listOfObjectives)
+        {
+            ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective = true;
+
+            GameObject objectiveImage = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(cord), new Quaternion());
+            objectiveImage.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+
+        }
         //   RuleManager.UnitInfo officer = Militarium.GetOfficer();
         //   officer.Position = new RuleManager.Coordinate(3, 3);
         //   int officerInt = -1;
@@ -866,9 +1053,45 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
+    private void CreateMovementObjects()
+    {
+        for(int i = 0; i < gridManager.Width; i++)
+        {
+            movementIndicatorObjectDictionary.Add(new List<GameObject>());
 
+            for(int z = 0; z < gridManager.Height; z++)
+            {
+                movementIndicatorObjectDictionary[i].Add(null);
+            }
+        }
+
+        print(gridManager.Width);
+        for(int i = 0; i < gridManager.Width; i++)
+        {
+            for(int z = 0; z < gridManager.Height; z++)
+            {
+                GameObject newObject = Instantiate(MovementRange);
+                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+
+            //    print(tempCord.X + " " + tempCord.Y);
+                newObject.transform.position = gridManager.GetTilePosition(tempCord);
+                movementIndicatorObjectDictionary[i][z] = newObject;
+                newObject.SetActive(false);
+            }
+        }
+    }
 }
 
+public struct UnitSprites
+{
+    public Sprite forwardSprite;
+
+    public Sprite backwardSprite;
+
+    public Sprite sidewaySprite;
+
+    public GameObject objectInScene;
+}
 
 
 public class UIInfo

@@ -36,6 +36,9 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
         abilityDescriptionText.text = abilityDescription;
 
+
+        print("vad heter abilityn i knappen");
+
         abilityNameText.text = abilityName;
 
         mainUI = GameObject.Find("UI").GetComponent<MainUI>();

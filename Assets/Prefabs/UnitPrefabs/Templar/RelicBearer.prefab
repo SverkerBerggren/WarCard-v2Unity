@@ -44,4 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9ab666b33a3a4e4486893c4761b94c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sprite: {fileID: 21300000, guid: 00847b9d067a98f449184135544fb03a, type: 3}
+  sidewaySprite: {fileID: 21300000, guid: 00847b9d067a98f449184135544fb03a, type: 3}
+  forwardSprite: {fileID: 21300000, guid: 3b924c26134106a4a95b9a2f8489251c, type: 3}
+  backWardSprite: {fileID: 21300000, guid: f9eac47c9f8c815438ea165568332b80, type: 3}
