@@ -92,6 +92,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
 
+    TextMeshProUGUI Player1Score;
+    TextMeshProUGUI Player2Score;
 
     [Serializable]
     public struct UnitInArmy
@@ -131,6 +133,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         errorMessage = GameObject.Find("ErrorMessage");
         errorMessage.SetActive(false);
 
+        Player1Score = GameObject.Find("Player1Score").GetComponent<TextMeshProUGUI>();
+        Player2Score = GameObject.Find("Player2Score").GetComponent<TextMeshProUGUI>();
         //     UIInfo forstaUIInfo = new UIInfo();
         //     forstaUIInfo.WhichImage = theSprites[0];
         //     UIInfo andraUIInfo = new UIInfo();
@@ -216,7 +220,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     // Update is called once per frame
     void Update()
     {
-        m_playerid = ruleManager.getPlayerPriority();
+   //     m_playerid = ruleManager.getPlayerPriority();
+
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            SwitchPlayerPriority();
+        }
     }
 
     public void OnUnitMove(int UnitID, RuleManager.Coordinate PreviousPosition, RuleManager.Coordinate NewPosition)
@@ -365,6 +374,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnScoreChange(int PlayerIndex,int NewScore)
     {
         print("Player index: " + PlayerIndex + " Player score: " + NewScore);
+
+        if(PlayerIndex == 0)
+        {
+            Player1Score.text = "Player 1 Score: " + NewScore;
+        }
+        else
+        {
+            Player2Score.text = "Player 2 Score: " + NewScore;
+        }
     }
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
@@ -379,7 +397,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
-        currentPlayerTurnText.text = "Current Player: " + CurrentPlayerTurnIndex;
+        currentPlayerTurnText.text = "Current Player: " + (CurrentPlayerTurnIndex +1);
 
         currentTurnText.text = "Turn: " + CurrentTurnCount;
     }
@@ -816,11 +834,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         if(whichPlayer == 0)
         {
-            initiativePlayer0.text = "Player 0 Initiative " + newIntitiative + "/15";
+            initiativePlayer0.text = "Player 1 Initiative " + newIntitiative + "/100";
         }
         if (whichPlayer == 1)
         {
-            initiativePlayer1.text = "Player 1 Initiative " + newIntitiative + "/15";
+            initiativePlayer1.text = "Player 2 Initiative " + newIntitiative + "/100";
         }
     }
     private void ConstructMovementRange(RuleManager.UnitInfo info)
