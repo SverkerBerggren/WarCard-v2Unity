@@ -44,7 +44,7 @@ public class GameState : MonoBehaviour
     void Update()
     {
 
-        int PlayerIndex = ruleManager.GetPlayerActionIndex();
+        int PlayerIndex = ruleManager.getPlayerPriority();
         if(m_PlayerActionRetrievers.Count <= PlayerIndex)
         {
             print("Invalid number of action retrievers");
