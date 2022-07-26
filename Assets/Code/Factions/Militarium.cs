@@ -14,6 +14,17 @@ public class Militarium
         NewUnitInfo.Stats.ActivationCost = 15;
         return (NewUnitInfo);
     }
+    public static RuleManager.UnitInfo GetHeavyWeapons()
+    {
+        RuleManager.UnitInfo NewUnitInfo = new RuleManager.UnitInfo();
+        NewUnitInfo.Stats.Movement = 5;
+        NewUnitInfo.Stats.Damage = 65;
+        NewUnitInfo.Stats.Range = 15;
+        NewUnitInfo.Stats.HP = 200;
+        NewUnitInfo.Stats.ObjectiveControll = 5;
+        NewUnitInfo.Stats.ActivationCost = 15;
+        return (NewUnitInfo);
+    }
 
     public static RuleManager.UnitInfo GetMeleeSoldier()
     {

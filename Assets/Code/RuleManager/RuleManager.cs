@@ -1130,6 +1130,10 @@ namespace RuleManager
                 {
                     TriggerToRegister.AffectedEntities = new TargetRetriever_Literal(AffectedTargets);
                 }
+                else
+                {
+                    TriggerToRegister.AffectedEntities = new TargetRetriever_Empty();                    
+                }
                 TriggerToRegister.TriggerCondition = ConditionToAdd;
                 TriggerToRegister.TriggerEffect = TriggerEffect.TriggerEffect;
                 TriggerToRegister.TriggerSource = Source;
