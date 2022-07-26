@@ -564,6 +564,10 @@ namespace RuleManager
     public class Coordinate : IEquatable<Coordinate>, IComparable<Coordinate>
     {
 
+        public override int GetHashCode()
+        {
+            return (HashCode.Combine(X, Y));
+        }
         public int CompareTo(Coordinate rhs)
         {
             int ReturnvValue = 1;
@@ -722,7 +726,7 @@ namespace RuleManager
         public int Range = 0;
         public int Damage = 0;
         public int ActivationCost = 0;
-
+        public int ObjectiveControll = 0;
         public UnitStats(UnitStats StatToCopy)
         {
             HP = StatToCopy.HP;
@@ -730,6 +734,7 @@ namespace RuleManager
             ActivationCost = StatToCopy.ActivationCost;
             Range = StatToCopy.Range;
             Damage = StatToCopy.Damage;
+            ObjectiveControll = StatToCopy.ObjectiveControll;
         }
         public UnitStats()
         {
@@ -797,7 +802,7 @@ namespace RuleManager
 
         void OnPlayerPassPriority(int currentPlayerString);
 
-
+        void OnScoreChange(int PlayerIndex, int NewScore);
 
 
     }
@@ -858,7 +863,9 @@ namespace RuleManager
         const int m_PlayerMaxInitiative = 150;
         const int m_PlayerTurnInitiativeGain = 100;
         const int m_PlayerInitiativeRetain = 40;
+        const int m_ObjectiveScoreGain = 50;
 
+        List<int> m_PlayerPoints = new List<int>();
         List<int> m_PlayerIntitiative = new List<int>();
         Dictionary<int, RegisteredContinousEffect> m_RegisteredContinousAbilities = new Dictionary<int, RegisteredContinousEffect>();
         Dictionary<int, RegisteredTrigger> m_RegisteredTriggeredAbilities = new Dictionary<int, RegisteredTrigger>();
@@ -971,6 +978,7 @@ namespace RuleManager
             for(int i = 0; i < m_PlayerCount;i++)
             {
                 m_PlayerIntitiative.Add(m_PlayerTurnInitiativeGain);
+                m_PlayerPoints.Add(0);
             }
         }
         public int RegisterUnit(UnitInfo NewUnit,int PlayerIndex)
@@ -1392,6 +1400,43 @@ namespace RuleManager
         {
             m_UnitInfos[UnitID].Stats.HP -= Damage;
         }
+
+        int p_GetObjectiveControllIndex(Coordinate ObjectiveCoordinate)
+        {
+            List<int> ObjectiveScores = new List<int>();
+            for(int i = 0; i <  m_PlayerCount;i++)
+            {
+                ObjectiveScores.Add(0);
+            }
+            for(int i = -1; i <= 1;i++)
+            {
+                for(int j = -1; j <= 1;j++)
+                {
+                    Coordinate CoordinateDiff = new Coordinate(i, j);
+                    if(!(CoordinateDiff.X == 0 && CoordinateDiff.Y == 0))
+                    {
+                        Coordinate CurrentCoord = ObjectiveCoordinate + CoordinateDiff;
+                        if (m_Tiles[CurrentCoord.Y][CurrentCoord.X].StandingUnitID != 0)
+                        {
+                            UnitInfo CurrentInfo = p_GetProcessedUnitInfo(m_Tiles[CurrentCoord.Y][CurrentCoord.X].StandingUnitID);
+                            ObjectiveScores[CurrentInfo.PlayerIndex] += CurrentInfo.Stats.ObjectiveControll;
+                        }
+                    }
+                }
+            }
+            int ReturnValue = -1;
+            int CurrentMaxObjective = 0;
+            for(int i = 0; i < m_PlayerCount;i++)
+            {
+                if(ObjectiveScores[i] > CurrentMaxObjective)
+                {
+                    CurrentMaxObjective = ObjectiveScores[i];
+                    ReturnValue = i;
+                }
+            }
+            return (ReturnValue);
+        }
+
         IEnumerator p_ChangeTurn()
         {
             m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
@@ -1408,6 +1453,33 @@ namespace RuleManager
                 if(m_EventHandler != null)
                 {
                     m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[i], i);
+                }
+            }
+            List<int> NewScore = new List<int>();
+            for(int i = 0; i < m_PlayerCount;i++)
+            {
+                NewScore.Add(0);
+            }
+            for(int i = 0; i < m_Tiles.Count;i++)
+            {
+                for(int j = 0; j < m_Tiles[0].Count;j++)
+                {
+                    if(m_Tiles[i][j].HasObjective)
+                    {
+                        int PlayerControllIndex = p_GetObjectiveControllIndex(new Coordinate(j, i));
+                        if(PlayerControllIndex != -1)
+                        {
+                            NewScore[PlayerControllIndex] += m_ObjectiveScoreGain;
+                        }
+                    }
+                }
+            }
+            for(int i = 0; i <  m_PlayerCount;i++)
+            {
+                m_PlayerPoints[i] += NewScore[i];
+                if(m_EventHandler != null)
+                {
+                    m_EventHandler.OnScoreChange(i, m_PlayerPoints[i]);
                 }
             }
 
@@ -1486,14 +1558,20 @@ namespace RuleManager
 
         void p_CheckStateBasedAction()
         {
+            List<int> UnitsToDestroy = new List<int>();
             foreach(KeyValuePair<int,UnitInfo> Unit in m_UnitInfos)
             {
                 if(Unit.Value.Stats.HP < 0)
                 {
-                    p_DestroyUnit(Unit.Key);
+                    UnitsToDestroy.Add(Unit.Key);
                 }
             }
+            foreach(int Unit in UnitsToDestroy)
+            {
+                p_DestroyUnit(Unit);
+            }
         }
+        
 
         bool m_PriorityTabled = false;
 
@@ -1606,6 +1684,7 @@ namespace RuleManager
             {
                 throw new ArgumentException("Invalid Action type");
             }
+            p_CheckStateBasedAction();
             m_EndOfTurnPass = EndOfTurnPass;
             m_PriorityTabled = PriorityTabled;
         }
@@ -1814,7 +1893,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        void p_PossibleMoves(Coordinate CurrentCoord,int CurrentMovement,List<Coordinate> OutPossibleMoves)
+        void p_PossibleMoves(Coordinate CurrentCoord,int CurrentMovement,List<Coordinate> OutPossibleMoves,Dictionary<Coordinate,int> VisitedSpaces)
         {
             if(CurrentMovement == 0)
             {
@@ -1823,6 +1902,14 @@ namespace RuleManager
             foreach(Coordinate CurrentDiff in new Coordinate[] {new Coordinate(1,0),new Coordinate(0,1),new Coordinate(-1,0),new Coordinate(0,-1)})
             {
                 Coordinate NewCoord = CurrentCoord + CurrentDiff;
+                if(VisitedSpaces.ContainsKey(NewCoord))
+                {
+                    int PreviousMovement = VisitedSpaces[NewCoord];
+                    if(PreviousMovement >= CurrentMovement)
+                    {
+                        continue;
+                    }
+                }
                 if((NewCoord.Y >= m_Tiles.Count || NewCoord.Y < 0) || (NewCoord.X >= m_Tiles[0].Count || NewCoord.X < 0))
                 {
                     continue;
@@ -1831,8 +1918,9 @@ namespace RuleManager
                 {
                     continue;
                 }
+                VisitedSpaces[NewCoord] = CurrentMovement;
                 OutPossibleMoves.Add(NewCoord);
-                p_PossibleMoves(NewCoord, CurrentMovement - 1, OutPossibleMoves);
+                p_PossibleMoves(NewCoord, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces);
             }
         }
         List<Coordinate> p_NormalizeMoves(List<Coordinate> MovesToNormalize)
@@ -1859,7 +1947,7 @@ namespace RuleManager
             }
             UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
             ReturnValue.Add(UnitToMove.Position);
-            p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue);
+            p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
             ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);
         }
@@ -1914,7 +2002,7 @@ namespace RuleManager
             {
                 throw new ArgumentException("Invalid X coordinate: out or range");
             }
-            return new TileInfo(m_Tiles[Y][X]);
+            return m_Tiles[Y][X];
         }
     }
 }

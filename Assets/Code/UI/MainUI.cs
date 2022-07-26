@@ -362,6 +362,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
     }
 
+    public void OnScoreChange(int PlayerIndex,int NewScore)
+    {
+        print("Player index: " + PlayerIndex + " Player score: " + NewScore);
+    }
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
     {
