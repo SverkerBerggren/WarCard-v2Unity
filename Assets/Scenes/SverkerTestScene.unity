@@ -1520,7 +1520,7 @@ PrefabInstance:
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: secondPlayerArmy.Array.data[24].cord.Y
-      value: 39
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
