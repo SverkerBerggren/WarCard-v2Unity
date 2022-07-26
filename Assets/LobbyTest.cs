@@ -163,8 +163,8 @@ public class LobbyTest : MonoBehaviour
         StateObject = FindObjectOfType<GameState>();
         Thread MessageThread = new Thread(LobbyServerConnector);
         MessageThread.Start();
-        //Thread ServerThread = new Thread(_RunServer);
-        //ServerThread.Start();
+        Thread ServerThread = new Thread(_RunServer);
+        ServerThread.Start();
     }
 
     // Update is called once per frame
