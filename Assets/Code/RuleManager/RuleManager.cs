@@ -1742,11 +1742,6 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
-        public int GetPlayerActionIndex()
-        {
-            int ReturnValue = 0;
-            return (ReturnValue);
-        }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
             if(ActionToCheck.PlayerIndex == -1)
@@ -1770,6 +1765,13 @@ namespace RuleManager
             if(ActionToCheck is MoveAction)
             {
                 MoveAction MoveToCheck = (MoveAction)ActionToCheck;
+                if (MoveToCheck.PlayerIndex != m_CurrentPlayerTurn)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only move on your own turn";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
                 if (!m_UnitInfos.ContainsKey(MoveToCheck.UnitID))
                 {
                     ReturnValue = false;
@@ -1805,6 +1807,13 @@ namespace RuleManager
             else if(ActionToCheck is AttackAction)
             {
                 AttackAction AttackToCheck = (AttackAction)ActionToCheck;
+                if(AttackToCheck.PlayerIndex != m_CurrentPlayerTurn)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only attack on your turn";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
                 if(m_UnitInfos.ContainsKey(AttackToCheck.AttackerID) == false || m_UnitInfos.ContainsKey(AttackToCheck.DefenderID) == false)
                 {
                     ReturnValue = false;
