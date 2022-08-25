@@ -475,7 +475,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 //FIX ME
                 List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
-                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), EmptyTargets, targetTile))
+
+                RuleManager.EffectSource_Unit EffectSource = new RuleManager.EffectSource_Unit(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex,selectedUnit.UnitID);
+                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile))
                 {
                     currentTargetToSelect += 1;
                     targetWasCorrect = true;
@@ -483,7 +485,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 }
                 if(currentTargetToSelect < requiredAbilityTargets.Count)
                 {
-                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], new RuleManager.EffectSource_Unit(selectedUnit.UnitID), EmptyTargets, targetUnit) && !targetWasCorrect)
+                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetUnit) && !targetWasCorrect)
                     {
                         currentTargetToSelect += 1;
                         targetWasCorrect = true;

@@ -13,6 +13,8 @@ public class Militarium
         NewUnitInfo.Stats.HP = 100;
         NewUnitInfo.Stats.ActivationCost = 15;
         NewUnitInfo.Stats.ObjectiveControll = 10;
+
+        NewUnitInfo.Tags.Add("Infantry");
         return (NewUnitInfo);
     }
     public static RuleManager.UnitInfo GetHeavyWeapons()
@@ -38,6 +40,7 @@ public class Militarium
         NewUnitInfo.Stats.HP = 100;
         NewUnitInfo.Stats.ActivationCost = 15;
         NewUnitInfo.Stats.ObjectiveControll = 10;
+        NewUnitInfo.Tags.Add("Infantry");
         return (NewUnitInfo);
     }
 
@@ -89,11 +92,21 @@ public class Militarium
         EffectResult.OptionalAffectedTarget = new RuleManager.TargetRetriever_Index(0);
 
         IncreaseDamage.ActivatedEffect = EffectResult;
-        IncreaseDamage.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Friendly(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
+        IncreaseDamage.ActivationTargets = 
+            new RuleManager.TargetInfo_List( 
+                new RuleManager.TargetCondition_And(
+                    new RuleManager.TargetCondition_UnitTag("Infantry"),
+                    new RuleManager.TargetCondition_Friendly(),
+                    new RuleManager.TargetCondition_Range(6),
+                    new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit)));
 
         RuleManager.Ability_Activated IncreaseMovement = new RuleManager.Ability_Activated(
                 new RuleManager.TargetInfo_List(
-                    new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Friendly(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(6))),
+                    new RuleManager.TargetCondition_And(
+                        new RuleManager.TargetCondition_UnitTag("Infantry"),
+                        new RuleManager.TargetCondition_Friendly(),
+                        new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), 
+                        new RuleManager.TargetCondition_Range(6))),
                 new RuleManager.Effect_RegisterContinousAbility(new RuleManager.TargetRetriever_Index(0), new RuleManager.TargetCondition_True(),new RuleManager.Effect_IncreaseMovement(5))
             );
 

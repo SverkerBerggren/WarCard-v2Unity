@@ -99,6 +99,8 @@ namespace RuleManager
     public class Effect_RegisterContinousAbility : Effect
     {
         public TargetRetriever OptionalAffectedTarget;
+        public int PassDuration = 1;
+        public int TurnDuration = 1;
         public TargetCondition ContinousCondition = new TargetCondition_True();
         public Effect ContinousEffect;
 
@@ -106,11 +108,13 @@ namespace RuleManager
         {
 
         }
-        public Effect_RegisterContinousAbility(TargetRetriever Retriever,TargetCondition Condition,Effect NewEffect)
+        public Effect_RegisterContinousAbility(TargetRetriever Retriever,TargetCondition Condition,Effect NewEffect,int NewPassDuration = 0,int NewTurnDuration = 0)
         {
             OptionalAffectedTarget = Retriever;
             ContinousCondition = Condition;
             ContinousEffect = NewEffect;
+            PassDuration = NewPassDuration;
+            TurnDuration = NewTurnDuration;
         }
     }
     public class Effect_RegisterTrigger : Effect
@@ -186,10 +190,9 @@ namespace RuleManager
     }
     public class Effect_SilenceUnit : Effect
     {
-        public TargetRetriever Targets;
-        public Effect_SilenceUnit(TargetRetriever TargetsToSilence)
+        public Effect_SilenceUnit()
         {
-            Targets = TargetsToSilence;
+
         }
     }
 
@@ -301,17 +304,20 @@ namespace RuleManager
         {
             return m_Description;
         }
-        public void SetName(string NewName)
+        public Ability SetName(string NewName)
         {
             m_Name = NewName;
+            return (this);
         }
-        public void SetFlavour(string NewFlavour)
+        public Ability SetFlavour(string NewFlavour)
         {
             m_Flavor = NewFlavour;
+            return (this);
         }
-        public void SetDescription(string NewDescription)
+        public Ability SetDescription(string NewDescription)
         {
             m_Description = NewDescription;
+            return (this);
         }
     }
 
@@ -370,6 +376,10 @@ namespace RuleManager
         public Target_Player() : base(TargetType.Player)
         {
 
+        }
+        public Target_Player(int NewPlayerIndex) : base(TargetType.Player)
+        {
+            PlayerIndex = NewPlayerIndex;
         }
         public override bool Equals(Target obj)
         {
@@ -489,6 +499,15 @@ namespace RuleManager
             Conditions = new List<TargetCondition>(NewConditions);
         }
     }
+    public class TargetCondition_Or : TargetCondition
+    {
+        public List<TargetCondition> Conditions = new List<TargetCondition>();
+
+        public TargetCondition_Or(params TargetCondition[] NewConditions)
+        {
+            Conditions = new List<TargetCondition>(NewConditions);
+        }
+    }
     public class TargetCondition_UnitTag : TargetCondition
     {
         public string TagToContain = "";
@@ -520,8 +539,9 @@ namespace RuleManager
     public class EffectSource_Unit : EffectSource
     {
         public int UnitID = 0;
-        public EffectSource_Unit(int NewUnitID)
+        public EffectSource_Unit(int NewPlayerIndex,int NewUnitID)
         {
+            PlayerIndex = NewPlayerIndex;
             UnitID = NewUnitID;
         }
     }
@@ -767,22 +787,33 @@ namespace RuleManager
 
         }
     }
+    public enum UnitFlags : uint
+    {
+        Silenced = 1,
+        CantAttack = 1<<1,
+    }
     [Serializable]
     public class UnitInfo
     {
         //public EffectType Temp = EffectType.Activated;
+
+        //Static stuff
         public int UnitID = 0;
         public int PlayerIndex = 0;
         public object OpaqueInteger = null;
-        public Coordinate Position = new Coordinate();
         public List<Ability> Abilities = new List<Ability>();
         public UnitStats Stats = new UnitStats();
         public HashSet<string> Tags = new HashSet<string>();
 
+
+        //Dynamic stuff
+        public List<bool> AbilityActivated = new List<bool>(); 
+        public Coordinate Position = new Coordinate();
         public bool IsActivated = false;
         public bool HasMoved = false;
         public bool HasAttacked = false;
-
+        public UnitFlags Flags = 0;
+        //
         public UnitInfo()
         {
 
@@ -798,6 +829,10 @@ namespace RuleManager
             IsActivated =   InfoToCopy.IsActivated;
             HasMoved    =   InfoToCopy.HasMoved   ;
             HasAttacked =   InfoToCopy.HasAttacked;
+            Flags = InfoToCopy.Flags;
+            Tags = new HashSet<string>(InfoToCopy.Tags);
+            AbilityActivated = new List<bool>(InfoToCopy.AbilityActivated);
+
         }
     }
     public class TileInfo
@@ -853,7 +888,9 @@ namespace RuleManager
 
         class RegisteredContinousEffect
         {
-            public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
+            //public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
+            public int PassDuration = 0;
+            public int TurnDuration = 0;
             public EffectSource AbilitySource;
             public TargetCondition AffectedEntities;
             public Effect EffectToApply;
@@ -941,7 +978,7 @@ namespace RuleManager
             {
                 if(p_TriggerIsTriggered(NewEvent,Trigger.Value.TriggerCondition))
                 {
-                    IEnumerator TriggerTargetsRetriever = p_RetrieveTargets(new List<Target>(), Trigger.Value.AffectedEntities);
+                    IEnumerator TriggerTargetsRetriever = p_RetrieveTargets(new List<Target>(),Trigger.Value.TriggerSource, Trigger.Value.AffectedEntities);
                     while(TriggerTargetsRetriever.MoveNext())
                     {
                         if(TriggerTargetsRetriever.Current == null)
@@ -1016,10 +1053,25 @@ namespace RuleManager
             NewUnit.PlayerIndex = PlayerIndex;
             m_UnitInfos[NewID] = NewUnit;
 
+            for(int i = 0; i < NewUnit.Abilities.Count;i++)
+            {
+                NewUnit.AbilityActivated.Add(false);
+            }
             
             m_Tiles[NewUnit.Position.Y][NewUnit.Position.X].StandingUnitID = NewID;
 
             return (NewID);
+        }
+
+        void p_RefreshUnit(UnitInfo UnitToRefresh)
+        {
+            UnitToRefresh.HasAttacked = false;
+            UnitToRefresh.HasMoved = false;
+            UnitToRefresh.IsActivated = false;
+            for(int i = 0; i < UnitToRefresh.AbilityActivated.Count;i++)
+            {
+                UnitToRefresh.AbilityActivated[i] = false;
+            }
         }
 
         bool p_MoveUnit(int UnitID, Coordinate TilePosition)
@@ -1037,13 +1089,34 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        IEnumerator p_RetrieveTargets(List<Target> Targets,TargetRetriever Retriever)
+        IEnumerator p_RetrieveTargets(List<Target> Targets,EffectSource Source,TargetRetriever Retriever)
         {
             if(Retriever is TargetRetriever_Index)
             {
                 TargetRetriever_Index IndexRetriever = (TargetRetriever_Index)Retriever;
                 List<Target> NewTargets = new List<Target>();
-                NewTargets.Add(Targets[IndexRetriever.Index]);
+                if(IndexRetriever.Index == -1)
+                {
+                    if(Source is EffectSource_Player)
+                    {
+                        NewTargets.Add(new Target_Player(((EffectSource_Player)Source).PlayerIndex));
+                    }
+                    else if(Source is EffectSource_Unit)
+                    {
+                        NewTargets.Add(new Target_Unit(((EffectSource_Unit)Source).UnitID));
+                    }
+                    else if(Source is EffectSource_Empty)
+                    {
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid effect source when retrieving index target");
+                    }
+                }
+                else
+                {
+                    NewTargets.Add(Targets[IndexRetriever.Index]);
+                }
                 yield return (NewTargets);
             }
             else if(Retriever is TargetRetriever_Choose)
@@ -1077,7 +1150,7 @@ namespace RuleManager
             if (EffectToResolve is Effect_DealDamage)
             {
                 Effect_DealDamage DamageEffect = (Effect_DealDamage)EffectToResolve;
-                IEnumerator RetrievedTargets = p_RetrieveTargets(Targets, DamageEffect.Targets);
+                IEnumerator RetrievedTargets = p_RetrieveTargets(Targets,Source, DamageEffect.Targets);
                 RetrievedTargets.MoveNext();
                 while(RetrievedTargets.Current == null)
                 {
@@ -1102,7 +1175,7 @@ namespace RuleManager
             else if(EffectToResolve is Effect_MoveUnit)
             {
                 Effect_MoveUnit MoveEffect = (Effect_MoveUnit)EffectToResolve;
-                IEnumerator RetrievedMoveTargets = p_RetrieveTargets(Targets, MoveEffect.UnitToMove);
+                IEnumerator RetrievedMoveTargets = p_RetrieveTargets(Targets,Source, MoveEffect.UnitToMove);
                 RetrievedMoveTargets.MoveNext();
                 while (RetrievedMoveTargets.Current == null)
                 {
@@ -1121,7 +1194,7 @@ namespace RuleManager
                 Target_Unit UnitToMove = (Target_Unit)MoveTargets[0];
 
 
-                IEnumerator RetrievedTileTargets = p_RetrieveTargets(Targets, MoveEffect.TargetPosition);
+                IEnumerator RetrievedTileTargets = p_RetrieveTargets(Targets,Source, MoveEffect.TargetPosition);
                 RetrievedTileTargets.MoveNext();
                 while(RetrievedTileTargets.Current == null)
                 {
@@ -1141,10 +1214,36 @@ namespace RuleManager
 
                 bool Result = p_MoveUnit(UnitToMove.UnitID, TileToMoveTo.TargetCoordinate);
             }
+            else if(EffectToResolve is Effect_RefreshUnit)
+            {
+                Effect_RefreshUnit RefreshEffect = (Effect_RefreshUnit)EffectToResolve;
+                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets,Source, RefreshEffect.TargetsToRefresh);
+                RetrievedAffectedTargets.MoveNext();
+                while (RetrievedAffectedTargets.Current == null)
+                {
+                    yield return null;
+                    RetrievedAffectedTargets.MoveNext();
+                }
+                List<Target> AffectedTargets = (List<Target>)RetrievedAffectedTargets.Current;
+                foreach(Target CurrentTarget in AffectedTargets)
+                {
+                    if(CurrentTarget.Type != TargetType.Unit)
+                    {
+                        throw new Exception("Can only refresh units");
+                    }
+                    Target_Unit UnitTarget = (Target_Unit)CurrentTarget;
+                    if (!m_UnitInfos.ContainsKey(UnitTarget.UnitID))
+                    {
+                        throw new Exception("Unit to refresh doesn't exist");
+                    }
+                    UnitInfo UnitToRefresh = m_UnitInfos[UnitTarget.UnitID];
+                    p_RefreshUnit(UnitToRefresh);
+                }
+            }
             else if (EffectToResolve is Effect_RegisterTrigger)
             {
                 Effect_RegisterTrigger TriggerEffect = (Effect_RegisterTrigger)EffectToResolve;
-                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets,TriggerEffect.OptionalAffectedTarget);
+                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets,Source,TriggerEffect.OptionalAffectedTarget);
                 RetrievedAffectedTargets.MoveNext();
                 while (RetrievedAffectedTargets.Current == null)
                 {
@@ -1172,7 +1271,7 @@ namespace RuleManager
             else if(EffectToResolve is Effect_RegisterContinousAbility)
             {
                 Effect_RegisterContinousAbility ContinousEffect = (Effect_RegisterContinousAbility)EffectToResolve;
-                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets, ContinousEffect.OptionalAffectedTarget);
+                IEnumerator RetrievedAffectedTargets = p_RetrieveTargets(Targets,Source, ContinousEffect.OptionalAffectedTarget);
                 RetrievedAffectedTargets.MoveNext();
                 while (RetrievedAffectedTargets.Current == null)
                 {
@@ -1189,13 +1288,14 @@ namespace RuleManager
                 ContinousEffectToRegister.AbilitySource = Source;
                 ContinousEffectToRegister.AffectedEntities = ConditionToAdd;
                 ContinousEffectToRegister.EffectToApply = ContinousEffect.ContinousEffect;
-                ContinousEffectToRegister.IsEndOfTurn = true;
+                ContinousEffectToRegister.PassDuration = ContinousEffect.PassDuration;
+                ContinousEffectToRegister.TurnDuration = ContinousEffect.TurnDuration;
                 p_RegisterContinousEffect(ContinousEffectToRegister);
             }
             else if(EffectToResolve is Effect_DamageArea)
             {
                 Effect_DamageArea AreaDamageEffect = (Effect_DamageArea)EffectToResolve;
-                IEnumerator RetrievedOrigin = p_RetrieveTargets(Targets, AreaDamageEffect.Origin);
+                IEnumerator RetrievedOrigin = p_RetrieveTargets(Targets,Source, AreaDamageEffect.Origin);
                 RetrievedOrigin.MoveNext();
                 while (RetrievedOrigin.Current == null)
                 {
@@ -1221,8 +1321,17 @@ namespace RuleManager
                     for(int j = -(AreaDamageEffect.Range - Math.Abs(i)); j <= AreaDamageEffect.Range- Math.Abs(i); j++)
                     {
                         Coordinate CurrentTile = TargetTile + new Coordinate(i, j);
+                        if((CurrentTile.X < 0 || CurrentTile.X >= m_Tiles[0].Count) || (CurrentTile.Y < 0 || CurrentTile.Y >= m_Tiles[0].Count))
+                        {
+                            continue;
+                        }
                         if(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID != 0)
                         {
+                            UnitInfo UnitToDamage = p_GetProcessedUnitInfo(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID);
+                            if(UnitToDamage.PlayerIndex == Source.PlayerIndex)
+                            {
+                                continue;
+                            }
                             p_DealDamage(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID, AreaDamageEffect.Damage);
                         }
                     }
@@ -1248,7 +1357,7 @@ namespace RuleManager
             else if(EffectToResolve is Effect_DestroyUnits)
             {
                 Effect_DestroyUnits DestroyToResolve = (Effect_DestroyUnits)EffectToResolve;
-                IEnumerator RetrievedOrigin = p_RetrieveTargets(Targets, DestroyToResolve.TargetsToDestroy);
+                IEnumerator RetrievedOrigin = p_RetrieveTargets(Targets,Source, DestroyToResolve.TargetsToDestroy);
                 RetrievedOrigin.MoveNext();
                 while (RetrievedOrigin.Current == null)
                 {
@@ -1286,9 +1395,7 @@ namespace RuleManager
             {
                 m_EventHandler.OnStackPop(TopOfStack);
             }
-
-            //state based actions
-
+            p_CheckStateBasedAction();
             yield break;
         }
         public bool p_VerifyTarget(Target TargetToVerify)
@@ -1401,6 +1508,24 @@ namespace RuleManager
                 TargetCondition_Target TargetCondition = (TargetCondition_Target)Condition;
                 return (TargetCondition.NeededTarget.Equals(TargetToVerify));
             }
+            else if(Condition is TargetCondition_UnitTag)
+            {
+                TargetCondition_UnitTag TagCondition = (TargetCondition_UnitTag)Condition;
+                if(TargetToVerify.Type != TargetType.Unit)
+                {
+                    //Excpeption eller returna false?
+                    ReturnValue = false;
+                }
+                else
+                {
+                    int UnitToInspect = ((Target_Unit)TargetToVerify).UnitID;
+                    if(!m_UnitInfos.ContainsKey(UnitToInspect))
+                    {
+                        return (false);
+                    }
+                    ReturnValue = m_UnitInfos[UnitToInspect].Tags.Contains(TagCondition.TagToContain);
+                }
+            }
             else if(Condition is TargetCondition_And)
             {
                 TargetCondition_And AndCondition = (TargetCondition_And)Condition;
@@ -1409,6 +1534,19 @@ namespace RuleManager
                     if(!p_VerifyTarget(AndClause,Source,CurrentTargets,TargetToVerify))
                     {
                         ReturnValue = false;
+                        break;
+                    }
+                }
+            }
+            else if (Condition is TargetCondition_Or)
+            {
+                TargetCondition_Or OrCondition = (TargetCondition_Or)Condition;
+                ReturnValue = false;
+                foreach (TargetCondition OrClause in OrCondition.Conditions)
+                {
+                    if (p_VerifyTarget(OrClause, Source, CurrentTargets, TargetToVerify))
+                    {
+                        ReturnValue = true;
                         break;
                     }
                 }
@@ -1519,40 +1657,40 @@ namespace RuleManager
                     m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[i], i);
                 }
             }
-            List<int> NewScore = new List<int>();
-            for(int i = 0; i < m_PlayerCount;i++)
-            {
-                NewScore.Add(0);
-            }
-            for(int i = 0; i < m_Tiles.Count;i++)
-            {
-                for(int j = 0; j < m_Tiles[0].Count;j++)
-                {
-                    if(m_Tiles[i][j].HasObjective)
-                    {
-                        int PlayerControllIndex = p_GetObjectiveControllIndex(new Coordinate(j, i));
-                        if(PlayerControllIndex != -1)
-                        {
-                            NewScore[PlayerControllIndex] += m_ObjectiveScoreGain;
-                        }
-                    }
-                }
-            }
-            for(int i = 0; i <  m_PlayerCount;i++)
-            {
-                m_PlayerPoints[i] += NewScore[i];
-                if(m_EventHandler != null)
-                {
-                    m_EventHandler.OnScoreChange(i, m_PlayerPoints[i]);
-                }
-            }
+            //List<int> NewScore = new List<int>();
+            //for(int i = 0; i < m_PlayerCount;i++)
+            //{
+            //    NewScore.Add(0);
+            //}
+            //for(int i = 0; i < m_Tiles.Count;i++)
+            //{
+            //    for(int j = 0; j < m_Tiles[0].Count;j++)
+            //    {
+            //        if(m_Tiles[i][j].HasObjective)
+            //        {
+            //            int PlayerControllIndex = p_GetObjectiveControllIndex(new Coordinate(j, i));
+            //            if(PlayerControllIndex != -1)
+            //            {
+            //                NewScore[PlayerControllIndex] += m_ObjectiveScoreGain;
+            //            }
+            //        }
+            //    }
+            //}
+            //for(int i = 0; i <  m_PlayerCount;i++)
+            //{
+            //    m_PlayerPoints[i] += NewScore[i];
+            //    if(m_EventHandler != null)
+            //    {
+            //        m_EventHandler.OnScoreChange(i, m_PlayerPoints[i]);
+            //    }
+            //}
 
-            foreach(KeyValuePair<int,UnitInfo> Units in m_UnitInfos)
-            {
-                Units.Value.IsActivated = false;
-                Units.Value.HasMoved = false;
-                Units.Value.HasMoved = false;
-            }
+            //foreach(KeyValuePair<int,UnitInfo> Units in m_UnitInfos)
+            //{
+            //    Units.Value.IsActivated = false;
+            //    Units.Value.HasMoved = false;
+            //    Units.Value.HasMoved = false;
+            //}
 
 
             TriggerEvent_RoundBegin RoundBegin = new TriggerEvent_RoundBegin();
@@ -1568,7 +1706,12 @@ namespace RuleManager
             List<int> ContinousEffectsToRemove = new List<int>();
             foreach(KeyValuePair<int,RegisteredContinousEffect> RegisteredEffect in m_RegisteredContinousAbilities)
             {
-                if (RegisteredEffect.Value.IsEndOfTurn)
+                if(RegisteredEffect.Value.PassDuration <= 0)
+                {
+                    continue;
+                }
+                RegisteredEffect.Value.PassDuration -= 1;
+                if (RegisteredEffect.Value.PassDuration == 0)
                 {
                     ContinousEffectsToRemove.Add(RegisteredEffect.Key);
                 }
@@ -1625,7 +1768,7 @@ namespace RuleManager
             List<int> UnitsToDestroy = new List<int>();
             foreach(KeyValuePair<int,UnitInfo> Unit in m_UnitInfos)
             {
-                if(Unit.Value.Stats.HP < 0)
+                if(Unit.Value.Stats.HP <= 0)
                 {
                     UnitsToDestroy.Add(Unit.Key);
                 }
@@ -1726,7 +1869,7 @@ namespace RuleManager
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
                 NewEntity.EffectToResolve.SetText(AbilityToActivate.GetDescription());
                 NewEntity.Targets = EffectToExecute.Targets;
-                NewEntity.Source = new EffectSource_Unit(EffectToExecute.UnitID);
+                NewEntity.Source = new EffectSource_Unit(ActionToExecute.PlayerIndex,EffectToExecute.UnitID);
                 NewEntity.Source.PlayerIndex = ActionToExecute.PlayerIndex;
                 m_TheStack.Push(NewEntity);
                 if(m_EventHandler != null)
@@ -1742,7 +1885,7 @@ namespace RuleManager
                         m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[UnitWithEffect.PlayerIndex], UnitWithEffect.PlayerIndex);
                     }
                 }
-                UnitWithEffect.HasAttacked = true;
+                UnitWithEffect.AbilityActivated[EffectToExecute.EffectIndex] = true;
                 p_PassPriority();
             }
             else
@@ -1848,7 +1991,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                UnitInfo AssociatedUnit = m_UnitInfos[MoveToCheck.UnitID];
+                UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(MoveToCheck.UnitID); //m_UnitInfos[MoveToCheck.UnitID];
                 if(AssociatedUnit.HasMoved)
                 {
                     ReturnValue = false;
@@ -1882,12 +2025,19 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                UnitInfo DefenderInfo = m_UnitInfos[AttackToCheck.DefenderID];
-                UnitInfo AttackerInfo = m_UnitInfos[AttackToCheck.AttackerID];
-                if(Coordinate.Distance(AttackerInfo.Position,DefenderInfo.Position) > AttackerInfo.Stats.Range)
+                UnitInfo DefenderInfo = p_GetProcessedUnitInfo(AttackToCheck.DefenderID);  //m_UnitInfos[AttackToCheck.DefenderID];
+                UnitInfo AttackerInfo = p_GetProcessedUnitInfo(AttackToCheck.AttackerID); //m_UnitInfos[AttackToCheck.AttackerID];
+                if (Coordinate.Distance(AttackerInfo.Position,DefenderInfo.Position) > AttackerInfo.Stats.Range)
                 {
                     ReturnValue = false;
                     ErrorString = "Defender out of range for attacker";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if((AttackerInfo.Flags & UnitFlags.CantAttack) != 0)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Unit is unable to attack";
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
@@ -1921,7 +2071,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                UnitInfo AssociatedUnit = m_UnitInfos[EffectToCheck.UnitID];
+                UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(EffectToCheck.UnitID);
                 if(AssociatedUnit.PlayerIndex != EffectToCheck.PlayerIndex)
                 {
                     ReturnValue = false;
@@ -1929,10 +2079,17 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if(AssociatedUnit.Abilities.Count <= EffectToCheck.EffectIndex)
+                if(AssociatedUnit.Abilities.Count <= EffectToCheck.EffectIndex || EffectToCheck.EffectIndex < 0)
                 {
                     ReturnValue = false;
                     ErrorString = "Invalid effect index for unit";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if(AssociatedUnit.AbilityActivated[EffectToCheck.EffectIndex])
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only activate an effect once per turn";
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
@@ -1943,8 +2100,15 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
+                if((AssociatedUnit.Flags & UnitFlags.Silenced) != 0)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Unit is silenced";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
                 Ability_Activated AbilityToActive =(Ability_Activated ) AssociatedUnit.Abilities[EffectToCheck.EffectIndex];
-                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(AssociatedUnit.UnitID),EffectToCheck.Targets))
+                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(ActionToCheck.PlayerIndex,AssociatedUnit.UnitID),EffectToCheck.Targets))
                 {
                     ReturnValue = false;
                     ErrorString = "Invalid targets for ability";
@@ -2020,6 +2184,10 @@ namespace RuleManager
                 throw new Exception("Need valid unit to check possible moves");
             }
             UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
+            if(UnitToMove.HasMoved)
+            {
+                return (ReturnValue);
+            }
             ReturnValue.Add(UnitToMove.Position);
             p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
             ReturnValue = p_NormalizeMoves(ReturnValue);
@@ -2035,6 +2203,14 @@ namespace RuleManager
             else if(Modifier is Effect_IncreaseMovement)
             {
                 InfoToModify.Stats.Movement += ((Effect_IncreaseMovement)Modifier).MovementIncrease;
+                if(InfoToModify.Stats.Movement < 0)
+                {
+                    InfoToModify.Stats.Movement = 0;
+                }
+            }
+            else if(Modifier is Effect_SilenceUnit)
+            {
+                InfoToModify.Flags |= UnitFlags.Silenced;
             }
             else
             {
