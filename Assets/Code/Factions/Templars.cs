@@ -33,7 +33,11 @@ public class Templars
         DamageEffect.Targets = new RuleManager.TargetRetriever_Index(0);
         
         ActivatedAbility.ActivatedEffect = DamageEffect;
-        ActivatedAbility.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
+        ActivatedAbility.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Range(8),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit),new RuleManager.TargetCondition_Enemy());
+
+        ActivatedAbility.SetDescription("Target a enemy unit within 8 tiles: Deal 50 damage to it");
+        ActivatedAbility.SetFlavour("Templars be smighting");
+        ActivatedAbility.SetName("Smite");
 
         ReturnValue.Abilities.Add(ActivatedAbility);
         return (ReturnValue);
@@ -49,6 +53,18 @@ public class Templars
         ReturnValue.Stats.Movement = 7;
         ReturnValue.Stats.ObjectiveControll = 20;
 
+        ReturnValue.Abilities.Add(
+                new RuleManager.Ability_Activated(
+                        new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Enemy(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit),new RuleManager.TargetCondition_Range(12)),
+                        new RuleManager.Effect_RegisterContinousAbility(new RuleManager.TargetRetriever_Index(0),new RuleManager.TargetCondition_True(),new RuleManager.Effect_IncreaseMovement(-5))
+                    )
+            );
+        ReturnValue.Abilities.Add(
+        new RuleManager.Ability_Activated(
+                new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Enemy(), new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(12)),
+                new RuleManager.Effect_RegisterContinousAbility(new RuleManager.TargetRetriever_Index(0), new RuleManager.TargetCondition_True(), new RuleManager.Effect_IncreaseMovement(-5))
+            )
+        );
 
         return (ReturnValue);
     }
@@ -64,7 +80,9 @@ public class Templars
         ReturnValue.Stats.ObjectiveControll = 10;
 
         ReturnValue.Abilities.Add(
-                new RuleManager.Ability_Activated(new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(10)),
+                new RuleManager.Ability_Activated(
+                    new RuleManager.TargetInfo_List(
+                        new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(10),new RuleManager.TargetCondition_Friendly()),
                 new RuleManager.Effect_List(new RuleManager.Effect_DamageArea(new RuleManager.TargetRetriever_Index(0), 3, 80),new RuleManager.Effect_DestroyUnits(new RuleManager.TargetRetriever_Index(0)))
             ));
         ReturnValue.Abilities[0].SetDescription("Target a knight within 10 tiles: deal 80 within 4 tiles and destroy the knight");
@@ -72,12 +90,12 @@ public class Templars
         ReturnValue.Abilities[0].SetFlavour("Some decisions are to important even for knight's to decide");
 
         ReturnValue.Abilities.Add(new RuleManager.Ability_Activated(new RuleManager.TargetInfo_List(
-            new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(8)),
-            new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(0,8))),
+            new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(8),new RuleManager.TargetCondition_Friendly()),
+            new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(0,8),new RuleManager.TargetCondition_Enemy())),
             new RuleManager.Effect_DealDamage(new RuleManager.TargetRetriever_Index(1),80))
             );
         ReturnValue.Abilities[1].SetName("Chain smite");
-        ReturnValue.Abilities[1].SetDescription("Target a priest within 8 tiles and a enemy within 8 inches of that priest: Deal 50 damage to it, and 20 damage to the priest");
+        ReturnValue.Abilities[1].SetDescription("Target a priest within 8 tiles and a enemy within 8 tiles of that priest: Deal 80 damage to it");
         ReturnValue.Abilities[1].SetFlavour("Priest conduit nibba");
 
         ReturnValue.Abilities.Add(new RuleManager.Ability_Activated(new RuleManager.TargetInfo_List(),
@@ -94,7 +112,24 @@ public class Templars
     }
     public static  RuleManager.UnitInfo GetRelic()
     {
-        return (null);
+        RuleManager.UnitInfo ReturnValue = new RuleManager.UnitInfo();
+        ReturnValue.Stats = new RuleManager.UnitStats();
+        ReturnValue.Stats.ActivationCost = 20;
+        ReturnValue.Stats.Damage = 0;
+        ReturnValue.Stats.HP = 100;
+        ReturnValue.Stats.Range = 0;
+        ReturnValue.Stats.Movement = 7;
+        ReturnValue.Stats.ObjectiveControll = 20;
+
+        ReturnValue.Abilities.Add(
+                new RuleManager.Ability_Activated(
+                        new RuleManager.TargetInfo_List(
+                            new RuleManager.TargetCondition_Friendly(), new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(10)),
+                        new RuleManager.Effect_List(
+                            new RuleManager.Effect_DestroyUnits(new RuleManager.TargetRetriever_Index(-1)), new RuleManager.Effect_RefreshUnit(new RuleManager.TargetRetriever_Index(0)))
+                    )
+            );
+        return (ReturnValue);
     }
 
 }

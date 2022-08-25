@@ -24,6 +24,8 @@ public class Militarium
         NewUnitInfo.Stats.HP = 200;
         NewUnitInfo.Stats.ObjectiveControll = 5;
         NewUnitInfo.Stats.ActivationCost = 15;
+        
+        
         return (NewUnitInfo);
     }
 
@@ -35,6 +37,7 @@ public class Militarium
         NewUnitInfo.Stats.Range = 1;
         NewUnitInfo.Stats.HP = 100;
         NewUnitInfo.Stats.ActivationCost = 15;
+        NewUnitInfo.Stats.ObjectiveControll = 10;
         return (NewUnitInfo);
     }
 
@@ -76,7 +79,7 @@ public class Militarium
         RuleManager.Ability_Activated MoveAbility = new RuleManager.Ability_Activated();
         MoveAbility.ActivationTargets = 
             new RuleManager.TargetInfo_List(
-            new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit),new RuleManager.TargetCondition_Range(6)), 
+            new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Friendly(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit),new RuleManager.TargetCondition_Range(6)), 
             new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Tile),new RuleManager.TargetCondition_Range(0,3)));
         MoveAbility.ActivatedEffect = new RuleManager.Effect_MoveUnit(new RuleManager.TargetRetriever_Index(0), new RuleManager.TargetRetriever_Index(1));
 
@@ -86,10 +89,11 @@ public class Militarium
         EffectResult.OptionalAffectedTarget = new RuleManager.TargetRetriever_Index(0);
 
         IncreaseDamage.ActivatedEffect = EffectResult;
-        IncreaseDamage.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
+        IncreaseDamage.ActivationTargets = new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_Friendly(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit));
 
         RuleManager.Ability_Activated IncreaseMovement = new RuleManager.Ability_Activated(
-                new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(6))),
+                new RuleManager.TargetInfo_List(
+                    new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Friendly(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), new RuleManager.TargetCondition_Range(6))),
                 new RuleManager.Effect_RegisterContinousAbility(new RuleManager.TargetRetriever_Index(0), new RuleManager.TargetCondition_True(),new RuleManager.Effect_IncreaseMovement(5))
             );
 

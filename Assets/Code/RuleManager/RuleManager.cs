@@ -184,6 +184,24 @@ namespace RuleManager
 
         }
     }
+    public class Effect_SilenceUnit : Effect
+    {
+        public TargetRetriever Targets;
+        public Effect_SilenceUnit(TargetRetriever TargetsToSilence)
+        {
+            Targets = TargetsToSilence;
+        }
+    }
+
+    public class Effect_RefreshUnit : Effect
+    {
+        public TargetRetriever TargetsToRefresh;
+        public Effect_RefreshUnit(TargetRetriever RetrieverToUse)
+        {
+            TargetsToRefresh = RetrieverToUse;
+        }
+    }
+
     public enum RetrieverType
     {
         Index,
@@ -426,6 +444,14 @@ namespace RuleManager
         {
             ValidType = TypeToUse;
         }
+    }
+    public class TargetCondition_Enemy : TargetCondition
+    {
+        
+    }
+    public class TargetCondition_Friendly : TargetCondition
+    {
+
     }
     public class TargetCondition_Range : TargetCondition
     {
@@ -1177,15 +1203,19 @@ namespace RuleManager
                     RetrievedOrigin.MoveNext();
                 }
                 List<Target> Origins = (List<Target>)RetrievedOrigin.Current;
+                Coordinate TargetTile = null;
                 if(Origins.Count != 1)
                 {
                     throw new Exception("Need exactly 1 origin to resolve DamageArea");
                 }
-                if(Origins[0].Type != TargetType.Tile)
+                if(Origins[0].Type == TargetType.Tile)
                 {
-                    throw new Exception("Can only target Tile for damage area");
+                    TargetTile = ((Target_Tile)Origins[0]).TargetCoordinate;
                 }
-                Coordinate TargetTile = ((Target_Tile)Origins[0]).TargetCoordinate;
+                if (Origins[0].Type == TargetType.Unit)
+                {
+                    TargetTile = m_UnitInfos[((Target_Unit)Origins[0]).UnitID].Position;
+                }
                 for(int i = -AreaDamageEffect.Range; i <= AreaDamageEffect.Range;i++)
                 {
                     for(int j = -(AreaDamageEffect.Range - Math.Abs(i)); j <= AreaDamageEffect.Range- Math.Abs(i); j++)
@@ -1203,7 +1233,11 @@ namespace RuleManager
                 Effect_List ListToResolve = (Effect_List)EffectToResolve;
                 foreach(Effect NewEffect in ListToResolve.EffectsToExecute)
                 {
-                    p_ResolveEffect(Targets, Source, EffectToResolve);
+                    IEnumerator CurrentEffect = p_ResolveEffect(Targets, Source, NewEffect);
+                    while (CurrentEffect.MoveNext())
+                    {
+                        yield return null;
+                    }
                 }
             }
             else if (EffectToResolve is Effect_GainInitiative)
@@ -1298,6 +1332,30 @@ namespace RuleManager
             {
                 TargetCondition_Type TypeCondition = (TargetCondition_Type)Condition;
                 ReturnValue = TypeCondition.ValidType == TargetToVerify.Type;
+            }
+            else if(Condition is TargetCondition_Enemy)
+            {
+                ReturnValue = true;
+                if(TargetToVerify is Target_Unit)
+                {
+                    ReturnValue = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].PlayerIndex != Source.PlayerIndex;
+                }
+                else if(TargetToVerify is Target_Player)
+                {
+                    ReturnValue = ((Target_Player)TargetToVerify).PlayerIndex != Source.PlayerIndex;
+                }
+            }
+            else if(Condition is TargetCondition_Friendly)
+            {
+                ReturnValue = true;
+                if (TargetToVerify is Target_Unit)
+                {
+                    ReturnValue = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].PlayerIndex == Source.PlayerIndex;
+                }
+                else if (TargetToVerify is Target_Player)
+                {
+                    ReturnValue = ((Target_Player)TargetToVerify).PlayerIndex == Source.PlayerIndex;
+                }
             }
             else if(Condition is TargetCondition_Range)
             {
