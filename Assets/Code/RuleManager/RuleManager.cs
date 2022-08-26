@@ -957,6 +957,8 @@ namespace RuleManager
         const int m_PlayerInitiativeRetain = 40;
         const int m_ObjectiveScoreGain = 50;
 
+
+
         bool m_ActionIsPlayed = false;
 
         List<int> m_PlayerPoints = new List<int>();
@@ -973,6 +975,8 @@ namespace RuleManager
         RuleEventHandler m_EventHandler;
 
         List<Target> m_ChoosenTargets = null;
+
+        private int m_FirstRound = 2;
         
 
         bool p_TriggerIsTriggered(TriggerEvent Event,TriggerCondition ConditionToVerify)
@@ -1069,6 +1073,7 @@ namespace RuleManager
                 }
                 m_Tiles.Add(NewList);
             }
+            m_FirstRound = m_PlayerCount;
             m_UnitInfos = new Dictionary<int, UnitInfo>();
             m_PlayerIntitiative = new List<int>(m_PlayerCount);
             for(int i = 0; i < m_PlayerCount;i++)
@@ -1442,7 +1447,12 @@ namespace RuleManager
             }
             else if(ConditionToVerify is ActivationCondition_FirstTurn)
             {
-                
+                ActivationCondition_FirstTurn FirstTurnCondition = (ActivationCondition_FirstTurn)ConditionToVerify;
+                if(m_FirstRound <= 0)
+                {
+                    ErrorString = "Not the first turn of the battleround";
+                    ReturnValue = false;
+                }
             }
             else
             {
@@ -1694,7 +1704,7 @@ namespace RuleManager
         IEnumerator p_ChangeBattleround()
         {
             List<int> NewScore = new List<int>();
-
+            m_FirstRound = m_PlayerCount;
             m_ActionIsPlayed = false;
             for(int i = 0; i < m_PlayerCount; i++)
             {
@@ -1806,9 +1816,12 @@ namespace RuleManager
                 }
             }
 
+            m_FirstRound -= 1;
+
             m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
             m_CurrentTurn += 1;
             m_CurrentPlayerPriority = m_CurrentPlayerTurn;
+
 
             if (m_EventHandler != null)
             {

@@ -60,6 +60,7 @@ public class Militarium
                         new RuleManager.Effect_DamageArea(new RuleManager.TargetRetriever_Index(0),2,50)
                     )
             );
+        BarrageAbility.Conditions = new RuleManager.ActivationCondition_FirstTurn();
 
         BarrageAbility.SetName("Creeping barrage");
         BarrageAbility.SetFlavour("Shooty shooty");
