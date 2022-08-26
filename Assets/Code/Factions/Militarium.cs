@@ -54,7 +54,7 @@ public class Militarium
         NewUnitInfo.Stats.ActivationCost = 30;
         NewUnitInfo.Stats.ObjectiveControll = 5;
 
-        RuleManager.Ability_Activated BarrageAbility = new RuleManager.Ability_Activated(
+        RuleManager.Ability_Activated BarrageAbility = new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed1,
                 new RuleManager.TargetInfo_List(new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Type(RuleManager.TargetType.Tile),new RuleManager.TargetCondition_Range(30))),
                 new RuleManager.Effect_RegisterTrigger(true,false,new RuleManager.TargetRetriever_Index(0),new RuleManager.TriggerCondition_Type(RuleManager.TriggerType.BattleroundBegin),
                         new RuleManager.Effect_DamageArea(new RuleManager.TargetRetriever_Index(0),2,50)
@@ -80,6 +80,7 @@ public class Militarium
 
 
         RuleManager.Ability_Activated MoveAbility = new RuleManager.Ability_Activated();
+        MoveAbility.Speed = RuleManager.SpellSpeed.Speed2;
         MoveAbility.ActivationTargets = 
             new RuleManager.TargetInfo_List(
             new RuleManager.TargetCondition_And(new RuleManager.TargetCondition_Friendly(),new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit),new RuleManager.TargetCondition_Range(6)), 
@@ -92,6 +93,7 @@ public class Militarium
         EffectResult.OptionalAffectedTarget = new RuleManager.TargetRetriever_Index(0);
 
         IncreaseDamage.ActivatedEffect = EffectResult;
+        IncreaseDamage.Speed = RuleManager.SpellSpeed.Speed1;
         IncreaseDamage.ActivationTargets = 
             new RuleManager.TargetInfo_List( 
                 new RuleManager.TargetCondition_And(
@@ -100,7 +102,7 @@ public class Militarium
                     new RuleManager.TargetCondition_Range(6),
                     new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit)));
 
-        RuleManager.Ability_Activated IncreaseMovement = new RuleManager.Ability_Activated(
+        RuleManager.Ability_Activated IncreaseMovement = new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed1,
                 new RuleManager.TargetInfo_List(
                     new RuleManager.TargetCondition_And(
                         new RuleManager.TargetCondition_UnitTag("Infantry"),

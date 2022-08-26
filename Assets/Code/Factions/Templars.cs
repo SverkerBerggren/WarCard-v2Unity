@@ -32,7 +32,8 @@ public class Templars
         RuleManager.Effect_DealDamage DamageEffect = new RuleManager.Effect_DealDamage();
         DamageEffect.Damage = 50;
         DamageEffect.Targets = new RuleManager.TargetRetriever_Index(0);
-        
+
+        ActivatedAbility.Speed = RuleManager.SpellSpeed.Speed2;
         ActivatedAbility.ActivatedEffect = DamageEffect;
         ActivatedAbility.ActivationTargets = new RuleManager.TargetInfo_List(
             new RuleManager.TargetCondition_And(
@@ -60,7 +61,7 @@ public class Templars
         ReturnValue.Tags.Add("Priest");
 
         ReturnValue.Abilities.Add(
-                new RuleManager.Ability_Activated(
+                new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed2,
                         new RuleManager.TargetInfo_List(
                         new RuleManager.TargetCondition_And(
                             new RuleManager.TargetCondition_Enemy(),
@@ -71,7 +72,7 @@ public class Templars
                     ).SetName("Blinding light").SetDescription("Target an enemy unit within 12 tiles: decrease it's movement by 5 for the battle round").SetFlavour("bright light difficult see")
             );
         ReturnValue.Abilities.Add(
-        new RuleManager.Ability_Activated(
+        new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed2,
                 new RuleManager.TargetInfo_List(
                 new RuleManager.TargetCondition_And(
                     new RuleManager.TargetCondition_Enemy(), 
@@ -98,7 +99,7 @@ public class Templars
         ReturnValue.Tags.Add("Inquisitor");
 
         ReturnValue.Abilities.Add(
-                new RuleManager.Ability_Activated(
+                new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed2,
                     new RuleManager.TargetInfo_List(
                         new RuleManager.TargetCondition_And(
                             new RuleManager.TargetCondition_UnitTag("Knight"),
@@ -112,7 +113,7 @@ public class Templars
         ReturnValue.Abilities[0].SetName("Ultima sacrificium");
         ReturnValue.Abilities[0].SetFlavour("Some decisions are to important even for knight's to decide");
 
-        ReturnValue.Abilities.Add(new RuleManager.Ability_Activated(new RuleManager.TargetInfo_List(
+        ReturnValue.Abilities.Add(new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed2, new RuleManager.TargetInfo_List(
             new RuleManager.TargetCondition_And(
                 new RuleManager.TargetCondition_UnitTag("Priest"),
                 new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit), 
@@ -125,7 +126,8 @@ public class Templars
         ReturnValue.Abilities[1].SetDescription("Target a priest within 8 tiles and a enemy within 8 tiles of that priest: Deal 80 damage to it");
         ReturnValue.Abilities[1].SetFlavour("Priest conduit nibba");
 
-        ReturnValue.Abilities.Add(new RuleManager.Ability_Activated(new RuleManager.TargetInfo_List(),
+        ReturnValue.Abilities.Add(new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed1,
+                new RuleManager.TargetInfo_List(),
                 new RuleManager.Effect_RegisterTrigger(true,false, 
                 new RuleManager.TargetRetriever_Empty(),
                 new RuleManager.TriggerCondition_Type(RuleManager.TriggerType.BattleroundBegin),
@@ -149,7 +151,7 @@ public class Templars
         ReturnValue.Stats.ObjectiveControll = 20;
 
         ReturnValue.Abilities.Add(
-                new RuleManager.Ability_Activated(
+                new RuleManager.Ability_Activated(RuleManager.SpellSpeed.Speed1,
                         new RuleManager.TargetInfo_List(
                         new RuleManager.TargetCondition_And(
                             new RuleManager.TargetCondition_Or(new RuleManager.TargetCondition_UnitTag("Inquisitor"), new RuleManager.TargetCondition_UnitTag("Priest")),

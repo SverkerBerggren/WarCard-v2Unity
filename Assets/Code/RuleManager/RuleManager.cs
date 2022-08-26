@@ -321,8 +321,33 @@ namespace RuleManager
         }
     }
 
+    public enum SpellSpeed
+    {
+        Speed0,
+        Speed1,
+        Speed2,
+    }
+
+
+    public class ActivationCondition
+    {
+
+    }
+
+    public class ActivationCondition_True : ActivationCondition
+    {
+
+    }
+    public class ActivationCondition_FirstTurn : ActivationCondition
+    {
+
+    }
+
     public class Ability_Activated : Ability
     {
+
+        public SpellSpeed Speed = SpellSpeed.Speed1;
+        public ActivationCondition Conditions = new ActivationCondition_True();
         public TargetInfo ActivationTargets;
         public Effect ActivatedEffect;
 
@@ -330,8 +355,9 @@ namespace RuleManager
         {
             
         }
-        public Ability_Activated(TargetInfo Targets, Effect EffectToUse) : base(AbilityType.Activated)
+        public Ability_Activated(SpellSpeed NewSpeed,TargetInfo Targets, Effect EffectToUse) : base(AbilityType.Activated)
         {
+            Speed = NewSpeed;
             ActivationTargets = Targets;
             ActivatedEffect = EffectToUse;
         }
@@ -857,6 +883,7 @@ namespace RuleManager
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
+        void OnRoundChange(int CurrentPlayerTurnIndex,int CurrentRoundCount);
         void OnUnitCreate(UnitInfo NewUnit);
 
         void OnInitiativeChange(int newInitiativen, int whichPlayer ); 
@@ -884,6 +911,8 @@ namespace RuleManager
         private int m_CurrentPlayerTurn = 0;
         private int m_CurrentPlayerPriority = 0;
 
+        private int m_CurrentRoundCount = 1;
+        
         private bool m_EndOfTurnPass = false;
 
         class RegisteredContinousEffect
@@ -928,6 +957,8 @@ namespace RuleManager
         const int m_PlayerInitiativeRetain = 40;
         const int m_ObjectiveScoreGain = 50;
 
+        bool m_ActionIsPlayed = false;
+
         List<int> m_PlayerPoints = new List<int>();
         List<int> m_PlayerIntitiative = new List<int>();
         Dictionary<int, RegisteredContinousEffect> m_RegisteredContinousAbilities = new Dictionary<int, RegisteredContinousEffect>();
@@ -935,6 +966,8 @@ namespace RuleManager
 
         Stack<StackEntity> m_TheStack = new Stack<StackEntity>();
         IEnumerator m_CurrentResolution = null;
+
+        List<bool> m_EmptyPassed = new List<bool>();
 
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
@@ -1040,6 +1073,7 @@ namespace RuleManager
             m_PlayerIntitiative = new List<int>(m_PlayerCount);
             for(int i = 0; i < m_PlayerCount;i++)
             {
+                m_EmptyPassed.Add(false);
                 m_PlayerIntitiative.Add(m_PlayerTurnInitiativeGain);
                 m_PlayerPoints.Add(0);
             }
@@ -1398,6 +1432,25 @@ namespace RuleManager
             p_CheckStateBasedAction();
             yield break;
         }
+        public bool p_VerifyActivationConditions(ActivationCondition ConditionToVerify,out string OutError)
+        {
+            bool ReturnValue = true;
+            string ErrorString = "";
+            if(ConditionToVerify is ActivationCondition_True)
+            {
+
+            }
+            else if(ConditionToVerify is ActivationCondition_FirstTurn)
+            {
+                
+            }
+            else
+            {
+                throw new Exception("Invalid activation condition type: " + ConditionToVerify.GetType().Name);
+            }
+            OutError = ErrorString;
+            return (ReturnValue);
+        }
         public bool p_VerifyTarget(Target TargetToVerify)
         {
             bool ReturnValue = true;
@@ -1638,12 +1691,125 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+        IEnumerator p_ChangeBattleround()
+        {
+            List<int> NewScore = new List<int>();
 
+            m_ActionIsPlayed = false;
+            for(int i = 0; i < m_PlayerCount; i++)
+            {
+                m_PlayerIntitiative[i] = 0;
+                m_EmptyPassed[i] = false;
+            }
+
+            for(int i = 0; i < m_PlayerCount;i++)
+            {
+                NewScore.Add(0);
+            }
+            for(int i = 0; i < m_Tiles.Count;i++)
+            {
+                for(int j = 0; j < m_Tiles[0].Count;j++)
+                {
+                    if(m_Tiles[i][j].HasObjective)
+                    {
+                        int PlayerControllIndex = p_GetObjectiveControllIndex(new Coordinate(j, i));
+                        if(PlayerControllIndex != -1)
+                        {
+                            NewScore[PlayerControllIndex] += m_ObjectiveScoreGain;
+                        }
+                    }
+                }
+            }
+            for(int i = 0; i <  m_PlayerCount;i++)
+            {
+                m_PlayerPoints[i] += NewScore[i];
+                if(m_EventHandler != null)
+                {
+                    m_EventHandler.OnScoreChange(i, m_PlayerPoints[i]);
+                }
+            }
+
+            foreach(KeyValuePair<int,UnitInfo> Units in m_UnitInfos)
+            {
+                p_RefreshUnit(Units.Value);
+            }
+
+
+
+            List<int> ContinousEffectsToRemove = new List<int>();
+            foreach (KeyValuePair<int, RegisteredContinousEffect> RegisteredEffect in m_RegisteredContinousAbilities)
+            {
+                if (RegisteredEffect.Value.TurnDuration <= 0)
+                {
+                    continue;
+                }
+                RegisteredEffect.Value.TurnDuration -= 1;
+                if (RegisteredEffect.Value.TurnDuration == 0)
+                {
+                    ContinousEffectsToRemove.Add(RegisteredEffect.Key);
+                }
+            }
+            foreach (int EffectToRemove in ContinousEffectsToRemove)
+            {
+                m_RegisteredContinousAbilities.Remove(EffectToRemove);
+            }
+            List<int> RegisteredEffectsToRemove = new List<int>();
+            foreach (KeyValuePair<int, RegisteredTrigger> RegisteredEffect in m_RegisteredTriggeredAbilities)
+            {
+
+            }
+            foreach (int EffectToRemove in RegisteredEffectsToRemove)
+            {
+                m_RegisteredContinousAbilities.Remove(EffectToRemove);
+            }
+
+
+
+
+            if (m_EventHandler != null)
+            {
+                m_CurrentRoundCount++;
+                m_EventHandler.OnRoundChange(0, m_CurrentRoundCount);
+            }
+
+
+
+
+
+
+            TriggerEvent_RoundBegin RoundBegin = new TriggerEvent_RoundBegin();
+            IEnumerator TriggersEnumerator = p_AddTriggers(RoundBegin);
+            while(TriggersEnumerator.MoveNext())
+            {
+                yield return null;
+            }
+        }
         IEnumerator p_ChangeTurn()
         {
+            m_EmptyPassed[m_CurrentPlayerTurn] = !m_ActionIsPlayed;
+            m_ActionIsPlayed = false;
+            bool ChangeRound = true;
+            foreach (bool PassedEmpty in m_EmptyPassed)
+            {
+                if (!PassedEmpty)
+                {
+                    ChangeRound = false;
+                    break;
+                }
+            }
+            if (ChangeRound)
+            {
+                IEnumerator ChangeEnum = p_ChangeBattleround();
+                while (ChangeEnum.MoveNext())
+                {
+                    yield return null;
+                }
+            }
+
             m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
             m_CurrentTurn += 1;
             m_CurrentPlayerPriority = m_CurrentPlayerTurn;
+
             if (m_EventHandler != null)
             {
                 m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
@@ -1657,51 +1823,6 @@ namespace RuleManager
                     m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[i], i);
                 }
             }
-            //List<int> NewScore = new List<int>();
-            //for(int i = 0; i < m_PlayerCount;i++)
-            //{
-            //    NewScore.Add(0);
-            //}
-            //for(int i = 0; i < m_Tiles.Count;i++)
-            //{
-            //    for(int j = 0; j < m_Tiles[0].Count;j++)
-            //    {
-            //        if(m_Tiles[i][j].HasObjective)
-            //        {
-            //            int PlayerControllIndex = p_GetObjectiveControllIndex(new Coordinate(j, i));
-            //            if(PlayerControllIndex != -1)
-            //            {
-            //                NewScore[PlayerControllIndex] += m_ObjectiveScoreGain;
-            //            }
-            //        }
-            //    }
-            //}
-            //for(int i = 0; i <  m_PlayerCount;i++)
-            //{
-            //    m_PlayerPoints[i] += NewScore[i];
-            //    if(m_EventHandler != null)
-            //    {
-            //        m_EventHandler.OnScoreChange(i, m_PlayerPoints[i]);
-            //    }
-            //}
-
-            //foreach(KeyValuePair<int,UnitInfo> Units in m_UnitInfos)
-            //{
-            //    Units.Value.IsActivated = false;
-            //    Units.Value.HasMoved = false;
-            //    Units.Value.HasMoved = false;
-            //}
-
-
-            TriggerEvent_RoundBegin RoundBegin = new TriggerEvent_RoundBegin();
-            IEnumerator TriggersEnumerator = p_AddTriggers(RoundBegin);
-            while(TriggersEnumerator.MoveNext())
-            {
-                yield return null;
-            }
-
-
-
 
             List<int> ContinousEffectsToRemove = new List<int>();
             foreach(KeyValuePair<int,RegisteredContinousEffect> RegisteredEffect in m_RegisteredContinousAbilities)
@@ -1797,6 +1918,8 @@ namespace RuleManager
             bool EndOfTurnPass = false;
             bool PriorityTabled = false;
 
+            bool ActionIsExecuted = true;
+
             if(ActionToExecute is  MoveAction)
             {
                 MoveAction MoveToExecute = (MoveAction)ActionToExecute;
@@ -1847,6 +1970,7 @@ namespace RuleManager
             }
             else if(ActionToExecute is PassAction)
             {
+                ActionIsExecuted = false; 
                 if (m_TheStack.Count != 0 && m_CurrentPlayerPriority != m_TheStack.Peek().Source.PlayerIndex)
                 {
                     PriorityTabled = true;
@@ -1858,7 +1982,6 @@ namespace RuleManager
                     m_EndOfTurnPass = true;
                 }
                 p_PassPriority();
-
             }
             else if(ActionToExecute is EffectAction)
             {
@@ -1891,6 +2014,10 @@ namespace RuleManager
             else
             {
                 throw new ArgumentException("Invalid Action type");
+            }
+            if(!m_ActionIsPlayed && ActionIsExecuted)
+            {
+                m_ActionIsPlayed = true;
             }
             p_CheckStateBasedAction();
             m_EndOfTurnPass = EndOfTurnPass;
@@ -2107,7 +2234,19 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
+                if(m_CurrentPlayerTurn != AssociatedUnit.PlayerIndex && ((Ability_Activated) AssociatedUnit.Abilities[EffectToCheck.EffectIndex]).Speed != SpellSpeed.Speed2)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only active spell speed 2 abilities on your opponents turn";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
                 Ability_Activated AbilityToActive =(Ability_Activated ) AssociatedUnit.Abilities[EffectToCheck.EffectIndex];
+                bool PreconditionsSatisfied = p_VerifyActivationConditions(AbilityToActive.Conditions, out OutInfo);
+                if(!PreconditionsSatisfied)
+                {
+                    return (PreconditionsSatisfied);
+                }
                 if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(ActionToCheck.PlayerIndex,AssociatedUnit.UnitID),EffectToCheck.Targets))
                 {
                     ReturnValue = false;

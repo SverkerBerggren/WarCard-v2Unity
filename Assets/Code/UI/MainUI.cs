@@ -108,6 +108,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
+
+    public void OnRoundChange(int CurrentPriority,int CurrentBattleRound)
+    {
+        print("Current battle round: " + CurrentBattleRound);
+    }
+
+
     void Start()
     {
       //  initiativeText = GameObject.Find("InitiativeText").GetComponent<TextMeshProUGUI>();
