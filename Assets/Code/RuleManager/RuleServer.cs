@@ -719,19 +719,36 @@ namespace RuleServer
             }
             return (ReturnValue);
         }
+        void p_RemoveConnectionID(int IDToRemove)
+        {
+
+        }
         public void p_ConnectionHandler(object Data)
         {
             //Has the responsibility for handling initial handshakes, but otherwise just forwards the messages
-            TcpClient TCPConnection = (TcpClient)Data;
-            NetworkStream ClientStream = TCPConnection.GetStream();
-            ServerConnection Connection = new ServerConnection(ClientStream);
-            while(TCPConnection.Connected)
+            int ConnectionID = 0;
+            try
             {
-                ClientMessage NewMessage = Connection.GetNextMessage();
-                ServerMessage Response = p_HandleMessage(NewMessage);
-                Connection.SendServerResponse(Response);
-                //throw new Exception("First message recieved");
-                //break;
+                TcpClient TCPConnection = (TcpClient)Data;
+                NetworkStream ClientStream = TCPConnection.GetStream();
+                ServerConnection Connection = new ServerConnection(ClientStream);
+                while (TCPConnection.Connected)
+                {
+                    ClientMessage NewMessage = Connection.GetNextMessage();
+                    ServerMessage Response = p_HandleMessage(NewMessage);
+                    if(Response is ServerHandshake)
+                    {
+                        ConnectionID = ((ServerHandshake)Response).NewConnectionIdentifier;
+                    }
+                    Connection.SendServerResponse(Response);
+                    //throw new Exception("First message recieved");
+                    //break;
+                }
+            }
+            catch(Exception e)
+            {
+                p_RemoveConnectionID(ConnectionID);
+                System.Console.WriteLine("Error handling connection with ID: " + ConnectionID + " " + e.Message);
             }
         }
 
