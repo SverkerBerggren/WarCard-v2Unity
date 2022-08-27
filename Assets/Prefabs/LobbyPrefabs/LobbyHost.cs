@@ -8,11 +8,17 @@ public class LobbyHost : MonoBehaviour
     // Start is called before the first frame update
     public TextMeshProUGUI HostCodeButtonText = null;
     private ClientConnectionHandler ServerConnection = null;
+    public GameObject StatusObject = null;
+    public List<GameObject> LobyStatuses = new List<GameObject>();
     void Start()
     {
         ServerConnection = FindObjectOfType<ClientConnectionHandler>();
         RuleServer.RegisterLobby LobbyRequest = new RuleServer.RegisterLobby();
         ServerConnection.SendMessage(LobbyRequest, new System.Action<RuleServer.ServerMessage>(p_HandleCreateLobbyReponse));
+
+        PlayerStatus HostStatus = LobyStatuses[0].GetComponent<PlayerStatus>();
+        HostStatus.gameObject.SetActive(true);
+        HostStatus.SetName("You");
     }
     string m_LobbyID = "";
     string m_ErrorString = "";
@@ -57,6 +63,11 @@ public class LobbyHost : MonoBehaviour
             {
                 //add new player
                 RuleServer.LobbyEvent_PlayerJoined JoinEvent = (RuleServer.LobbyEvent_PlayerJoined)Event;
+                //hardcoded
+                PlayerStatus JoinedStatus = LobyStatuses[1].GetComponent<PlayerStatus>();
+                JoinedStatus.SetName("Guest 1");
+                JoinedStatus.SetInteractive(false);
+                JoinedStatus.gameObject.SetActive(true);
             }
             else if(Event is RuleServer.LobbyEvent_StatusUpdated)
             {
