@@ -72,11 +72,13 @@ public class LobbyHost : MonoBehaviour
             else if(Event is RuleServer.LobbyEvent_StatusUpdated)
             {
                 RuleServer.LobbyEvent_StatusUpdated StatusEvent = (RuleServer.LobbyEvent_StatusUpdated)Event;
+                LobyStatuses[1].GetComponent<PlayerStatus>().SetReady(StatusEvent.NewStatus.Ready);
             }
             else if(Event is RuleServer.LobbyEvent_GameStart)
             {
                 //start game
                 RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
             }
         }
     }
