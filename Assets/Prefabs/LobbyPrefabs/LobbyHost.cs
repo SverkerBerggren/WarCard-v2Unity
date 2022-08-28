@@ -3,6 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using TMPro;
+
+public class CallbackDelagator
+{
+    List<System.Tuple<System.Action<RuleServer.ServerMessage>,RuleServer.ServerMessage>> m_ActionList = new List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>>();
+    System.Action<RuleServer.ServerMessage> m_ResultAction = null;
+    public CallbackDelagator(List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>> ActionList,System.Action<RuleServer.ServerMessage> Result)
+    {
+        m_ActionList = ActionList;
+        m_ResultAction = Result;
+    }
+
+    public void Callback(RuleServer.ServerMessage Result)
+    {
+        lock(m_ActionList)
+        {
+            m_ActionList.Add(new System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>(m_ResultAction,Result));
+        }
+    }
+    public static void SendMessageToMain(ClientConnectionHandler Connection, List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>> ActionList,
+        System.Action<RuleServer.ServerMessage> Result,RuleServer.ClientMessage MessageToSend)
+    {
+        CallbackDelagator Delagator = new CallbackDelagator(ActionList, Result);
+        Connection.SendMessage(MessageToSend, Delagator.Callback);
+    }
+}
+
 public class LobbyHost : MonoBehaviour
 {
     // Start is called before the first frame update
@@ -10,12 +36,19 @@ public class LobbyHost : MonoBehaviour
     private ClientConnectionHandler ServerConnection = null;
     public GameObject StatusObject = null;
     public List<GameObject> LobyStatuses = new List<GameObject>();
+
+
+    private List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>> m_ActionList = new List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>>();
+    
+
+    
+    
     void Start()
     {
         ServerConnection = FindObjectOfType<ClientConnectionHandler>();
         RuleServer.RegisterLobby LobbyRequest = new RuleServer.RegisterLobby();
-        ServerConnection.SendMessage(LobbyRequest, new System.Action<RuleServer.ServerMessage>(p_HandleCreateLobbyReponse));
-
+        //ServerConnection.SendMessage(LobbyRequest, new System.Action<RuleServer.ServerMessage>(p_HandleCreateLobbyReponse));
+        CallbackDelagator.SendMessageToMain(ServerConnection, m_ActionList, p_HandleCreateLobbyReponse,LobbyRequest);
         PlayerStatus HostStatus = LobyStatuses[0].GetComponent<PlayerStatus>();
         HostStatus.gameObject.SetActive(true);
         HostStatus.SetName("You");
@@ -116,10 +149,29 @@ public class LobbyHost : MonoBehaviour
 
 
     
+
     // Update is called once per frame
+    double m_LastQueryTime = 0;
     void Update()
     {
-        if(m_LobbyID != "" && m_LobbyID != HostCodeButtonText.text)
+        m_LastQueryTime += Time.deltaTime;
+        if(m_LastQueryTime >= 1 && ServerConnection.IsConnected())
+        {
+            m_LastQueryTime = 0;
+            RuleServer.LobbyEventPoll EventPoll = new RuleServer.LobbyEventPoll();
+            EventPoll.LobbyID = m_LobbyID;
+            //ServerConnection.SendMessage(EventPoll, new System.Action<RuleServer.ServerMessage>(p_HandleQueryLobbyEvents));
+            CallbackDelagator.SendMessageToMain(ServerConnection, m_ActionList, p_HandleQueryLobbyEvents, EventPoll);
+
+        }
+        lock (m_ActionList)
+        {
+            foreach (System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage> Actions in m_ActionList)
+            {
+                Actions.Item1(Actions.Item2);
+            }
+        }
+        if (m_LobbyID != "" && m_LobbyID != HostCodeButtonText.text)
         {
             HostCodeButtonText.color = new Color(0, 0, 0);
             HostCodeButtonText.text = m_LobbyID;

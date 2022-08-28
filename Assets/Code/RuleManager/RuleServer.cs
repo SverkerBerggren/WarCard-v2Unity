@@ -546,11 +546,12 @@ namespace RuleServer
                 JoinLobby JoinMessageToHandle = (JoinLobby)MessageToHandle;
                 m_InternalsMutex.WaitOne();
                 //cons
-                //Console.WriteLine("Current lobby ID's (JoinLobby): ");
-                //foreach (KeyValuePair<string, ActiveLobbyInfo> Lobby in m_ActiveLobbys)
-                //{
-                //    Console.WriteLine(Lobby.Key);
-                //}
+                Console.WriteLine("Queryed lobby id: " + JoinMessageToHandle.LobbyID);
+                Console.WriteLine("Current lobby ID's (JoinLobby): ");
+                foreach (KeyValuePair<string, ActiveLobbyInfo> ActiveLobbys in m_ActiveLobbys)
+                {
+                    Console.WriteLine(ActiveLobbys.Key);
+                }
                 if (!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
                 {
                     ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
@@ -577,11 +578,11 @@ namespace RuleServer
                 ActiveLobbyInfo NewLobby = new ActiveLobbyInfo();
                 NewLobby.ConnectedUsers.Add(MessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
                 m_ActiveLobbys.Add(LobbyID, NewLobby);
-                //Console.WriteLine("Current lobby ID's (RegisterLobby): ");
-                //foreach(KeyValuePair<string,ActiveLobbyInfo> Lobby in m_ActiveLobbys)
-                //{
-                //    Console.WriteLine(Lobby.Key);
-                //}
+                Console.WriteLine("Current lobby ID's (RegisterLobby): ");
+                foreach(KeyValuePair<string,ActiveLobbyInfo> Lobby in m_ActiveLobbys)
+                {
+                    Console.WriteLine(Lobby.Key);
+                }
             }
             else if(MessageToHandle is SendLobbyEvent)
             {

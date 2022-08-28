@@ -13,6 +13,8 @@ public class EnterCode : MonoBehaviour
     public TextMeshProUGUI LobbyIDElement = null;
 
     private ClientConnectionHandler m_Connection = null;
+    List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>> m_ActionList = new List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>>();
+
     void Start()
     {
         m_Connection = FindObjectOfType<ClientConnectionHandler>();
@@ -69,6 +71,7 @@ public class EnterCode : MonoBehaviour
         {
             lock (m_ResponseErrorMessage)
             {
+                print(e.Message);
                 m_ResponseErrorMessage = "Error joining room: unkown error";
             }
             print(e.Message);
@@ -87,15 +90,25 @@ public class EnterCode : MonoBehaviour
         ErrorTextElement.color = new Color(0, 0, 0);
         ErrorTextElement.text = "Sending message to server...";
         m_RequestActive = true;
-        m_RequestLobbyID = LobbyIDElement.text;
-        print(m_RequestLobbyID);
+        m_RequestLobbyID = LobbyIDElement.text.Substring(0,LobbyIDElement.text.Length-1);
         RuleServer.JoinLobby JoinMessage = new RuleServer.JoinLobby();
         JoinMessage.LobbyID = m_RequestLobbyID;
-        m_Connection.SendMessage(JoinMessage, new System.Action<RuleServer.ServerMessage>(p_HandleJoinResponse));
+        print(JoinMessage.LobbyID.Length);
+        print(JoinMessage.LobbyID);
+        print(System.BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(JoinMessage.LobbyID)));
+        //m_Connection.SendMessage(JoinMessage, new System.Action<RuleServer.ServerMessage>(p_HandleJoinResponse));
+        CallbackDelagator.SendMessageToMain(m_Connection, m_ActionList, p_HandleJoinResponse, JoinMessage);
     }
     // Update is called once per frame
     void Update()
     {
+        lock(m_ActionList)
+        {
+            foreach(System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage> Actions in m_ActionList)
+            {
+                Actions.Item1(Actions.Item2);
+            }
+        }
         lock(m_ResponseErrorMessage)
         {
             if(m_ResponseErrorMessage != "")

@@ -11,7 +11,7 @@ public class PlayerStatus : MonoBehaviour
     //Ugly af
     public GameObject FactionIconObject = null;
     public GameObject CheckmarkObject = null;
-    public GameObject NameObject = null;
+    public TMPro.TextMeshProUGUI NameObject = null;
     public List<Sprite> FactionIcons = new List<Sprite>();
 
     bool m_IsReady = false;
@@ -64,7 +64,7 @@ public class PlayerStatus : MonoBehaviour
     }
     public void SetName(string NewName)
     {
-        NameObject.GetComponent<TMPro.TextMeshProUGUI>().text = NewName;
+        NameObject.text = NewName;
     }
     public void SetFactionIndex(int NewIndex)
     {

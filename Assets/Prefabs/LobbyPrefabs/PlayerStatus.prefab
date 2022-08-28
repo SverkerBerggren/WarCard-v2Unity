@@ -227,7 +227,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FactionIconObject: {fileID: 3282636834495680740}
   CheckmarkObject: {fileID: 5341878400811229165}
-  NameObject: {fileID: 3282636835825264083}
+  NameObject: {fileID: 3282636835825264093}
   FactionIcons:
   - {fileID: 21300000, guid: ad1b3c9adaa5a4848b8fd28ac0c59d50, type: 3}
   - {fileID: 21300000, guid: 8a33e39d7743bcd428ddef1abf466255, type: 3}

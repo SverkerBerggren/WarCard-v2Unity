@@ -8,12 +8,15 @@ public class LobbyJoined : MonoBehaviour
 
     ClientConnectionHandler m_ServerConnection = null;
     public List<GameObject> LobyStatuses = new List<GameObject>();
-    
+    List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>> m_ActionList = new List<System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage>>();
+
     void p_HandleLocalReadyClick(bool IsReady)
     {
         RuleServer.UpdateLobbyStatus UpdateMessage = new RuleServer.UpdateLobbyStatus();
         UpdateMessage.NewStatus.Ready = IsReady;
-        m_ServerConnection.SendMessage(UpdateMessage,new System.Action<RuleServer.ServerMessage>(p_HandleSetReadyStatusResponse));
+        //m_ServerConnection.SendMessage(UpdateMessage,new System.Action<RuleServer.ServerMessage>(p_HandleSetReadyStatusResponse));
+        CallbackDelagator.SendMessageToMain(m_ServerConnection, m_ActionList, p_HandleSetReadyStatusResponse, UpdateMessage);
+
     }
 
     void Start()
@@ -97,12 +100,21 @@ public class LobbyJoined : MonoBehaviour
     double m_LastPollDiff = 0;
     void Update()
     {
+        lock (m_ActionList)
+        {
+            foreach (System.Tuple<System.Action<RuleServer.ServerMessage>, RuleServer.ServerMessage> Actions in m_ActionList)
+            {
+                Actions.Item1(Actions.Item2);
+            }
+        }
         m_LastPollDiff += Time.deltaTime;
         if(m_LastPollDiff >= 1 && m_ServerConnection.IsConnected())
         {
+            m_LastPollDiff = 0;
             RuleServer.LobbyEventPoll EventPoll = new RuleServer.LobbyEventPoll();
             EventPoll.LobbyID = m_LobbyID;
-            m_ServerConnection.SendMessage(EventPoll,new System.Action<RuleServer.ServerMessage>(p_HandleQueryLobbyEvent));
+            //m_ServerConnection.SendMessage(EventPoll,new System.Action<RuleServer.ServerMessage>(p_HandleQueryLobbyEvent));
+            CallbackDelagator.SendMessageToMain(m_ServerConnection, m_ActionList, p_HandleQueryLobbyEvent, EventPoll);
         }
     }
 }
