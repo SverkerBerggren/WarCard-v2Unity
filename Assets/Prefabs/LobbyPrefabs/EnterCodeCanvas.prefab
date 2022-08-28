@@ -676,7 +676,7 @@ MonoBehaviour:
   LobbyStart: {fileID: 0}
   LobbyJoined: {fileID: 0}
   ErrorTextElement: {fileID: 3477323796583298675}
-  m_Connection: {fileID: 0}
+  LobbyIDElement: {fileID: 3477323796050372613}
 --- !u!114 &3477323796310412740
 MonoBehaviour:
   m_ObjectHideFlags: 0

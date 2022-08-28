@@ -10,8 +10,9 @@ public class EnterCode : MonoBehaviour
     public GameObject LobbyJoined = null;
 
     public TextMeshProUGUI ErrorTextElement = null;
+    public TextMeshProUGUI LobbyIDElement = null;
 
-    public ClientConnectionHandler m_Connection = null;
+    private ClientConnectionHandler m_Connection = null;
     void Start()
     {
         m_Connection = FindObjectOfType<ClientConnectionHandler>();
@@ -86,7 +87,8 @@ public class EnterCode : MonoBehaviour
         ErrorTextElement.color = new Color(0, 0, 0);
         ErrorTextElement.text = "Sending message to server...";
         m_RequestActive = true;
-        m_RequestLobbyID = GetComponentInChildren<TextMeshProUGUI>().text;
+        m_RequestLobbyID = LobbyIDElement.text;
+        print(m_RequestLobbyID);
         RuleServer.JoinLobby JoinMessage = new RuleServer.JoinLobby();
         JoinMessage.LobbyID = m_RequestLobbyID;
         m_Connection.SendMessage(JoinMessage, new System.Action<RuleServer.ServerMessage>(p_HandleJoinResponse));
