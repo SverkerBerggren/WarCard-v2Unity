@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Prefabs/MainMenu/MainMenu.unity
     guid: a96fc89cc83ffca409ad9b0b44f6c359
+  - enabled: 1
+    path: Assets/Scenes/ModelTest.unity
+    guid: a35dd8dacdc9f9241b43aa329dcb5672
   m_configObjects: {}
