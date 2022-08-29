@@ -130,7 +130,7 @@ public class LobbyHost : MonoBehaviour
                 //start game
                 RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
                 GlobalNetworkState.LocalPlayerIndex = GameStartEvent.PlayerIndex;
-                GlobalNetworkState.OpponentActionRetriever = new NetworkActionRetriever(ServerConnection.GetUnderlyingConnection(), GameStartEvent.PlayerIndex, GameStartEvent.PlayerIndex == 0 ? 1 : 0);
+                GlobalNetworkState.OpponentActionRetriever = new NetworkActionRetriever(ServerConnection.GetUnderlyingConnection(), GameStartEvent.GameID, GameStartEvent.PlayerIndex == 0 ? 1 : 0);
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
             }
         }
