@@ -98,6 +98,7 @@ public class LobbyJoined : MonoBehaviour
             {
                 print("Yikes");
             }
+            return;
         }
         throw new System.Exception("Invalid response to server request");
     }

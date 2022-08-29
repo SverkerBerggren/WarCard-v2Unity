@@ -230,7 +230,7 @@ namespace RuleServer
         {
             ErrorString = Error;
         }
-        public string ErrorString = "";
+        public string ErrorString = "Ok";
     }
     public class RegisterLobbyResponse : ServerMessage
     {
