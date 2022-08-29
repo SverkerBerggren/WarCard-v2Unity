@@ -122,8 +122,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         GameState GlobalState = FindObjectOfType<GameState>();
         ruleManager = GlobalState.GetRuleManager();
-        GlobalState.SetActionRetriever(GlobalState.GetLocalPlayerIndex(), this);
-
+        GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex, this);
+        if(GlobalNetworkState.OpponentActionRetriever != null)
+        {
+            GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, GlobalNetworkState.OpponentActionRetriever);
+            GlobalNetworkState.OpponentActionRetriever = null;
+        }
+        if(GlobalState)
 
         //    gridManager = FindObjectOfType<GridManager>();
 

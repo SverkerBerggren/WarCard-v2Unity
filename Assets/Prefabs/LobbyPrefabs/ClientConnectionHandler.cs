@@ -52,7 +52,16 @@ public class ClientConnectionHandler : MonoBehaviour
     {
         return (m_IsConnected);
     }
-
+    public RuleServer.ClientConnection GetUnderlyingConnection()
+    {
+        lock(m_MessagesToSend)
+        {
+            m_MessagesToSend.Clear();
+            m_IsConnected = false;
+            m_Stopping = true;
+        }
+        return (m_Connection);
+    }
     public void SendMessage(RuleServer.ClientMessage MessageToSend,Action<RuleServer.ServerMessage> Callback)
     {
         if(!m_IsConnected)

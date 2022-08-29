@@ -13,10 +13,18 @@ public class LobbyJoined : MonoBehaviour
     void p_HandleLocalReadyClick(bool IsReady)
     {
         RuleServer.UpdateLobbyStatus UpdateMessage = new RuleServer.UpdateLobbyStatus();
-        UpdateMessage.NewStatus.Ready = IsReady;
+        UpdateMessage.LobbyID = m_LobbyID;
+        UpdateMessage.NewStatus = LobyStatuses[1].GetComponent<PlayerStatus>().GetLobbyStatus();
         //m_ServerConnection.SendMessage(UpdateMessage,new System.Action<RuleServer.ServerMessage>(p_HandleSetReadyStatusResponse));
         CallbackDelagator.SendMessageToMain(m_ServerConnection, m_ActionList, p_HandleSetReadyStatusResponse, UpdateMessage);
 
+    }
+    void p_LocalFactionIndexCallback(int FactionIndex)
+    {
+        RuleServer.UpdateLobbyStatus UpdateMessage = new RuleServer.UpdateLobbyStatus();
+        UpdateMessage.LobbyID = m_LobbyID;
+        UpdateMessage.NewStatus = LobyStatuses[1].GetComponent<PlayerStatus>().GetLobbyStatus();
+        CallbackDelagator.SendMessageToMain(m_ServerConnection, m_ActionList, p_HandleSetReadyStatusResponse, UpdateMessage);
     }
 
     void Start()
@@ -30,6 +38,8 @@ public class LobbyJoined : MonoBehaviour
         HostStatus.SetInteractive(false);
 
         LocalStatus.SetName("You");
+        LocalStatus.GetComponent<PlayerStatus>().SetFactionIndexCallback(p_LocalFactionIndexCallback);
+        LocalStatus.GetComponent<PlayerStatus>().SetReadyCallback(p_HandleLocalReadyClick);
     }
     string m_LobbyID = "";
     public void Quit()
@@ -61,6 +71,9 @@ public class LobbyJoined : MonoBehaviour
             if(Event is RuleServer.LobbyEvent_GameStart)
             {
                 //Start game
+                RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
+                GlobalNetworkState.LocalPlayerIndex = GameStartEvent.PlayerIndex;
+                GlobalNetworkState.OpponentActionRetriever = new NetworkActionRetriever(m_ServerConnection.GetUnderlyingConnection(), GameStartEvent.PlayerIndex, GameStartEvent.PlayerIndex == 0 ? 1 : 0);
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
             }
             else if(Event is RuleServer.LobbyEvent_PlayerJoined)
@@ -72,6 +85,7 @@ public class LobbyJoined : MonoBehaviour
                 //ASSUMPTION only 2 players, has to be the host that is updated
                 RuleServer.LobbyEvent_StatusUpdated StatusUpdateEvent = (RuleServer.LobbyEvent_StatusUpdated)Event;
                 LobyStatuses[0].GetComponent<PlayerStatus>().SetReady(StatusUpdateEvent.NewStatus.Ready);
+                LobyStatuses[0].GetComponent<PlayerStatus>().SetFactionIndex(StatusUpdateEvent.NewStatus.FactionIndex);
             }
         }
     }

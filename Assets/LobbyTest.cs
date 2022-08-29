@@ -140,7 +140,7 @@ public class LobbyTest : MonoBehaviour
                     {
                         RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
                         StateObject.SetActionRetriever(GameStartEvent.PlayerIndex == 0 ? 1 : 0, new NetworkActionRetriever(Connection, GameStartEvent.GameID, GameStartEvent.PlayerIndex == 0 ? 1 : 0));
-                        StateObject.SetLocalPlayerIndex(GameStartEvent.PlayerIndex);
+                        //StateObject.SetLocalPlayerIndex(GameStartEvent.PlayerIndex);
                         print("This is the local player index: "+GameStartEvent.PlayerIndex);
                         print("This is the opponent index: "+(GameStartEvent.PlayerIndex == 0 ? 1 : 0));
                         LoadGameScene = true;

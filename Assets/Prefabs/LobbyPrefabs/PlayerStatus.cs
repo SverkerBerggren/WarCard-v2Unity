@@ -58,6 +58,13 @@ public class PlayerStatus : MonoBehaviour
     {
         
     }
+    public RuleServer.ConnectionLobbyStatus GetLobbyStatus()
+    {
+        RuleServer.ConnectionLobbyStatus ReturnValue = new RuleServer.ConnectionLobbyStatus();
+        ReturnValue.FactionIndex = m_FactionIndex;
+        ReturnValue.Ready = m_IsReady;
+        return (ReturnValue);
+    }
     public void SetInteractive(bool IsInteractive)
     {
         m_IsInteractive = IsInteractive;

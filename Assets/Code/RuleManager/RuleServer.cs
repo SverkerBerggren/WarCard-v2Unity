@@ -504,6 +504,16 @@ namespace RuleServer
     public class ConnectionLobbyStatus
     {
         public bool Ready = false;
+        public int FactionIndex = 0;
+        public ConnectionLobbyStatus()
+        {
+
+        }
+        public ConnectionLobbyStatus(ConnectionLobbyStatus StatusToCopy)
+        {
+            Ready = StatusToCopy.Ready;
+            FactionIndex = StatusToCopy.FactionIndex; 
+        }
     }
     public class ConnectionLobbyInfo
     {
@@ -652,7 +662,7 @@ namespace RuleServer
                     {
                         LobbyEvent_StatusUpdated NewEvent = new LobbyEvent_StatusUpdated();
                         NewEvent.ConnectionID = UpdateStatusMessage.ConnectionIdentifier;
-                        NewEvent.NewStatus = UpdateStatusMessage.NewStatus;
+                        NewEvent.NewStatus = new ConnectionLobbyStatus(UpdateStatusMessage.NewStatus);
                         Connection.Value.StoredEvents.Add(NewEvent);
                     }
                 }

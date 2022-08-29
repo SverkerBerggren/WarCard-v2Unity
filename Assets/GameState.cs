@@ -2,35 +2,43 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public static class GlobalNetworkState
+{
+    public static int LocalPlayerIndex = 0;
+    public static ActionRetriever OpponentActionRetriever = null;
+}
+
+
 public class GameState : MonoBehaviour
 {
-    static GameState m_GlobalGamestate = null;
+    //static GameState m_GlobalGamestate = null;
     // Start is called before the first frame update
     private RuleManager.RuleManager ruleManager = new RuleManager.RuleManager((uint)30, (uint)42);
     private List<ActionRetriever> m_PlayerActionRetrievers = new List<ActionRetriever>();
     int m_LocalPlayerIndex = 0;
     void Awake()
     {
-        if(m_GlobalGamestate != null)
-        {
-            this.gameObject.SetActive(false);
-            Destroy(this.gameObject);
-        }
-        else
-        {
-            m_GlobalGamestate = this;
-            DontDestroyOnLoad(this.gameObject);
-        }
+        //if(m_GlobalGamestate != null)
+        //{
+        //    this.gameObject.SetActive(false);
+        //    Destroy(this.gameObject);
+        //}
+        //else
+        //{
+        //    m_GlobalGamestate = this;
+        //    DontDestroyOnLoad(this.gameObject);
+        //}
     }
-    public void SetLocalPlayerIndex(int NewIndex)
-    {
-        m_LocalPlayerIndex = NewIndex;
-    }
-    public int GetLocalPlayerIndex()
-    {
-        print("This is the local player index: " + m_LocalPlayerIndex);
-        return (m_LocalPlayerIndex);
-    }
+    //public void SetLocalPlayerIndex(int NewIndex)
+    //{
+    //    m_LocalPlayerIndex = NewIndex;
+    //}
+    //public int GetLocalPlayerIndex()
+    //{
+    //    print("This is the local player index: " + m_LocalPlayerIndex);
+    //    return (m_LocalPlayerIndex);
+    //}
     public void SetActionRetriever(int PlayerIndex,ActionRetriever NewRetriever)
     {
         for(int i = m_PlayerActionRetrievers.Count; i <= PlayerIndex;i++)
@@ -47,7 +55,7 @@ public class GameState : MonoBehaviour
         int PlayerIndex = ruleManager.getPlayerPriority();
         if(m_PlayerActionRetrievers.Count <= PlayerIndex)
         {
-            print("Invalid number of action retrievers");
+            //print("Invalid number of action retrievers");
             return;
         }
         if(m_PlayerActionRetrievers[PlayerIndex] == null)

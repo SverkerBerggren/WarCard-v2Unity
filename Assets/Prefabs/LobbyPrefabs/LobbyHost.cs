@@ -52,6 +52,8 @@ public class LobbyHost : MonoBehaviour
         PlayerStatus HostStatus = LobyStatuses[0].GetComponent<PlayerStatus>();
         HostStatus.gameObject.SetActive(true);
         HostStatus.SetName("You");
+        HostStatus.SetFactionIndexCallback(p_LocalFactionIndexCallback);
+        HostStatus.SetReadyCallback(p_LocalReadyCallback);
     }
     string m_LobbyID = "";
     string m_ErrorString = "";
@@ -69,6 +71,21 @@ public class LobbyHost : MonoBehaviour
             m_ErrorString = "Error sending status update: " + m_ErrorString;
             return;
         }
+    }
+
+    void p_LocalReadyCallback(bool IsReady)
+    {
+        RuleServer.UpdateLobbyStatus UpdateMessage = new RuleServer.UpdateLobbyStatus();
+        UpdateMessage.LobbyID = m_LobbyID;
+        UpdateMessage.NewStatus = LobyStatuses[0].GetComponent<PlayerStatus>().GetLobbyStatus();
+        CallbackDelagator.SendMessageToMain(ServerConnection, m_ActionList, p_HandleStatusUpdateResponse, UpdateMessage);
+    }
+    void p_LocalFactionIndexCallback(int FactionIndex)
+    {
+        RuleServer.UpdateLobbyStatus UpdateMessage = new RuleServer.UpdateLobbyStatus();
+        UpdateMessage.LobbyID = m_LobbyID;
+        UpdateMessage.NewStatus = LobyStatuses[0].GetComponent<PlayerStatus>().GetLobbyStatus();
+        CallbackDelagator.SendMessageToMain(ServerConnection, m_ActionList, p_HandleStatusUpdateResponse,UpdateMessage);
     }
 
     void p_HandleQueryLobbyEvents(RuleServer.ServerMessage Response)
@@ -106,11 +123,14 @@ public class LobbyHost : MonoBehaviour
             {
                 RuleServer.LobbyEvent_StatusUpdated StatusEvent = (RuleServer.LobbyEvent_StatusUpdated)Event;
                 LobyStatuses[1].GetComponent<PlayerStatus>().SetReady(StatusEvent.NewStatus.Ready);
+                LobyStatuses[1].GetComponent<PlayerStatus>().SetFactionIndex(StatusEvent.NewStatus.FactionIndex);
             }
             else if(Event is RuleServer.LobbyEvent_GameStart)
             {
                 //start game
                 RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
+                GlobalNetworkState.LocalPlayerIndex = GameStartEvent.PlayerIndex;
+                GlobalNetworkState.OpponentActionRetriever = new NetworkActionRetriever(ServerConnection.GetUnderlyingConnection(), GameStartEvent.PlayerIndex, GameStartEvent.PlayerIndex == 0 ? 1 : 0);
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
             }
         }
@@ -142,8 +162,27 @@ public class LobbyHost : MonoBehaviour
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/LobbyScene.unity");
     }
+    void p_HandleStartResponse(RuleServer.ServerMessage Response)
+    {
+        if(Response == null)
+        {
+            m_ErrorString = "Error starting game: Error connecting to server";
+            return;
+        }
+        if(((RuleServer.RequestStatusResponse)Response).ErrorString != "Ok")
+        {
+            m_ErrorString = ((RuleServer.RequestStatusResponse)Response).ErrorString;
+        }
+    }
     public void StartGame()
     {
+        RuleServer.LobbyEvent_GameStart StartGame = new RuleServer.LobbyEvent_GameStart();
+        //StartGame.Lob = m_LobbyID;
+        //StartGame.PlayerIndex
+        RuleServer.SendLobbyEvent Message = new RuleServer.SendLobbyEvent();
+        Message.LobbyID = m_LobbyID;
+        Message.EventToSend = StartGame;
+        CallbackDelagator.SendMessageToMain(ServerConnection, m_ActionList, p_HandleStartResponse, Message);
         print("Starting");
     }
 
