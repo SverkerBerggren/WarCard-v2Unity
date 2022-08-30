@@ -1,0 +1,2 @@
+Fix so that NetworkActionRetriever doesn't wait for networking on the main
+thread.

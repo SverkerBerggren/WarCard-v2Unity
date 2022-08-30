@@ -327,6 +327,7 @@ namespace RuleServer
         private ServerMessage p_Handle_Action(GameAction ActionMessage)
         {
             ServerMessage ReturnValue = null;
+            Console.WriteLine("Entering handling action:");
             lock(m_InternalsMutex)
             {
                 if (!ParticipatingPlayers.ContainsKey(ActionMessage.ConnectionIdentifier))
@@ -334,14 +335,17 @@ namespace RuleServer
                     ReturnValue = new RequestStatusResponse("Connection not present in game");
                     return (ReturnValue);
                 }
+                Console.WriteLine("Checked for ConnectionIdentifier");
                 int PlayerIndex = ParticipatingPlayers[ActionMessage.ConnectionIdentifier];
+                Console.WriteLine("Player Index: "+PlayerIndex);
                 if (PlayerIndex != ActionMessage.ActionToExecute.PlayerIndex)
                 {
                     ReturnValue = new RequestStatusResponse("Can't execute actions for your opponent");
                     return (ReturnValue);
                 }
-                string ErrorString;
-                bool ActionIsValid = m_GameRuleManager.ActionIsValid(ActionMessage.ActionToExecute, out ErrorString);
+                Console.WriteLine("Checked isn't opponent index");
+                //string ErrorString;
+                //bool ActionIsValid = m_GameRuleManager.ActionIsValid(ActionMessage.ActionToExecute, out ErrorString);
                 //TEMP AF
                 //if (!ActionIsValid)
                 //{
@@ -350,6 +354,7 @@ namespace RuleServer
                 //}
                 //m_GameRuleManager.ExecuteAction(ActionMessage.ActionToExecute);
                 m_PlayerActions[PlayerIndex].Add(ActionMessage.ActionToExecute);
+                Console.WriteLine("Added action to player actions");
                 ReturnValue = new RequestStatusResponse("Ok");
             }
             return (ReturnValue);
@@ -551,154 +556,143 @@ namespace RuleServer
         private ServerMessage p_HandleLobbyMessage(LobbyMessage MessageToHandle)
         {
             ServerMessage ReturnValue = null;
-            if(MessageToHandle is JoinLobby)
+            lock(m_InternalsMutex)
             {
-                JoinLobby JoinMessageToHandle = (JoinLobby)MessageToHandle;
-                m_InternalsMutex.WaitOne();
-                //cons
-                Console.WriteLine("Queryed lobby id: " + JoinMessageToHandle.LobbyID);
-                Console.WriteLine("Current lobby ID's (JoinLobby): ");
-                foreach (KeyValuePair<string, ActiveLobbyInfo> ActiveLobbys in m_ActiveLobbys)
+                if (MessageToHandle is JoinLobby)
                 {
-                    Console.WriteLine(ActiveLobbys.Key);
-                }
-                if (!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
-                {
-                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
-                }
-                ActiveLobbyInfo Lobby = m_ActiveLobbys[JoinMessageToHandle.LobbyID];
-                foreach(KeyValuePair<int, ConnectionLobbyInfo> Connection in Lobby.ConnectedUsers)
-                {
-                    Connection.Value.StoredEvents.Add(new LobbyEvent_PlayerJoined());
-                }
-                Lobby.ConnectedUsers.Add(JoinMessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
-                ReturnValue = new RequestStatusResponse("Ok");
-            }
-            else if(MessageToHandle is RegisterLobby)
-            {
-                byte[] RandomBytes = new byte[4];
-                new System.Random().NextBytes(RandomBytes);
-                string LobbyID = System.Convert.ToBase64String(RandomBytes);
-                RegisterLobbyResponse Response = new RegisterLobbyResponse();
-                Response.LobbyID = LobbyID;
-                ReturnValue = Response;
-                m_InternalsMutex.WaitOne();
-                ActiveLobbyInfo NewLobby = new ActiveLobbyInfo();
-                NewLobby.ConnectedUsers.Add(MessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
-                m_ActiveLobbys.Add(LobbyID, NewLobby);
-                Console.WriteLine("Current lobby ID's (RegisterLobby): ");
-                foreach(KeyValuePair<string,ActiveLobbyInfo> Lobby in m_ActiveLobbys)
-                {
-                    Console.WriteLine(Lobby.Key);
-                }
-            }
-            else if(MessageToHandle is SendLobbyEvent)
-            {
-                SendLobbyEvent ClientLobbyEvent = (SendLobbyEvent)MessageToHandle;
-                m_InternalsMutex.WaitOne();
-                if (!m_ActiveLobbys.ContainsKey(ClientLobbyEvent.LobbyID))
-                {
-                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
-                }
-                if(ClientLobbyEvent.EventToSend is LobbyEvent_GameStart)
-                {
-                    ActiveLobbyInfo Lobby = m_ActiveLobbys[ClientLobbyEvent.LobbyID];
-                    ReturnValue = new RequestStatusResponse("Ok");
-                    foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
+                    JoinLobby JoinMessageToHandle = (JoinLobby)MessageToHandle;
+                    Console.WriteLine("Queryed lobby id: " + JoinMessageToHandle.LobbyID);
+                    Console.WriteLine("Current lobby ID's (JoinLobby): ");
+                    foreach (KeyValuePair<string, ActiveLobbyInfo> ActiveLobbys in m_ActiveLobbys)
                     {
-                        if(Statuses.Value.Status.Ready == false)
+                        Console.WriteLine(ActiveLobbys.Key);
+                    }
+                    if (!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
+                    {
+                        ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                        return (ReturnValue);
+                    }
+                    ActiveLobbyInfo Lobby = m_ActiveLobbys[JoinMessageToHandle.LobbyID];
+                    foreach (KeyValuePair<int, ConnectionLobbyInfo> Connection in Lobby.ConnectedUsers)
+                    {
+                        Connection.Value.StoredEvents.Add(new LobbyEvent_PlayerJoined());
+                    }
+                    Lobby.ConnectedUsers.Add(JoinMessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
+                    ReturnValue = new RequestStatusResponse("Ok");
+                }
+                else if (MessageToHandle is RegisterLobby)
+                {
+                    byte[] RandomBytes = new byte[4];
+                    new System.Random().NextBytes(RandomBytes);
+                    string LobbyID = System.Convert.ToBase64String(RandomBytes);
+                    RegisterLobbyResponse Response = new RegisterLobbyResponse();
+                    Response.LobbyID = LobbyID;
+                    ReturnValue = Response;
+                    ActiveLobbyInfo NewLobby = new ActiveLobbyInfo();
+                    NewLobby.ConnectedUsers.Add(MessageToHandle.ConnectionIdentifier, new ConnectionLobbyInfo());
+                    m_ActiveLobbys.Add(LobbyID, NewLobby);
+                    Console.WriteLine("Current lobby ID's (RegisterLobby): ");
+                    foreach (KeyValuePair<string, ActiveLobbyInfo> Lobby in m_ActiveLobbys)
+                    {
+                        Console.WriteLine(Lobby.Key);
+                    }
+                }
+                else if (MessageToHandle is SendLobbyEvent)
+                {
+                    SendLobbyEvent ClientLobbyEvent = (SendLobbyEvent)MessageToHandle;
+                    if (!m_ActiveLobbys.ContainsKey(ClientLobbyEvent.LobbyID))
+                    {
+                        ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                        return (ReturnValue);
+                    }
+                    if (ClientLobbyEvent.EventToSend is LobbyEvent_GameStart)
+                    {
+                        ActiveLobbyInfo Lobby = m_ActiveLobbys[ClientLobbyEvent.LobbyID];
+                        ReturnValue = new RequestStatusResponse("Ok");
+                        foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
                         {
-                            ReturnValue = new RequestStatusResponse("Can only start if all players are ready");
-                            m_InternalsMutex.ReleaseMutex();
-                            return (ReturnValue);
+                            if (Statuses.Value.Status.Ready == false)
+                            {
+                                ReturnValue = new RequestStatusResponse("Can only start if all players are ready");
+                                return (ReturnValue);
+                            }
+                        }
+                        int NewGameID = p_CreateNewGame(Lobby);
+
+                        //arbitrary algorithm to determine who starts
+                        int CurrentPlayerIndex = 0;
+                        foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
+                        {
+                            LobbyEvent_GameStart GameStartEvent = new LobbyEvent_GameStart();
+                            GameStartEvent.GameID = NewGameID;
+                            GameStartEvent.PlayerIndex = CurrentPlayerIndex;
+                            Statuses.Value.StoredEvents.Add(GameStartEvent);
+                            CurrentPlayerIndex++;
+                        }
+
+                    }
+                    else
+                    {
+                        ReturnValue = new RequestStatusResponse("Invalid client lobby event");
+                        return (ReturnValue);
+                    }
+                }
+                else if (MessageToHandle is UpdateLobbyStatus)
+                {
+                    UpdateLobbyStatus UpdateStatusMessage = (UpdateLobbyStatus)MessageToHandle;
+                    if (!m_ActiveLobbys.ContainsKey(UpdateStatusMessage.LobbyID))
+                    {
+                        ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                        return (ReturnValue);
+                    }
+                    ActiveLobbyInfo Lobby = m_ActiveLobbys[UpdateStatusMessage.LobbyID];
+                    if (!Lobby.ConnectedUsers.ContainsKey(UpdateStatusMessage.ConnectionIdentifier))
+                    {
+                        ReturnValue = new RequestStatusResponse("Connection not in lobby");
+                        return (ReturnValue);
+                    }
+                    Lobby.ConnectedUsers[UpdateStatusMessage.ConnectionIdentifier].Status = UpdateStatusMessage.NewStatus;
+                    foreach (KeyValuePair<int, ConnectionLobbyInfo> Connection in Lobby.ConnectedUsers)
+                    {
+                        if (Connection.Key != UpdateStatusMessage.ConnectionIdentifier)
+                        {
+                            LobbyEvent_StatusUpdated NewEvent = new LobbyEvent_StatusUpdated();
+                            NewEvent.ConnectionID = UpdateStatusMessage.ConnectionIdentifier;
+                            NewEvent.NewStatus = new ConnectionLobbyStatus(UpdateStatusMessage.NewStatus);
+                            Connection.Value.StoredEvents.Add(NewEvent);
                         }
                     }
-                    int NewGameID = p_CreateNewGame(Lobby);
-
-                    //arbitrary algorithm to determine who starts
-                    int CurrentPlayerIndex = 0;
-                    foreach (KeyValuePair<int, ConnectionLobbyInfo> Statuses in Lobby.ConnectedUsers)
+                    ReturnValue = new RequestStatusResponse();
+                }
+                else if (MessageToHandle is LobbyEventPoll)
+                {
+                    LobbyEventPoll JoinMessageToHandle = (LobbyEventPoll)MessageToHandle;
+                    if (!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
                     {
-                        LobbyEvent_GameStart GameStartEvent = new LobbyEvent_GameStart();
-                        GameStartEvent.GameID = NewGameID;
-                        GameStartEvent.PlayerIndex = CurrentPlayerIndex;
-                        Statuses.Value.StoredEvents.Add(GameStartEvent);
-                        CurrentPlayerIndex++;
+                        ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
+                        return (ReturnValue);
                     }
-                    
-                }
-                else
-                {
-                    ReturnValue = new RequestStatusResponse("Invalid client lobby event");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
-                }
-            }
-            else if(MessageToHandle is UpdateLobbyStatus)
-            {
-                UpdateLobbyStatus UpdateStatusMessage = (UpdateLobbyStatus)MessageToHandle;
-                m_InternalsMutex.WaitOne();
-                if (!m_ActiveLobbys.ContainsKey(UpdateStatusMessage.LobbyID))
-                {
-                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
-                }
-                ActiveLobbyInfo Lobby = m_ActiveLobbys[UpdateStatusMessage.LobbyID];
-                if(!Lobby.ConnectedUsers.ContainsKey(UpdateStatusMessage.ConnectionIdentifier))
-                {
-                    ReturnValue = new RequestStatusResponse("Connection not in lobby");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
-                }
-                Lobby.ConnectedUsers[UpdateStatusMessage.ConnectionIdentifier].Status = UpdateStatusMessage.NewStatus;
-                foreach(KeyValuePair<int,ConnectionLobbyInfo> Connection in Lobby.ConnectedUsers)
-                {
-                    if(Connection.Key != UpdateStatusMessage.ConnectionIdentifier)
+                    ActiveLobbyInfo Lobby = m_ActiveLobbys[JoinMessageToHandle.LobbyID];
+                    //foreach (KeyValuePair<int, ConnectionLobbyStatus> Connection in Lobby.ConnectedUsers)
+                    //{
+                    //    Connection.Value.StoredEvents.Add(new LobbyEvent_PlayerJoined());
+                    //}
+
+                    if (!Lobby.ConnectedUsers.ContainsKey(JoinMessageToHandle.ConnectionIdentifier))
                     {
-                        LobbyEvent_StatusUpdated NewEvent = new LobbyEvent_StatusUpdated();
-                        NewEvent.ConnectionID = UpdateStatusMessage.ConnectionIdentifier;
-                        NewEvent.NewStatus = new ConnectionLobbyStatus(UpdateStatusMessage.NewStatus);
-                        Connection.Value.StoredEvents.Add(NewEvent);
+                        ReturnValue = new RequestStatusResponse("Need to join lobby before you can poll events");
+                        return (ReturnValue);
                     }
-                }
-                ReturnValue = new RequestStatusResponse();
-            }
-            else if(MessageToHandle is LobbyEventPoll)
-            {
-                LobbyEventPoll JoinMessageToHandle = (LobbyEventPoll)MessageToHandle;
-                m_InternalsMutex.WaitOne();
-                if (!m_ActiveLobbys.ContainsKey(JoinMessageToHandle.LobbyID))
-                {
-                    ReturnValue = new RequestStatusResponse("No lobby exists with given LobbyID");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
-                }
-                ActiveLobbyInfo Lobby = m_ActiveLobbys[JoinMessageToHandle.LobbyID];
-                //foreach (KeyValuePair<int, ConnectionLobbyStatus> Connection in Lobby.ConnectedUsers)
-                //{
-                //    Connection.Value.StoredEvents.Add(new LobbyEvent_PlayerJoined());
-                //}
+                    ConnectionLobbyInfo LobbyInfo = Lobby.ConnectedUsers[MessageToHandle.ConnectionIdentifier];
+                    LobbyEventResponse Response = new LobbyEventResponse();
+                    Response.Events = new List<LobbyEvent>(LobbyInfo.StoredEvents);
+                    LobbyInfo.StoredEvents.Clear();
+                    ReturnValue = Response;
 
-                if(!Lobby.ConnectedUsers.ContainsKey(JoinMessageToHandle.ConnectionIdentifier))
-                {
-                    ReturnValue = new RequestStatusResponse("Need to join lobby before you can poll events");
-                    m_InternalsMutex.ReleaseMutex();
-                    return (ReturnValue);
                 }
-                ConnectionLobbyInfo LobbyInfo = Lobby.ConnectedUsers[MessageToHandle.ConnectionIdentifier];
-                LobbyEventResponse Response = new LobbyEventResponse();
-                Response.Events = new List<LobbyEvent>(LobbyInfo.StoredEvents);
-                LobbyInfo.StoredEvents.Clear();
-                ReturnValue = Response;
 
             }
 
-            m_InternalsMutex.ReleaseMutex();
             return (ReturnValue);
         }
         private ServerMessage p_HandleGameMessage(GameMessage ClientMessage)

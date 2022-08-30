@@ -733,6 +733,10 @@ namespace RuleManager
             {
                 ReturnValue = typeof(PassAction);
             }
+            else if(SerializedType == ActionType.UnitEffect)
+            {
+                ReturnValue = typeof(EffectAction);
+            }
             else
             {
                 throw new Exception("Invalid Action type in when deserizalizing action");
@@ -773,7 +777,7 @@ namespace RuleManager
         public int UnitID = 0;
         public int EffectIndex = -1;
 
-        public EffectAction()
+        public EffectAction() : base(ActionType.UnitEffect)
         {
 
         }
