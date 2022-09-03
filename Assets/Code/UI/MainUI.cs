@@ -433,7 +433,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
-    {   if(selectedUnit != null)
+    {
+    //    if(GameObject.Find("UnitActions") != null)
+    //    {
+    //        GameObject.Find("UnitActions").GetComponent<UnitActions>().sortChildren();
+    //    }
+        if (selectedUnit != null)
         {
             if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
             {   
@@ -780,7 +785,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             int index = 0;
 
             print(padding);
-            foreach(RuleManager.Ability ability in unitInfo.Abilities)
+            DestroyButtons();
+            foreach (RuleManager.Ability ability in unitInfo.Abilities)
             {   
                 //  insta
                 GameObject attackButton = GameObject.Find("AttackButton");
@@ -788,10 +794,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 print("gar den igenom abilities");
 
-                 GameObject newButton =  Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding,attackButton.transform.position.y), new Quaternion());
+                GameObject newButton =  Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding,attackButton.transform.position.y,0), new Quaternion());
                 padding += ogPadding;
-                newButton.transform.parent = GameObject.Find("UnitActions").transform;
 
+                newButton.transform.SetParent(GameObject.Find("UnitActions").transform);
+            //    newButton.transform.parent = GameObject.Find("UnitActions").transform;
+                
                 AbilityButton abilityButton = newButton.GetComponent<AbilityButton>();
 
                 abilityButton.abilityIndex = index;
@@ -805,7 +813,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 abilityButton.abilityName = ability.GetName();
 
 
-                if(ability is RuleManager.Ability_Activated)
+                if (ability is RuleManager.Ability_Activated)
                 {
                     RuleManager.Ability_Activated activatedAbility = (RuleManager.Ability_Activated)ability;
 
@@ -824,12 +832,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 buttonDestroyList.Add(newButton);
 
-                index += 1; 
+                index += 1;
                 
             }
-            index = 0; 
-            
+            index = 0;
 
+            GameObject.Find("UnitActions").GetComponent<UnitActions>().sortChildren();
             ConstructMovementRange(unitInfo);
 
 
