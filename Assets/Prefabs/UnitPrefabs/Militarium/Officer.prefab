@@ -44,6 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d8a434556a6efd438f5dc71edb94336, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AbilityIcons:
+  - {fileID: 21300000, guid: 9a08b772181afc0488275c60a1c7986f, type: 3}
+  - {fileID: 21300000, guid: a33898361cf3de247a55202026cc3006, type: 3}
+  - {fileID: 21300000, guid: 9a08b772181afc0488275c60a1c7986f, type: 3}
   sidewaySprite: {fileID: 21300000, guid: 8bacaca688b3f46478fe0c81edb7b5c6, type: 3}
   forwardSprite: {fileID: 21300000, guid: 46d0df01994acc646afcbf22c3d50682, type: 3}
   backWardSprite: {fileID: 21300000, guid: 0727b8cd36c68aa4584bda0a65c56efb, type: 3}

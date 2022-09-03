@@ -33,6 +33,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private List<GameObject> CreatedMovementRange = new List<GameObject>();
 
+    private Dictionary<int, Unit> m_OpaqueToUIInfo = new Dictionary<int, Unit>();
+
+
     public RuleManager.UnitInfo selectedUnit;
 
     public bool MoveActionSelected = false;
@@ -370,6 +373,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             stackObjectsToDestroy.Add(createdImage);
             createdImage.transform.parent = FindObjectOfType<Canvas>().gameObject.transform;
 
+            if(entity.Source is RuleManager.EffectSource_Unit)
+            {
+                RuleManager.EffectSource_Unit Source = (RuleManager.EffectSource_Unit)entity.Source;
+                if(Source.EffectIndex != -1)
+                {
+                    createdImage.GetComponentInChildren<UnityEngine.UI.RawImage>().texture = m_OpaqueToUIInfo[ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger].AbilityIcons[Source.EffectIndex].texture;
+                }
+                print("Stack entity effect: " + entity.EffectToResolve.GetText());
+            }
+
             createdImage.GetComponent<RectTransform>().position = new Vector3((canvas.rect.width/2) - (firstItemPosition - originalPadding + increasingPadding), canvas.rect.height/2);
             increasingPadding += originalPadding;
         }
@@ -488,7 +501,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 //FIX ME
                 List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
 
-                RuleManager.EffectSource_Unit EffectSource = new RuleManager.EffectSource_Unit(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex,selectedUnit.UnitID);
+                RuleManager.EffectSource_Unit EffectSource = new RuleManager.EffectSource_Unit(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex,selectedUnit.UnitID,selectedAbilityIndex);
                 if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile))
                 {
                     currentTargetToSelect += 1;
@@ -1027,12 +1040,21 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private void CreateArmies()
     {
+
+        Dictionary<string, int> UnitOpaqueIDMap = new Dictionary<string, int>();
+        int CurrentUnitOpaqueID = 0;
         foreach(UnitInArmy unitFromList in firstPlayerArmy)
         {
   
             RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
           
-    
+            if(!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
+            {
+                UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
+                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
+                CurrentUnitOpaqueID += 1;
+            }
+            unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
 
 
             unitToCreate.Position = unitFromList.cord;
@@ -1053,6 +1075,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         foreach (UnitInArmy unitFromList in secondPlayerArmy)
         {
             RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
+
+            if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
+            {
+                UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
+                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
+                CurrentUnitOpaqueID += 1;
+            }
+            unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
 
             unitToCreate.Position = unitFromList.cord;
 

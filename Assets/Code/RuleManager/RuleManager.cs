@@ -565,10 +565,12 @@ namespace RuleManager
     public class EffectSource_Unit : EffectSource
     {
         public int UnitID = 0;
-        public EffectSource_Unit(int NewPlayerIndex,int NewUnitID)
+        public int EffectIndex = -1;
+        public EffectSource_Unit(int NewPlayerIndex,int NewUnitID,int NewEffectIndex)
         {
             PlayerIndex = NewPlayerIndex;
             UnitID = NewUnitID;
+            EffectIndex = NewEffectIndex;
         }
     }
     public class EffectSource_Player : EffectSource
@@ -830,7 +832,7 @@ namespace RuleManager
         //Static stuff
         public int UnitID = 0;
         public int PlayerIndex = 0;
-        public object OpaqueInteger = null;
+        public int OpaqueInteger = -1;
         public List<Ability> Abilities = new List<Ability>();
         public UnitStats Stats = new UnitStats();
         public HashSet<string> Tags = new HashSet<string>();
@@ -2009,7 +2011,7 @@ namespace RuleManager
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
                 NewEntity.EffectToResolve.SetText(AbilityToActivate.GetDescription());
                 NewEntity.Targets = EffectToExecute.Targets;
-                NewEntity.Source = new EffectSource_Unit(ActionToExecute.PlayerIndex,EffectToExecute.UnitID);
+                NewEntity.Source = new EffectSource_Unit(ActionToExecute.PlayerIndex,EffectToExecute.UnitID,EffectToExecute.EffectIndex);
                 NewEntity.Source.PlayerIndex = ActionToExecute.PlayerIndex;
                 m_TheStack.Push(NewEntity);
                 if(m_EventHandler != null)
@@ -2264,7 +2266,7 @@ namespace RuleManager
                 {
                     return (PreconditionsSatisfied);
                 }
-                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(ActionToCheck.PlayerIndex,AssociatedUnit.UnitID),EffectToCheck.Targets))
+                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(ActionToCheck.PlayerIndex,AssociatedUnit.UnitID,EffectToCheck.EffectIndex),EffectToCheck.Targets))
                 {
                     ReturnValue = false;
                     ErrorString = "Invalid targets for ability";
