@@ -6,7 +6,7 @@ public class Unit : MonoBehaviour
 {
 
     // Start is called before the first frame update
-
+    public Sprite unitCardSprite;
     public List<Sprite> AbilityIcons = new List<Sprite>();
     void Start()
     {

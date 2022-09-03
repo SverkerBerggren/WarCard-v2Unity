@@ -780,12 +780,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitCardInformation.ActivationCostText.text = unitInfo.Stats.ActivationCost.ToString();
             unitCardInformation.MovementText.text = unitInfo.Stats.Movement.ToString();
             unitCardInformation.RangeText.text = unitInfo.Stats.Range.ToString();
+
+            unitCardInformation.gameObject.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].unitCardSprite; 
+
+            
+
             int padding = 150;
             int ogPadding = padding; 
             int index = 0;
 
             print(padding);
+         //   print("hur manga barn innan destroy " + GameObject.Find("UnitActions").transform.childCount);
             DestroyButtons();
+            //   print("hur manga barn efter destroy " + GameObject.Find("UnitActions").transform.childCount);
+        //    GameObject.Find("UnitActions").GetComponent<UnitActions>().clearAbilityButtons();
             foreach (RuleManager.Ability ability in unitInfo.Abilities)
             {   
                 //  insta
@@ -836,7 +844,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 
             }
             index = 0;
-
+            print("hur manga barn innan sort " + GameObject.Find("UnitActions").transform.childCount);
             GameObject.Find("UnitActions").GetComponent<UnitActions>().sortChildren();
             ConstructMovementRange(unitInfo);
 
@@ -856,7 +864,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     private void DestroyButtons()
     {
         foreach(GameObject obj in buttonDestroyList)
-        {
+        {   
+            obj.transform.SetParent(null);
             Destroy(obj);
             
         }

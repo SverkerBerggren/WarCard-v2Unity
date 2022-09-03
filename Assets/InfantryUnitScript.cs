@@ -7,6 +7,8 @@ public class InfantryUnitScript :  Unit
     public Sprite sidewaySprite;
     public Sprite forwardSprite;
     public Sprite backWardSprite;
+
+ //   public Sprite unitCardSprite;
     // Start is called before the first frame update
     void Start()
     {

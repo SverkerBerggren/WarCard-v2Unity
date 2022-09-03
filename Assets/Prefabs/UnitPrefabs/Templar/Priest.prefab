@@ -44,6 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7058a13bd2d8d9745991277cb0646c18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  unitCardSprite: {fileID: 21300000, guid: df0b299958af6af41b88c065bfc40120, type: 3}
   AbilityIcons:
   - {fileID: 21300000, guid: 5ddef68ab06989c479087f7d0f4f0f8c, type: 3}
   - {fileID: 21300000, guid: 99a5ccdeca355e542acaef3cd3da3545, type: 3}

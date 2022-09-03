@@ -71,7 +71,7 @@ public class GridManager : MonoBehaviour
 
     public void OnClick(ClickType Type, int X, int Y)
     {
-        print(Y+" "+X);
+     //   print(Y+" "+X);
         if(m_Reciever != null)
         {
             m_Reciever.OnClick(Type, new Coordinate(X, Y));

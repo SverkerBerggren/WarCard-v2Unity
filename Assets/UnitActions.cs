@@ -25,8 +25,18 @@ public class UnitActions : MonoBehaviour
     public void sortChildren()
     {
         int amountOfChildren = gameObject.transform.childCount;
+        float firstButtonXPosition = 0;
+        if(amountOfChildren < 4)
+        {
+            firstButtonXPosition = (paddingBetweenButtons * (amountOfChildren - 1) / 2) * -1;
+        }
+        else
+        {
+            firstButtonXPosition = ((paddingBetweenButtons -100) * (amountOfChildren - 1) / 2) * -1;
+        }
+         
 
-        float firstButtonXPosition = (paddingBetweenButtons * (amountOfChildren -1) / 2) * -1;
+
 
         print(amountOfChildren);
 
@@ -38,10 +48,41 @@ public class UnitActions : MonoBehaviour
 
             transform.localScale = new Vector3(2, 2, 2);
 
-            firstButtonXPosition += paddingBetweenButtons; 
+          //  firstButtonXPosition += paddingBetweenButtons;
+            if (amountOfChildren < 4)
+            {
+                firstButtonXPosition += paddingBetweenButtons;
+            }
+            else
+            {
+                firstButtonXPosition += paddingBetweenButtons -100;
+            }
         }
 
 
 
+    }
+
+    public void clearAbilityButtons()
+    {
+        List<GameObject> buttonsToDestroy = new List<GameObject>();
+        for(int i = 0; i < gameObject.transform.childCount; i++)
+        {
+            if(i == 0 || i == 1)
+            {
+
+            }
+            else
+            {
+                buttonsToDestroy.Add(gameObject.transform.GetChild(i).gameObject);
+            }
+        }
+
+        foreach(GameObject obj in buttonsToDestroy)
+        {
+            Destroy(obj);
+        }
+
+        buttonsToDestroy.Clear();
     }
 }
