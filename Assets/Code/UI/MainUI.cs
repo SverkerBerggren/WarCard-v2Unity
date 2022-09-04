@@ -7,6 +7,8 @@ using System;
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
 
+    public CanvasUiScript canvasUIScript; 
+
     RuleManager.RuleManager ruleManager;
 
     public GridManager gridManager; 
@@ -79,6 +81,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private TextMeshProUGUI initiativeText;
 
+    public Sprite firstPlayerTopFrameSprite;
+
+    public Sprite secondPlayerTopFrameSprite;
+
     public TextMeshProUGUI currentPlayerTurnText;
 
     public TextMeshProUGUI currentPlayerPriority;
@@ -124,7 +130,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
       //  print(initiativeText);
 
         GameState GlobalState = FindObjectOfType<GameState>();
+
+        canvasUIScript = FindObjectOfType<CanvasUiScript>();
+
         ruleManager = GlobalState.GetRuleManager();
+         
+
         GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex, this);
         if(GlobalNetworkState.OpponentActionRetriever != null)
         {
@@ -361,7 +372,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             firstItemPosition = stackPadding * ((amountOfItems / 2) - 1);//Screen.width - (stackPadding * (amountOfItems / 2)) + (stackPadding/2);
         }
-
+        if (localStack.Count == 2) ;
 
         foreach (RuleManager.StackEntity entity in localStack)
         {
@@ -371,7 +382,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             createdImage.GetComponent<ImageAbilityStackScript>().descriptionText.text = entity.EffectToResolve.GetText();
             stackObjectsToDestroy.Add(createdImage);
-            createdImage.transform.parent = FindObjectOfType<Canvas>().gameObject.transform;
+            createdImage.transform.SetParent(GameObject.Find("StackAbilityHolder").transform);//FindObjectOfType<Canvas>().gameObject.transform;
 
             if(entity.Source is RuleManager.EffectSource_Unit)
             {
@@ -379,21 +390,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 if(Source.EffectIndex != -1)
                 {
                     createdImage.GetComponentInChildren<UnityEngine.UI.RawImage>().texture = m_OpaqueToUIInfo[ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger].AbilityIcons[Source.EffectIndex].texture;
+                    
                 }
                 print("Stack entity effect: " + entity.EffectToResolve.GetText());
             }
-
-            createdImage.GetComponent<RectTransform>().position = new Vector3((canvas.rect.width/2) - (firstItemPosition - originalPadding + increasingPadding), canvas.rect.height/2);
+            
+           // createdImage.GetComponent<RectTransform>().position = new Vector3((canvas.rect.width/2) - (firstItemPosition - originalPadding + increasingPadding), canvas.rect.height/2);
             increasingPadding += originalPadding;
         }
+        GameObject.Find("StackAbilityHolder").GetComponent<UnitActions>().sortChildren();
     }
 
     private void DestroyStackUI()
     {
         foreach (GameObject obj in stackObjectsToDestroy)
         {
+            obj.transform.SetParent(null);
             Destroy(obj);
         }
+
+        stackObjectsToDestroy.Clear();
     }
 
     public void OnScoreChange(int PlayerIndex,int NewScore)
@@ -422,7 +438,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
-        currentPlayerTurnText.text = "Current Player: " + (CurrentPlayerTurnIndex +1);
+        //    currentPlayerTurnText.text = "Current Player: " + (CurrentPlayerTurnIndex +1);
+
+        canvasUIScript.changeTopFrame();
 
         currentTurnText.text = "Turn: " + CurrentTurnCount;
     }
@@ -583,6 +601,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 if (!targetWasCorrect)
                 {
+                    canvasUIScript.errorMessage("Wrong target, you needed to select a " + requiredAbilityTargets[currentTargetToSelect]);
                     resetSelection();
                     return;
                 }
@@ -928,7 +947,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
     private void DestroyMovementRange()
-    {   
+    {       
+            
+            
       
             foreach(List<GameObject> obj in movementIndicatorObjectDictionary)
             {
