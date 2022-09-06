@@ -22,6 +22,8 @@ public class NetworkActionRetriever : ActionRetriever
         m_Connection = Connection;
         m_EventThread = new Thread(p_RecieveEventThread);
         m_EventThread.Start();
+        Thread SendThread = new Thread(p_SendEventThread);
+        SendThread.Start();
     }
 
     ~NetworkActionRetriever()
@@ -60,6 +62,35 @@ public class NetworkActionRetriever : ActionRetriever
             Thread.Sleep(200);
         }
     }
+    void p_SendEventThread()
+    {
+        while(!m_ShouldStop)
+        {
+            m_SemaphoreToUse.WaitOne();
+            lock(m_ActionsToSend)
+            {
+                if(m_ActionsToSend.Count > 0)
+                {
+                    lock(m_Connection)
+                    {
+                        RuleServer.GameAction ActionToSend = m_ActionsToSend.Pop();
+                        RuleServer.ServerMessage Response = m_Connection.SendMessage(ActionToSend);
+                        if(!(Response is RuleServer.RequestStatusResponse))
+                        {
+                            //Yikes
+                            throw new System.Exception("Invalid server response type: " + Response == null ? "response was null" : Response.GetType().Name);
+                        }
+                        RuleServer.RequestStatusResponse StatusResponse = (RuleServer.RequestStatusResponse)Response;
+                        if(StatusResponse.ErrorString != "Ok")
+                        {
+                            m_ShouldStop = true;
+                            throw new System.Exception("Error sending action: "+StatusResponse.ErrorString);
+                        }
+                    }
+                }
+            }
+        }
+    }
     public int getAvailableActions()
     {
         lock(m_RecievedActions)
@@ -75,24 +106,20 @@ public class NetworkActionRetriever : ActionRetriever
             return (ReturnValue);
         }
     }
+    
+    Semaphore m_SemaphoreToUse = new Semaphore(0,100);
+    Stack<RuleServer.GameAction> m_ActionsToSend = new Stack<RuleServer.GameAction>();
+
     public void SendAction(RuleManager.Action ActionToSend)
     {
         RuleServer.GameAction Message = new RuleServer.GameAction();
         Message.ActionToExecute = ActionToSend;
         Message.GameIdentifier = m_GameIdentifier;
-        RuleServer.ServerMessage Response = null;
-        lock(m_Connection)
+
+        lock(m_ActionsToSend)
         {
-            Response = m_Connection.SendMessage(Message);
-        }
-        if(Response is RuleServer.RequestStatusResponse)
-        {
-            RuleServer.RequestStatusResponse Status = (RuleServer.RequestStatusResponse)Response;
-            if(Status.ErrorString != "Ok")
-            {
-                //yikes
-                // print("Error in sending action" + Status.ErrorString);
-            }
+            m_ActionsToSend.Push(Message);
+            m_SemaphoreToUse.Release();
         }
     }
 }

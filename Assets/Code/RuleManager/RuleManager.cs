@@ -896,6 +896,7 @@ namespace RuleManager
 
         void OnPlayerPassPriority(int currentPlayerString);
 
+        void OnPlayerWin(int WinningPlayerIndex);
         void OnScoreChange(int PlayerIndex, int NewScore);
 
 
@@ -961,8 +962,11 @@ namespace RuleManager
         const int m_PlayerMaxInitiative = 150;
         const int m_PlayerTurnInitiativeGain = 100;
         const int m_PlayerInitiativeRetain = 40;
-        const int m_ObjectiveScoreGain = 50;
+        const int m_ObjectiveScoreGain = 15;
 
+        const int m_PlayerWinThreshold = 100;
+
+        bool m_GameFinished = false;
 
 
         bool m_ActionIsPlayed = false;
@@ -1467,7 +1471,7 @@ namespace RuleManager
             OutError = ErrorString;
             return (ReturnValue);
         }
-        public bool p_VerifyTarget(Target TargetToVerify)
+        public bool p_VerifyTarget(Target TargetToVerify,out string OutError)
         {
             bool ReturnValue = true;
             if(TargetToVerify is Target_Unit)
@@ -1475,6 +1479,7 @@ namespace RuleManager
                 Target_Unit UnitTarget = (Target_Unit)TargetToVerify;
                 if(!m_UnitInfos.ContainsKey(UnitTarget.UnitID))
                 {
+                    OutError = "Can't target unit that doesn't exist";
                     return (false);
                 }
             }
@@ -1483,6 +1488,7 @@ namespace RuleManager
                 Target_Tile TileTarget = (Target_Tile)TargetToVerify;
                 if ((TileTarget.TargetCoordinate.Y >= m_Tiles.Count || TileTarget.TargetCoordinate.Y < 0) || (TileTarget.TargetCoordinate.X >= m_Tiles[0].Count || TileTarget.TargetCoordinate.X < 0))
                 {
+                    OutError = "Tile coordinate x=" + TileTarget.TargetCoordinate.X + " y=" + TileTarget.TargetCoordinate.Y + " is out of range for battlefield";
                     return (false);
                 }
             }
@@ -1491,16 +1497,20 @@ namespace RuleManager
                 Target_Player PlayerTarget = (Target_Player)TargetToVerify;
                 if(PlayerTarget.PlayerIndex < 0 ||  PlayerTarget.PlayerIndex >= m_PlayerCount)
                 {
+                    OutError = "Invalid player index";
                     return (false);
                 }
             }
+            OutError = "";
             return (ReturnValue);
         }
 
-        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,List<Target> CurrentTargets,Target TargetToVerify)
+        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,List<Target> CurrentTargets,Target TargetToVerify,out string OutError)
         {
             bool ReturnValue = true;
-            if(!p_VerifyTarget(TargetToVerify))
+            string Error = "";
+            
+            if(!p_VerifyTarget(TargetToVerify,out OutError))
             {
                 return (false);
             }
@@ -1508,6 +1518,10 @@ namespace RuleManager
             {
                 TargetCondition_Type TypeCondition = (TargetCondition_Type)Condition;
                 ReturnValue = TypeCondition.ValidType == TargetToVerify.Type;
+                if(!ReturnValue)
+                {
+                    Error = "Invalid type for target: type needs to be " + TypeCondition.ValidType.ToString();
+                }
             }
             else if(Condition is TargetCondition_Enemy)
             {
@@ -1515,10 +1529,18 @@ namespace RuleManager
                 if(TargetToVerify is Target_Unit)
                 {
                     ReturnValue = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].PlayerIndex != Source.PlayerIndex;
+                    if(!ReturnValue)
+                    {
+                        Error = "Target needs to be an enemy unit";
+                    }
                 }
                 else if(TargetToVerify is Target_Player)
                 {
                     ReturnValue = ((Target_Player)TargetToVerify).PlayerIndex != Source.PlayerIndex;
+                    if (!ReturnValue)
+                    {
+                        Error = "Target needs to be an enemy player";
+                    }
                 }
             }
             else if(Condition is TargetCondition_Friendly)
@@ -1527,10 +1549,18 @@ namespace RuleManager
                 if (TargetToVerify is Target_Unit)
                 {
                     ReturnValue = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].PlayerIndex == Source.PlayerIndex;
+                    if(!ReturnValue)
+                    {
+                        Error = "Target needs to be a friendly unit";
+                    }
                 }
                 else if (TargetToVerify is Target_Player)
                 {
                     ReturnValue = ((Target_Player)TargetToVerify).PlayerIndex == Source.PlayerIndex;
+                    if (!ReturnValue)
+                    {
+                        Error = "Target needs to be a friendly player";
+                    }
                 }
             }
             else if(Condition is TargetCondition_Range)
@@ -1570,29 +1600,42 @@ namespace RuleManager
                 {
                     ReturnValue = false;
                 }
+                if(!ReturnValue)
+                {
+                    Error = "Target out of range";
+                }
 
             }
             else if(Condition is TargetCondition_Target)
             {
                 TargetCondition_Target TargetCondition = (TargetCondition_Target)Condition;
-                return (TargetCondition.NeededTarget.Equals(TargetToVerify));
+                ReturnValue = TargetCondition.NeededTarget.Equals(TargetToVerify);
+                if(!ReturnValue)
+                {
+                    Error = "This should not be written";
+                }
             }
             else if(Condition is TargetCondition_UnitTag)
             {
                 TargetCondition_UnitTag TagCondition = (TargetCondition_UnitTag)Condition;
                 if(TargetToVerify.Type != TargetType.Unit)
                 {
-                    //Excpeption eller returna false?
                     ReturnValue = false;
+                    Error = "Target needs to be a unit";
                 }
                 else
                 {
                     int UnitToInspect = ((Target_Unit)TargetToVerify).UnitID;
                     if(!m_UnitInfos.ContainsKey(UnitToInspect))
                     {
+                        Error = "Unit doesn't exist";
                         return (false);
                     }
                     ReturnValue = m_UnitInfos[UnitToInspect].Tags.Contains(TagCondition.TagToContain);
+                    if(!ReturnValue)
+                    {
+                        Error = "Unit doesn't have the required tag: " + TagCondition.TagToContain;
+                    }
                 }
             }
             else if(Condition is TargetCondition_And)
@@ -1600,7 +1643,7 @@ namespace RuleManager
                 TargetCondition_And AndCondition = (TargetCondition_And)Condition;
                 foreach(TargetCondition AndClause in AndCondition.Conditions)
                 {
-                    if(!p_VerifyTarget(AndClause,Source,CurrentTargets,TargetToVerify))
+                    if(!p_VerifyTarget(AndClause,Source,CurrentTargets,TargetToVerify,out Error))
                     {
                         ReturnValue = false;
                         break;
@@ -1613,7 +1656,7 @@ namespace RuleManager
                 ReturnValue = false;
                 foreach (TargetCondition OrClause in OrCondition.Conditions)
                 {
-                    if (p_VerifyTarget(OrClause, Source, CurrentTargets, TargetToVerify))
+                    if (p_VerifyTarget(OrClause, Source, CurrentTargets, TargetToVerify,out Error))
                     {
                         ReturnValue = true;
                         break;
@@ -1628,30 +1671,34 @@ namespace RuleManager
             {
                 throw new Exception("Invalid target condition type: "+Condition.GetType().Name);
             }
+            OutError = Error;
             return (ReturnValue);
         }
 
-        public bool p_VerifyTargets(TargetInfo Info,EffectSource Source,List<Target> TargetsToVerify)
+        public bool p_VerifyTargets(TargetInfo Info,EffectSource Source,List<Target> TargetsToVerify,out string OutError)
         {
             bool ReturnValue = true;
+
             if(Info is TargetInfo_List)
             {
                 TargetInfo_List ListToVerify = (TargetInfo_List)Info;
                 if(ListToVerify.Targets.Count != ListToVerify.Targets.Count)
                 {
                     ReturnValue = false;
+                    OutError = "Invalid number of targets";
                     return (ReturnValue);
                 }
                 List<Target> CurrentTargets = new List<Target>();
                 for(int i = 0; i < ListToVerify.Targets.Count;i++)
                 {
-                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source,CurrentTargets, TargetsToVerify[i]))
+                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source,CurrentTargets, TargetsToVerify[i],out OutError))
                     {
                         return (false);
                     }
                     CurrentTargets.Add(TargetsToVerify[i]);
                 }
             }
+            OutError = "";
             return (ReturnValue);
         }
 
@@ -1743,8 +1790,16 @@ namespace RuleManager
                 {
                     m_EventHandler.OnScoreChange(i, m_PlayerPoints[i]);
                 }
+                if(m_PlayerPoints[i] >= m_PlayerWinThreshold)
+                {
+                    m_GameFinished = true;
+                    if(m_EventHandler != null)
+                    {
+                        m_EventHandler.OnPlayerWin(i);
+                    }
+                    yield break;
+                }
             }
-
             foreach(KeyValuePair<int,UnitInfo> Units in m_UnitInfos)
             {
                 p_RefreshUnit(Units.Value);
@@ -2004,6 +2059,8 @@ namespace RuleManager
             }
             else if(ActionToExecute is EffectAction)
             {
+                PriorityTabled = false;
+                m_PriorityTabled = false;
                 EffectAction EffectToExecute = (EffectAction)ActionToExecute;
                 UnitInfo UnitWithEffect = m_UnitInfos[EffectToExecute.UnitID];
                 Ability_Activated AbilityToActivate =(Ability_Activated) UnitWithEffect.Abilities[EffectToExecute.EffectIndex];
@@ -2069,31 +2126,36 @@ namespace RuleManager
             }
             yield break;
         }
-        public IEnumerable<Target> GetPossibleTargets(TargetInfo InfoToInspect)
-        {
-            List<Target> ReturnValue = new List<Target>();
-
-            if(InfoToInspect is TargetInfo_List)
-            {
-                TargetInfo_List ListInfo = (TargetInfo_List)InfoToInspect;
-                if(ListInfo.Targets.Count == 1)
-                {
-                    IEnumerator<Target> TargetEnumerator = p_TotalTargetIterator();
-                    while (TargetEnumerator.MoveNext())
-                    {
-                        List<Target> TargetList = new List<Target>();
-                        TargetList.Add(TargetEnumerator.Current);
-                        if(p_VerifyTargets(InfoToInspect,new EffectSource_Empty(),TargetList))
-                        {
-                            ReturnValue.Add(TargetEnumerator.Current);
-                        }
-                    }
-                }
-            }
-            return (ReturnValue);
-        }
+        //public IEnumerable<Target> GetPossibleTargets(TargetInfo InfoToInspect)
+        //{
+        //    List<Target> ReturnValue = new List<Target>();
+        //
+        //    if(InfoToInspect is TargetInfo_List)
+        //    {
+        //        TargetInfo_List ListInfo = (TargetInfo_List)InfoToInspect;
+        //        if(ListInfo.Targets.Count == 1)
+        //        {
+        //            IEnumerator<Target> TargetEnumerator = p_TotalTargetIterator();
+        //            while (TargetEnumerator.MoveNext())
+        //            {
+        //                List<Target> TargetList = new List<Target>();
+        //                TargetList.Add(TargetEnumerator.Current);
+        //                if(p_VerifyTargets(InfoToInspect,new EffectSource_Empty(),TargetList))
+        //                {
+        //                    ReturnValue.Add(TargetEnumerator.Current);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    return (ReturnValue);
+        //}
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
+            if(m_GameFinished)
+            {
+                OutInfo = "Game is finished";
+                return false;
+            }
             if(ActionToCheck.PlayerIndex == -1)
             {
                 ActionToCheck.PlayerIndex = m_CurrentPlayerPriority;
@@ -2266,10 +2328,9 @@ namespace RuleManager
                 {
                     return (PreconditionsSatisfied);
                 }
-                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(ActionToCheck.PlayerIndex,AssociatedUnit.UnitID,EffectToCheck.EffectIndex),EffectToCheck.Targets))
+                if(!p_VerifyTargets(AbilityToActive.ActivationTargets,new EffectSource_Unit(ActionToCheck.PlayerIndex,AssociatedUnit.UnitID,EffectToCheck.EffectIndex),EffectToCheck.Targets,out OutInfo))
                 {
                     ReturnValue = false;
-                    ErrorString = "Invalid targets for ability";
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
@@ -2380,9 +2441,10 @@ namespace RuleManager
         {
             UnitInfo ReturnValue = new UnitInfo(m_UnitInfos[ID]);
             List<Target> EmptyTargets = new List<Target>();
+            string ErrorString = "";
             foreach(KeyValuePair<int,RegisteredContinousEffect> ContinousEffect in m_RegisteredContinousAbilities)
             {
-                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource,EmptyTargets, new Target_Unit(ID)))
+                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource,EmptyTargets, new Target_Unit(ID),out ErrorString))
                 {
                     p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply);
                 }

@@ -104,6 +104,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     TextMeshProUGUI Player1Score;
     TextMeshProUGUI Player2Score;
 
+
+
+
+
+
+    public GameObject EndScreenUI = null;
+    public Sprite WinSprite = null;
+    public Sprite DefeatSprite = null;
+
+
     [Serializable]
     public struct UnitInArmy
     {
@@ -450,6 +460,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
+    public void OnPlayerWin(int WinningPlayerIndex)
+    {
+        GameObject EndScreen = Instantiate(EndScreenUI);
+        if(WinningPlayerIndex == GlobalNetworkState.LocalPlayerIndex)
+        {
+            EndScreen.GetComponent<UnityEngine.UI.Image>().sprite = WinSprite;
+        }
+        else
+        {
+            EndScreen.GetComponent<UnityEngine.UI.Image>().sprite = DefeatSprite;
+        }
+        gameObject.SetActive(false);
+    }
+
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
     {
     //    if(GameObject.Find("UnitActions") != null)
@@ -523,9 +547,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 //FIX ME
                 List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
-
+                string ErrorString = "";
                 RuleManager.EffectSource_Unit EffectSource = new RuleManager.EffectSource_Unit(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex,selectedUnit.UnitID,selectedAbilityIndex);
-                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile))
+                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile,out ErrorString))
                 {
                     currentTargetToSelect += 1;
                     targetWasCorrect = true;
@@ -533,7 +557,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 }
                 if(currentTargetToSelect < requiredAbilityTargets.Count)
                 {
-                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetUnit) && !targetWasCorrect)
+                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetUnit, out ErrorString) && !targetWasCorrect)
                     {
                         currentTargetToSelect += 1;
                         targetWasCorrect = true;
@@ -601,7 +625,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 if (!targetWasCorrect)
                 {
-                    canvasUIScript.errorMessage("Wrong target, you needed to select a " + requiredAbilityTargets[currentTargetToSelect]);
+                    canvasUIScript.errorMessage(ErrorString);
                     resetSelection();
                     return;
                 }

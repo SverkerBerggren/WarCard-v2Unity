@@ -710,13 +710,31 @@ PrefabInstance:
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: isOnline
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: WinSprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 2ac8c6619728b314c8ce11a6ca93fb9f,
+        type: 3}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: EndScreenUI
+      value: 
+      objectReference: {fileID: 9167687509031472244, guid: 8b7419a8e80278a4a85e901483a8f059,
+        type: 3}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: gridManager
       value: 
       objectReference: {fileID: 1868169915}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: DefeatSprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d5747c81a18d7e647adfc9e32ca934e1,
+        type: 3}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: stackPadding
