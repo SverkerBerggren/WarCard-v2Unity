@@ -26,7 +26,7 @@ public class GridManager : MonoBehaviour
         return (ReturnValue);
     }
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         //m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
         for(int YIndex = 0; YIndex < Height; YIndex++)
@@ -36,7 +36,9 @@ public class GridManager : MonoBehaviour
                 GameObject NewObject = Instantiate(TileObject);
                 //Assumes that tiles are quadratic
                 float TileWidth = NewObject.GetComponent<SpriteRenderer>().size.x;
+                TileWidth *= NewObject.transform.localScale.x;
                 m_TileWidth = TileWidth;
+                print("The tile width: " + m_TileWidth);
                 Vector3 NewPosition = new Vector3(transform.position.x + XIndex * TileWidth, transform.position.y - YIndex * TileWidth, 0);
                 GridClick ClickObject = NewObject.GetComponent<GridClick>();
                 ClickObject.X = XIndex;
@@ -94,7 +96,8 @@ public class GridManager : MonoBehaviour
 
       //  print(transform.position + new Vector3(16 * cord.X, 16 * -cord.Y));
 
-        return transform.position + new Vector3(16 * cord.X, 16 * -cord.Y);
+        return transform.position + new Vector3(m_TileWidth * cord.X, m_TileWidth * -cord.Y);
+        //return transform.position + new Vector3(16 * cord.X, 16 * -cord.Y);
     }
 }
 public interface ClickReciever

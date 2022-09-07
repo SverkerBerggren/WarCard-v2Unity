@@ -198,9 +198,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 732740bb0e0ce174895a1eb88911c87d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ScrollSpeed: 10
-  MouseSpeed: 50
-  ZoomSpeed: 1
+  ScrollSpeed: 20
+  MouseSpeed: 100
+  ZoomSpeed: 10
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0

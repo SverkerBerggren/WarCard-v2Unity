@@ -1071,6 +1071,10 @@ namespace RuleManager
         {
             return m_CurrentPlayerPriority; 
         }
+        public int GetPlayerTurn()
+        {
+            return m_CurrentPlayerTurn;
+        }
         public RuleManager(uint Width,uint Height)
         {
             m_Tiles = new List<List<TileInfo>>((int)Height);
