@@ -1,6 +1,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI; 
 public class CanvasUiScript : MonoBehaviour
@@ -11,13 +12,17 @@ public class CanvasUiScript : MonoBehaviour
     private bool isFirstPlayerTopFrame = true;
 
     [SerializeField]
-    private ErrorMessageScript errorMessageScript; 
+    private ErrorMessageScript errorMessageScript;
+
+
+    [SerializeField]
+    private TextMeshProUGUI reactionText;
 
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        reactionText.gameObject.SetActive(false);
     }
 
     // Update is called once per frame
@@ -40,6 +45,13 @@ public class CanvasUiScript : MonoBehaviour
             topFrame.sprite = firstPlayerTopFrame; 
         }
 
+    }
+
+    public void changeReactionText(bool active, string text)
+    {
+        reactionText.gameObject.SetActive(active);
+
+        reactionText.text = text; 
     }
 
     public void errorMessage(string message)

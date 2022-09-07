@@ -614,6 +614,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3544125286779993332, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: heightPadding
+      value: -420
+      objectReference: {fileID: 0}
+    - target: {fileID: 3544125286779993332, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: paddingBetweenButtons
+      value: 360
+      objectReference: {fileID: 0}
     - target: {fileID: 4665449774012896317, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_Name
@@ -710,7 +720,7 @@ PrefabInstance:
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: isOnline
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}

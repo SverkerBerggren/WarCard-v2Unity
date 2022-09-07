@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System; 
+using System;
+using System.Xml;
+
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
 
@@ -105,7 +107,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     TextMeshProUGUI Player2Score;
 
 
-
+    public bool alwaysPassPriority = false; 
 
 
 
@@ -355,6 +357,37 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnPlayerPassPriority(int currentPlayerString)
     {
         currentPlayerPriority.text = "Current Player priority: " + (currentPlayerString+1);
+        if(alwaysPassPriority && currentPlayerString == GlobalNetworkState.LocalPlayerIndex && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
+        {   if(isOnline)
+            {
+                canvasUIScript.changeReactionText(false, " nagonting sket sig");
+
+                RuleManager.PassAction passAction = new RuleManager.PassAction();
+                passAction.PlayerIndex = currentPlayerString;
+
+                ExecutedActions.Enqueue(passAction);
+            }
+        }
+        if(isOnline)
+        {
+            if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
+            {
+                canvasUIScript.changeReactionText(true, "Waiting...");
+            }
+            if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
+            {
+                canvasUIScript.changeReactionText(false, "Waiting...");
+            }
+            if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
+            {
+                canvasUIScript.changeReactionText(false, "Waiting...");
+            }
+            if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
+            {
+                canvasUIScript.changeReactionText(true, "Reaction?");
+            }
+
+        }
     }
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
@@ -390,7 +423,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GameObject createdImage = Instantiate(imageStackAbility,new Vector3() , new Quaternion());
           
 
-            createdImage.GetComponent<ImageAbilityStackScript>().descriptionText.text = entity.EffectToResolve.GetText();
+            createdImage.GetComponent<ImageAbilityStackScript>().abilityEffectString = entity.EffectToResolve.GetText();
             stackObjectsToDestroy.Add(createdImage);
             createdImage.transform.SetParent(GameObject.Find("StackAbilityHolder").transform);//FindObjectOfType<Canvas>().gameObject.transform;
 
@@ -404,7 +437,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 }
                 print("Stack entity effect: " + entity.EffectToResolve.GetText());
             }
-            
+          //  createdImage.GetComponent<AbilityButton>().abilityDescriptionText = 
            // createdImage.GetComponent<RectTransform>().position = new Vector3((canvas.rect.width/2) - (firstItemPosition - originalPadding + increasingPadding), canvas.rect.height/2);
             increasingPadding += originalPadding;
         }
@@ -837,8 +870,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             DestroyButtons();
             //   print("hur manga barn efter destroy " + GameObject.Find("UnitActions").transform.childCount);
         //    GameObject.Find("UnitActions").GetComponent<UnitActions>().clearAbilityButtons();
-            foreach (RuleManager.Ability ability in unitInfo.Abilities)
-            {   
+            //foreach (RuleManager.Ability ability in unitInfo.Abilities)
+            for(int i = 0; i < unitInfo.Abilities.Count; i++)
+            {
+                RuleManager.Ability ability = unitInfo.Abilities[i];
                 //  insta
                 GameObject attackButton = GameObject.Find("AttackButton");
                 //      genericAbilityButton.SetActive(true);
@@ -848,7 +883,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 GameObject newButton =  Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding,attackButton.transform.position.y,0), new Quaternion());
                 padding += ogPadding;
 
-                newButton.transform.SetParent(GameObject.Find("UnitActions").transform);
+                newButton.transform.SetParent(GameObject.Find("UnitAbilitys").transform);
             //    newButton.transform.parent = GameObject.Find("UnitActions").transform;
                 
                 AbilityButton abilityButton = newButton.GetComponent<AbilityButton>();
@@ -863,6 +898,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 abilityButton.abilityName = ability.GetName();
 
+                newButton.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].AbilityIcons[i];
 
                 if (ability is RuleManager.Ability_Activated)
                 {
@@ -887,8 +923,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 
             }
             index = 0;
-            print("hur manga barn innan sort " + GameObject.Find("UnitActions").transform.childCount);
-            GameObject.Find("UnitActions").GetComponent<UnitActions>().sortChildren();
+            print("hur manga barn innan sort " + GameObject.Find("UnitAbilitys").transform.childCount);
+            GameObject.Find("UnitAbilitys").GetComponent<UnitActions>().sortChildren();
             ConstructMovementRange(unitInfo);
 
 
@@ -1205,6 +1241,28 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 newObject.transform.position = gridManager.GetTilePosition(tempCord);
                 movementIndicatorObjectDictionary[i][z] = newObject;
                 newObject.SetActive(false);
+            }
+        }
+    }
+
+    public void enableAlwaysPass()
+    {
+        if(alwaysPassPriority)
+        {
+            alwaysPassPriority = false; 
+        }
+
+        if(!alwaysPassPriority)
+        {
+            alwaysPassPriority = true; 
+
+            if(GlobalNetworkState.LocalPlayerIndex == ruleManager.getPlayerPriority() && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
+            {
+                RuleManager.PassAction passAction = new RuleManager.PassAction();
+                passAction.PlayerIndex = ruleManager.getPlayerPriority();
+
+                ExecutedActions.Enqueue(passAction);
+                
             }
         }
     }
