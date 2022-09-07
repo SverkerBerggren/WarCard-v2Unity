@@ -1251,8 +1251,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             alwaysPassPriority = false; 
         }
-
-        if(!alwaysPassPriority)
+        else
         {
             alwaysPassPriority = true; 
 
