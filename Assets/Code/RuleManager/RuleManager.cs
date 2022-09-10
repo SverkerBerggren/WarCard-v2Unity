@@ -857,6 +857,9 @@ namespace RuleManager
     {
         Silenced = 1,
         CantAttack = 1<<1,
+        HasMoved = 1<<2,
+        HasAttacked = 1<<3,
+        IsActivated = 1<<4,
     }
     [Serializable]
     public class UnitInfo
@@ -875,9 +878,9 @@ namespace RuleManager
         //Dynamic stuff
         public List<bool> AbilityActivated = new List<bool>(); 
         public Coordinate Position = new Coordinate();
-        public bool IsActivated = false;
-        public bool HasMoved = false;
-        public bool HasAttacked = false;
+        //public bool IsActivated = false;
+        //public bool HasMoved = false;
+        //public bool HasAttacked = false;
         public UnitFlags Flags = 0;
         //
         public UnitInfo()
@@ -892,9 +895,9 @@ namespace RuleManager
             Position = InfoToCopy.Position;
             Abilities = new List<Ability>(InfoToCopy.Abilities);
             Stats = new UnitStats(InfoToCopy.Stats);
-            IsActivated =   InfoToCopy.IsActivated;
-            HasMoved    =   InfoToCopy.HasMoved   ;
-            HasAttacked =   InfoToCopy.HasAttacked;
+            //IsActivated =   InfoToCopy.IsActivated;
+            //HasMoved    =   InfoToCopy.HasMoved   ;
+            //HasAttacked =   InfoToCopy.HasAttacked;
             Flags = InfoToCopy.Flags;
             Tags = new HashSet<string>(InfoToCopy.Tags);
             AbilityActivated = new List<bool>(InfoToCopy.AbilityActivated);
@@ -1152,9 +1155,11 @@ namespace RuleManager
 
         void p_RefreshUnit(UnitInfo UnitToRefresh)
         {
-            UnitToRefresh.HasAttacked = false;
-            UnitToRefresh.HasMoved = false;
-            UnitToRefresh.IsActivated = false;
+            UnitToRefresh.Flags &= ~(UnitFlags.HasAttacked);
+            UnitToRefresh.Flags &= ~(UnitFlags.HasMoved);
+            //UnitToRefresh.HasAttacked = false;
+            //UnitToRefresh.HasMoved = false;
+            //UnitToRefresh.IsActivated = false;
             for(int i = 0; i < UnitToRefresh.AbilityActivated.Count;i++)
             {
                 UnitToRefresh.AbilityActivated[i] = false;
@@ -2046,16 +2051,16 @@ namespace RuleManager
                 {
                     m_EventHandler.OnUnitMove(MoveToExecute.UnitID, OldPosition, MoveToExecute.NewPosition);
                 }
-                if(UnitToMove.IsActivated == false)
+                if((UnitToMove.Flags & UnitFlags.IsActivated) == 0)
                 {
-                    UnitToMove.IsActivated = true;
+                    UnitToMove.Flags |= UnitFlags.IsActivated;
                     m_PlayerIntitiative[UnitToMove.PlayerIndex] -= UnitToMove.Stats.ActivationCost;
                     if (m_EventHandler != null)
                     {
                         m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[UnitToMove.PlayerIndex], UnitToMove.PlayerIndex);
                     }
                 }
-                UnitToMove.HasMoved = true;
+                UnitToMove.Flags |= UnitFlags.HasMoved;
                 p_PassPriority();
             }
             else if(ActionToExecute is AttackAction)
@@ -2068,16 +2073,16 @@ namespace RuleManager
                     m_EventHandler.OnUnitAttack(AttackToExecute.AttackerID, AttackToExecute.DefenderID);
                 }
                 DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
-                if (AttackerInfo.IsActivated == false)
+                if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0)
                 {
-                    AttackerInfo.IsActivated = true;
+                    AttackerInfo.Flags |=UnitFlags.IsActivated;
                     m_PlayerIntitiative[AttackerInfo.PlayerIndex] -= AttackerInfo.Stats.ActivationCost;
                     if (m_EventHandler != null)
                     {
                         m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[AttackerInfo.PlayerIndex], AttackerInfo.PlayerIndex);
                     }
                 }
-                AttackerInfo.HasAttacked = true;
+                AttackerInfo.Flags |= UnitFlags.HasAttacked;
                 p_PassPriority();
             }
             else if(ActionToExecute is PassAction)
@@ -2113,9 +2118,9 @@ namespace RuleManager
                 {
                     m_EventHandler.OnStackPush(NewEntity);
                 }
-                if (UnitWithEffect.IsActivated == false)
+                if ((UnitWithEffect.Flags & UnitFlags.IsActivated) == 0)
                 {
-                    UnitWithEffect.IsActivated = true;
+                    UnitWithEffect.Flags |= UnitFlags.IsActivated;
                     m_PlayerIntitiative[UnitWithEffect.PlayerIndex] -= UnitWithEffect.Stats.ActivationCost;
                     if (m_EventHandler != null)
                     {
@@ -2238,14 +2243,14 @@ namespace RuleManager
                     return (ReturnValue);
                 }
                 UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(MoveToCheck.UnitID); //m_UnitInfos[MoveToCheck.UnitID];
-                if(AssociatedUnit.HasMoved)
+                if((AssociatedUnit.Flags & UnitFlags.HasMoved) != 0)
                 {
                     ReturnValue = false;
                     ErrorString = "Can only move unit once per activation";
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if (AssociatedUnit.IsActivated == false && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[MoveToCheck.PlayerIndex])
+                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[MoveToCheck.PlayerIndex])
                 {
                     ReturnValue = false;
                     ErrorString = "Not enough initiative to activate unit";
@@ -2288,14 +2293,14 @@ namespace RuleManager
                     return (ReturnValue);
                 }
 
-                if(AttackerInfo.HasAttacked)
+                if((AttackerInfo.Flags & UnitFlags.HasAttacked) != 0)
                 {
                     ReturnValue = false;
                     ErrorString = "Can only attack once per activation";
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if (AttackerInfo.IsActivated == false && AttackerInfo.Stats.ActivationCost >= m_PlayerIntitiative[AttackToCheck.PlayerIndex])
+                if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0 && AttackerInfo.Stats.ActivationCost >= m_PlayerIntitiative[AttackToCheck.PlayerIndex])
                 {
                     ReturnValue = false;
                     ErrorString = "Not enough initiative to activate unit";
@@ -2372,7 +2377,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if (AssociatedUnit.IsActivated == false && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[AssociatedUnit.PlayerIndex])
+                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[AssociatedUnit.PlayerIndex])
                 {
                     ReturnValue = false;
                     ErrorString = "Not enough initiative to activate unit";
@@ -2441,7 +2446,7 @@ namespace RuleManager
                 throw new Exception("Need valid unit to check possible moves");
             }
             UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
-            if(UnitToMove.HasMoved)
+            if((UnitToMove.Flags & UnitFlags.HasMoved) != 0)
             {
                 return (ReturnValue);
             }
