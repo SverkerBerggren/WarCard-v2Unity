@@ -382,9 +382,39 @@ namespace RuleManager
     }
 
 
-    public class Target
+    public class Target : MBJson.JSONTypeConverter,MBJson.JSONDeserializeable
     {
-        public readonly TargetType Type = TargetType.Null;
+        public Type GetType(int SerializedType)
+        {
+            Type ReturnValue = null;
+            if(Type == TargetType.Player)
+            {
+                ReturnValue = typeof(Target_Player);
+            }
+            else if(Type == TargetType.Tile)
+            {
+                ReturnValue = typeof(Target_Tile);
+            }
+            else if (Type == TargetType.Unit)
+            {
+                ReturnValue = typeof(Target_Unit);
+            }
+            else
+            {
+                throw new Exception("Invalid target type to serialize: " + Type);
+            }
+            return (ReturnValue);
+        }
+
+        public object Deserialize(MBJson.JSONObject ObjectToDeserialize)
+        {
+            object ReturnValue = null;
+            MBJson.DynamicJSONDeserializer Deserializer = new MBJson.DynamicJSONDeserializer(this);
+            ReturnValue = Deserializer.Deserialize(ObjectToDeserialize);
+            return (ReturnValue);
+        }
+
+        public TargetType Type = TargetType.Null;
 
         public virtual bool Equals(Target OtherTarget)
         {
@@ -783,13 +813,13 @@ namespace RuleManager
         {
 
         }
-        public EffectAction(IEnumerable<Target> NewTargets,int NewUnitID,int NewEffectIndex)
+        public EffectAction(IEnumerable<Target> NewTargets,int NewUnitID,int NewEffectIndex) : base(ActionType.UnitEffect)
         {
             Targets = new List<Target>(NewTargets);
             UnitID = NewUnitID;
             EffectIndex = NewEffectIndex;
         }
-        public EffectAction(Target NewTarget, int NewUnitID, int NewEffectIndex)
+        public EffectAction(Target NewTarget, int NewUnitID, int NewEffectIndex) : base(ActionType.UnitEffect)
         {
             Targets.Add(NewTarget);
             UnitID = NewUnitID;
