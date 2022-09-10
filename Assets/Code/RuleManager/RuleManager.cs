@@ -420,7 +420,11 @@ namespace RuleManager
         {
             return (false);
         }
-        protected Target(TargetType TypeToUse)
+        public Target()
+        {
+
+        }
+        public Target(TargetType TypeToUse)
         {
             Type = TypeToUse;
         }
