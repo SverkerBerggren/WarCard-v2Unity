@@ -1755,6 +1755,17 @@ PrefabInstance:
       propertyPath: Height
       value: 42
       objectReference: {fileID: 0}
+    - target: {fileID: 3897863834543741562, guid: 133312fb7b2512d469a3b3eb65b510b6,
+        type: 3}
+      propertyPath: TileWidth
+      value: 5.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3897863834543741562, guid: 133312fb7b2512d469a3b3eb65b510b6,
+        type: 3}
+      propertyPath: GrassObject
+      value: 
+      objectReference: {fileID: 3963050006536340265, guid: 117f776fabb6d9f48a7be4cdaf2d673e,
+        type: 3}
     - target: {fileID: 3897863834543741563, guid: 133312fb7b2512d469a3b3eb65b510b6,
         type: 3}
       propertyPath: m_Name

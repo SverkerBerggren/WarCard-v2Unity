@@ -5,7 +5,8 @@ using RuleManager;
 public class GridManager : MonoBehaviour
 {
 
-    public GameObject TileObject;
+    public GameObject TileObject = null;
+    public GameObject GrassObject = null;
 
     //Temp
       //RuleManager.RuleManager m_RuleManager;
@@ -16,17 +17,19 @@ public class GridManager : MonoBehaviour
     public int Height = 20;
     private ClickReciever m_Reciever = null;
 
-    private float m_TileWidth = 0;
+    public float TileWidth = 1;
+    public float GrassMultiplier = 4;
 
-    Vector3 p_GridToWorldPosition(int X, int Y)
-    {
-        Vector3 ReturnValue= new Vector3(0, 0, 0);
-        ReturnValue.x = transform.position.x + m_TileWidth * X;
-        ReturnValue.y = transform.position.y + m_TileWidth * Y;
-        return (ReturnValue);
-    }
+    //Vector3 p_GridToWorldPosition(int X, int Y)
+    //{
+    //    Vector3 ReturnValue= new Vector3(0, 0, 0);
+    //    ReturnValue.x = transform.position.x + m_TileWidth * X;
+    //    ReturnValue.y = transform.position.y + m_TileWidth * Y;
+    //    return (ReturnValue);
+    //}
     // Start is called before the first frame update
-    void Awake()
+    void Awake
+        ()
     {
         //m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
         for(int YIndex = 0; YIndex < Height; YIndex++)
@@ -34,16 +37,25 @@ public class GridManager : MonoBehaviour
             for(int XIndex = 0; XIndex < Width; XIndex++)
             {
                 GameObject NewObject = Instantiate(TileObject);
-                //Assumes that tiles are quadratic
-                float TileWidth = NewObject.GetComponent<SpriteRenderer>().size.x;
-                TileWidth *= NewObject.transform.localScale.x;
-                m_TileWidth = TileWidth;
-                print("The tile width: " + m_TileWidth);
+                float ObjectWidth = NewObject.GetComponent<BoxCollider>().size.x;
+                print("Bruh");
+                NewObject.transform.localScale *= TileWidth / ObjectWidth;
                 Vector3 NewPosition = new Vector3(transform.position.x + XIndex * TileWidth, transform.position.y - YIndex * TileWidth, 0);
                 GridClick ClickObject = NewObject.GetComponent<GridClick>();
                 ClickObject.X = XIndex;
                 ClickObject.Y = YIndex;
                 ClickObject.AssociatedGrid = this;
+                NewObject.transform.position = NewPosition;
+            }
+        }
+        for(int YIndex = 0; YIndex < Height / GrassMultiplier; YIndex++)
+        {
+            for (int XIndex = 0; XIndex < Width/GrassMultiplier; XIndex++)
+            {
+                GameObject NewObject = Instantiate(GrassObject);
+                float ObjectWidth = NewObject.GetComponent<BoxCollider>().size.x;
+                NewObject.transform.localScale *= TileWidth*GrassMultiplier/ObjectWidth;
+                Vector3 NewPosition = new Vector3(transform.position.x + XIndex * TileWidth*GrassMultiplier, transform.position.y - YIndex * TileWidth*GrassMultiplier, 0);
                 NewObject.transform.position = NewPosition;
             }
         }
@@ -92,12 +104,7 @@ public class GridManager : MonoBehaviour
 
     public Vector3 GetTilePosition(Coordinate cord)
     {
-       // print("tildedithe" + m_TileWidth);
-
-      //  print(transform.position + new Vector3(16 * cord.X, 16 * -cord.Y));
-
-        return transform.position + new Vector3(m_TileWidth * cord.X, m_TileWidth * -cord.Y);
-        //return transform.position + new Vector3(16 * cord.X, 16 * -cord.Y);
+        return transform.position + new Vector3(TileWidth * cord.X, TileWidth * -cord.Y);
     }
 }
 public interface ClickReciever
