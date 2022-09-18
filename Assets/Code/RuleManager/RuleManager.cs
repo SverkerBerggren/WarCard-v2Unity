@@ -1130,9 +1130,10 @@ namespace RuleManager
             for(int i = 0; i < m_PlayerCount;i++)
             {
                 m_EmptyPassed.Add(false);
-                m_PlayerIntitiative.Add(m_PlayerTurnInitiativeGain);
+                m_PlayerIntitiative.Add(0);
                 m_PlayerPoints.Add(0);
             }
+            m_PlayerIntitiative[0] = m_PlayerTurnInitiativeGain;
         }
         public int RegisterUnit(UnitInfo NewUnit,int PlayerIndex)
         {
@@ -1761,30 +1762,38 @@ namespace RuleManager
         {
             m_UnitInfos[UnitID].Stats.HP -= Damage;
         }
-
-        int p_GetObjectiveControllIndex(Coordinate ObjectiveCoordinate)
+        List<int> p_GetObjectiveScores(Coordinate ObjectiveCoordinate)
         {
-            List<int> ObjectiveScores = new List<int>();
-            for(int i = 0; i <  m_PlayerCount;i++)
+            List<int> ReturnValue = new List<int>();
+            for (int i = 0; i < m_PlayerCount; i++)
             {
-                ObjectiveScores.Add(0);
+                ReturnValue.Add(0);
             }
-            for(int i = -1; i <= 1;i++)
+            for (int i = -1; i <= 1; i++)
             {
-                for(int j = -1; j <= 1;j++)
+                for (int j = -1; j <= 1; j++)
                 {
                     Coordinate CoordinateDiff = new Coordinate(i, j);
-                    if(!(CoordinateDiff.X == 0 && CoordinateDiff.Y == 0))
+                    if (!(CoordinateDiff.X == 0 && CoordinateDiff.Y == 0))
                     {
                         Coordinate CurrentCoord = ObjectiveCoordinate + CoordinateDiff;
                         if (m_Tiles[CurrentCoord.Y][CurrentCoord.X].StandingUnitID != 0)
                         {
                             UnitInfo CurrentInfo = p_GetProcessedUnitInfo(m_Tiles[CurrentCoord.Y][CurrentCoord.X].StandingUnitID);
-                            ObjectiveScores[CurrentInfo.PlayerIndex] += CurrentInfo.Stats.ObjectiveControll;
+                            ReturnValue[CurrentInfo.PlayerIndex] += CurrentInfo.Stats.ObjectiveControll;
                         }
                     }
                 }
             }
+            return (ReturnValue);
+        }
+        public List<int> GetObjectiveContestion(Coordinate ObjectiveCoordinate)
+        {
+            return (p_GetObjectiveScores(ObjectiveCoordinate));
+        }
+        int p_GetObjectiveControllIndex(Coordinate ObjectiveCoordinate)
+        {
+            List<int> ObjectiveScores = p_GetObjectiveScores(ObjectiveCoordinate);
             int ReturnValue = -1;
             int CurrentMaxObjective = 0;
             for(int i = 0; i < m_PlayerCount;i++)
@@ -1932,14 +1941,14 @@ namespace RuleManager
                 m_EventHandler.OnTurnChange(m_CurrentPlayerTurn, m_CurrentTurn);
             }
 
-            for(int i = 0; i < m_PlayerCount;i++)
-            {
-                m_PlayerIntitiative[i] = Math.Min(Math.Min(m_PlayerIntitiative[i], m_PlayerInitiativeRetain) + m_PlayerTurnInitiativeGain, m_PlayerMaxInitiative);
+            //for(int i = 0; i < m_PlayerCount;i++)
+            //{
+                m_PlayerIntitiative[m_CurrentPlayerTurn] = Math.Min(Math.Min(m_PlayerIntitiative[m_CurrentPlayerTurn], m_PlayerInitiativeRetain) + m_PlayerTurnInitiativeGain, m_PlayerMaxInitiative);
                 if(m_EventHandler != null)
                 {
-                    m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[i], i);
+                    m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[m_CurrentPlayerTurn], m_CurrentPlayerTurn);
                 }
-            }
+            //}
 
             List<int> ContinousEffectsToRemove = new List<int>();
             foreach(KeyValuePair<int,RegisteredContinousEffect> RegisteredEffect in m_RegisteredContinousAbilities)
