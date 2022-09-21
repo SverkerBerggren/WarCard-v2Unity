@@ -47,11 +47,13 @@ public class CanvasUiScript : MonoBehaviour
 
     }
 
-    public void changeReactionText(bool active, string text)
+    public IEnumerator changeReactionText(bool active, string text)
     {
         reactionText.gameObject.SetActive(active);
 
         reactionText.text = text; 
+
+        yield return new WaitForSeconds(0.1f);
     }
 
     public void errorMessage(string message)

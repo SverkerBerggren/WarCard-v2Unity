@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using System.Xml;
+using RuleManager;
 
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
@@ -13,13 +14,19 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     RuleManager.RuleManager ruleManager;
 
-    public GridManager gridManager; 
+    public GridManager gridManager;
+
+    public GameObject objectiveContestionIndicator; 
 
     public GameObject prefabToInstaniate; 
+
+    public GameObject activationIndicatorPrefab;
 
     public Sprite[] theSprites;
 
     private Dictionary<int, UnitSprites> listOfImages = new Dictionary<int, UnitSprites>();
+
+    private Dictionary<int, GameObject> listOfActivationIndicators = new Dictionary<int, GameObject>();
 
     private Dictionary<int, UIInfo> opaqueIntegerUIInfo = new Dictionary<int, UIInfo>();
 
@@ -147,6 +154,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         ruleManager = GlobalState.GetRuleManager();
          
+        
 
         GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex, this);
         if(GlobalNetworkState.OpponentActionRetriever != null)
@@ -173,82 +181,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         Player1Score = GameObject.Find("Player1Score").GetComponent<TextMeshProUGUI>();
         Player2Score = GameObject.Find("Player2Score").GetComponent<TextMeshProUGUI>();
-        //     UIInfo forstaUIInfo = new UIInfo();
-        //     forstaUIInfo.WhichImage = theSprites[0];
-        //     UIInfo andraUIInfo = new UIInfo();
-        //     forstaUIInfo.WhichImage = theSprites[1];
-        //     opaqueIntegerUIInfo.Add(0, forstaUIInfo);
-        //     opaqueIntegerUIInfo.Add(1, andraUIInfo);
-        //
-        //     
-        //
-        //     RuleManager.UnitInfo forstaUnit = new RuleManager.UnitInfo();
-        //
-        //     forstaUnit.Stats.HP = 100;
-        //
-        //     forstaUnit.Stats.Movement = 5;
-        //
-        //     forstaUnit.Stats.Range = 3;
-        //     forstaUnit.Stats.ActivationCost = 1;
-        //     forstaUnit.Stats.Damage = 10;
-        //
-        //     forstaUnit.Position = new RuleManager.Coordinate(0, 0);
-        //
-        //     UIInfo UIForsta = new UIInfo();
-        //
-        //     UIForsta.WhichImage = theSprites[0];
-        //
-        //     forstaUnit.OpaqueInteger = 0;
-        //     forstaUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
-        //     unitEtt = ruleManager.RegisterUnit(forstaUnit, 0);
-        //
-        //    
-        //
-        //
-        //     GameObject forstaUnitPaKartan =  Instantiate(prefabToInstaniate, gridManager.GetTilePosition(forstaUnit.Position), new Quaternion());
-        //     listOfImages.Add(unitEtt, forstaUnitPaKartan);
-        //     forstaUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[0];
-        //
-        // //       print("unit id forsta  " + forstaUnit.UnitID);
-        //
-        //     //    test.transform.position = gridManager.GetTilePosition(forstaUnit.Position);
-        //
-        //
-        //     RuleManager.UnitInfo andraUnit = new RuleManager.UnitInfo();
-        //
-        //
-        //     andraUnit.Stats.HP = 1000;
-        //
-        //     andraUnit.Stats.Movement = 5;
-        //
-        //     andraUnit.Stats.Range = 3;
-        //     andraUnit.Stats.ActivationCost = 1;
-        //     andraUnit.Stats.Damage = 10;
-        //
-        //    
-        //
-        //     andraUnit.Position = new RuleManager.Coordinate(2, 0);
-        //
-        //     andraUnit.OpaqueInteger = 1;
-        //
-        //     andraUnit.Abilities.Add(Templars.GetKnight().Abilities[0]);
-        //
-        //   //  print("unit id ancdsra  " + andraUnit.UnitID);
-        //     unitTva = ruleManager.RegisterUnit(andraUnit, 1);
-        //
-        //     GameObject andraUnitPaKartan = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(andraUnit.Position), new Quaternion());
-        //     listOfImages.Add(unitTva, andraUnitPaKartan);
-        //     andraUnitPaKartan.GetComponent<SpriteRenderer>().sprite = theSprites[1];
-        //
-        //
-        //     RuleManager.UnitInfo officer = Militarium.GetOfficer();
-        //     officer.Position = new RuleManager.Coordinate(3, 3);
-        //     int officerInt = -1;
-        //     officerInt = ruleManager.RegisterUnit(officer, 0);
-        //
-        //     GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
-        //     listOfImages.Add(officerInt, officerObj);
-        //     officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+
 
         CreateMovementObjects();
         CreateArmies();
@@ -263,6 +196,27 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         if(Input.GetKeyDown(KeyCode.Space))
         {
             SwitchPlayerPriority();
+        }
+
+        foreach(int unitID in listOfActivationIndicators.Keys)
+        { 
+            if((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) != 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 0)
+            {
+                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(0f,0.7f,0f,0.7f);
+            }
+            if ((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) == 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 0)
+            {
+                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f, 1f);
+            }  
+            if((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) != 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 1)
+            {
+                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(0.7f,0f,0f,0.7f);
+            }
+            if ((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) == 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 1)
+            {
+                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f, 1f);
+            }
+
         }
     }
 
@@ -339,6 +293,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
 
         visualObject.transform.position  = gridManager.GetTilePosition(NewPosition);
+        listOfActivationIndicators[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
+
 
     }
 
@@ -372,19 +328,28 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
             {
-                canvasUIScript.changeReactionText(true, "Waiting...");
+            //    canvasUIScript.changeReactionText(true, "Waiting...");
+                StartCoroutine(canvasUIScript.changeReactionText(true, "Waiting..."));
+
             }
             if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
             {
-                canvasUIScript.changeReactionText(false, "Waiting...");
+              //  canvasUIScript.changeReactionText(false, "Waiting...");
+                StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
             }
             if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
             {
-                canvasUIScript.changeReactionText(false, "Waiting...");
+                
+              //  canvasUIScript.changeReactionText(false, "Waiting...");
+                StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
+
             }
             if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
             {
-                canvasUIScript.changeReactionText(true, "Reaction?");
+                StartCoroutine(canvasUIScript.changeReactionText(true, "Reaction?"));
+             //   canvasUIScript.changeReactionText(true, "Reaction?");
+                
+        
             }
 
         }
@@ -415,7 +380,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             firstItemPosition = stackPadding * ((amountOfItems / 2) - 1);//Screen.width - (stackPadding * (amountOfItems / 2)) + (stackPadding/2);
         }
-        if (localStack.Count == 2) ;
+     //   if (localStack.Count == 2) ;
 
         foreach (RuleManager.StackEntity entity in localStack)
         {
@@ -477,6 +442,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnUnitDestroyed(int UnitID)
     {
         listOfImages[UnitID].objectInScene.SetActive(false);
+        listOfActivationIndicators[UnitID].SetActive(false);
     }
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
@@ -513,6 +479,19 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     //    {
     //        GameObject.Find("UnitActions").GetComponent<UnitActions>().sortChildren();
     //    }
+        if(ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective)
+        {
+            objectiveContestionIndicator.SetActive(true);
+            objectiveContestionIndicator.transform.position = gridManager.GetTilePosition(cord);
+            objectiveContestionIndicator.transform.position += new Vector3(0, 20, 0);
+            objectiveContestionIndicator.GetComponent<ObjectiveContestionIndicator>().setPoints(0, ruleManager.GetObjectiveContestion(cord)[0]);
+            objectiveContestionIndicator.GetComponent<ObjectiveContestionIndicator>().setPoints(1, ruleManager.GetObjectiveContestion(cord)[1]);
+        }
+        else
+        {
+            objectiveContestionIndicator.SetActive(false);
+        }
+        
         if (selectedUnit != null)
         {
             if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
@@ -857,8 +836,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitCardInformation.MovementText.text = unitInfo.Stats.Movement.ToString();
             unitCardInformation.RangeText.text = unitInfo.Stats.Range.ToString();
 
-            unitCardInformation.gameObject.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].unitCardSprite; 
-
+            unitCardInformation.gameObject.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].unitCardSprite;
+            if((ruleManager.GetUnitInfo(selectedUnit.UnitID).Flags & RuleManager.UnitFlags.HasMoved )!= 0)
+            {
+                GameObject.Find("MoveButton").GetComponent<Button>().interactable = false;
+            }
+            else
+            {
+                GameObject.Find("MoveButton").GetComponent<Button>().interactable = true;
+            }
             
 
             int padding = 150;
@@ -1166,6 +1152,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             unitSprites.objectInScene = unitToCreateVisualObject;
 
+            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
+
+
+
+            listOfActivationIndicators.Add(unitInt, activationIndicator);
+
+
             listOfImages.Add(unitInt, unitSprites);
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
 
@@ -1191,6 +1187,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
 
             unitSprites.objectInScene = unitToCreateVisualObject;
+
+            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = Color.red;
+
+
+
+            listOfActivationIndicators.Add(unitInt, activationIndicator);
 
             listOfImages.Add(unitInt, unitSprites);
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
@@ -1265,6 +1270,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             }
         }
     }
+
+
+    public void updateUnit(UnitInfo unitInfo)
+    {
+
+    }
 }
 
 public struct UnitSprites
@@ -1274,6 +1285,8 @@ public struct UnitSprites
     public Sprite backwardSprite;
 
     public Sprite sidewaySprite;
+
+    public Sprite activationIndicator;
 
     public GameObject objectInScene;
 }
