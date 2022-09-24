@@ -1416,7 +1416,7 @@ namespace RuleManager
                     for(int j = -(AreaDamageEffect.Range - Math.Abs(i)); j <= AreaDamageEffect.Range- Math.Abs(i); j++)
                     {
                         Coordinate CurrentTile = TargetTile + new Coordinate(i, j);
-                        if((CurrentTile.X < 0 || CurrentTile.X >= m_Tiles[0].Count) || (CurrentTile.Y < 0 || CurrentTile.Y >= m_Tiles[0].Count))
+                        if((CurrentTile.X < 0 || CurrentTile.X >= m_Tiles[0].Count) || (CurrentTile.Y < 0 || CurrentTile.Y >= m_Tiles.Count))
                         {
                             continue;
                         }
@@ -2261,7 +2261,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[MoveToCheck.PlayerIndex])
+                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost > m_PlayerIntitiative[MoveToCheck.PlayerIndex])
                 {
                     ReturnValue = false;
                     ErrorString = "Not enough initiative to activate unit";
@@ -2311,7 +2311,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0 && AttackerInfo.Stats.ActivationCost >= m_PlayerIntitiative[AttackToCheck.PlayerIndex])
+                if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0 && AttackerInfo.Stats.ActivationCost > m_PlayerIntitiative[AttackToCheck.PlayerIndex])
                 {
                     ReturnValue = false;
                     ErrorString = "Not enough initiative to activate unit";
@@ -2388,7 +2388,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost >= m_PlayerIntitiative[AssociatedUnit.PlayerIndex])
+                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost > m_PlayerIntitiative[AssociatedUnit.PlayerIndex])
                 {
                     ReturnValue = false;
                     ErrorString = "Not enough initiative to activate unit";
