@@ -1859,6 +1859,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainUI: {fileID: 0}
+  keyCodeToClick: 101
 --- !u!1 &3550164189252336795
 GameObject:
   m_ObjectHideFlags: 0
@@ -1959,6 +1960,7 @@ MonoBehaviour:
   ActivationCostText: {fileID: 6086293646368871447}
   RangeText: {fileID: 4694969307023177424}
   MovementText: {fileID: 2083196083740328453}
+  ObjectiveControlText: {fileID: 0}
 --- !u!1 &3605836638725426559
 GameObject:
   m_ObjectHideFlags: 0
@@ -2314,6 +2316,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainUI: {fileID: 0}
+  keyCodeToClick: 113
 --- !u!1 &4665449774012896317
 GameObject:
   m_ObjectHideFlags: 0
@@ -3791,7 +3794,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: W
+  m_text: E
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

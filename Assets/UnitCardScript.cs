@@ -11,6 +11,7 @@ public class UnitCardScript : MonoBehaviour
     public TextMeshProUGUI ActivationCostText;
     public TextMeshProUGUI RangeText;
     public TextMeshProUGUI MovementText;
+    public TextMeshProUGUI ObjectiveControlText;
 
     // Start is called before the first frame update
     void Start()

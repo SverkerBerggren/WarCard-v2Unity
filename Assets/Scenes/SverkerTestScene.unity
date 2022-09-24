@@ -428,6 +428,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1312067576 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7856348748702610992, guid: e733d5ac57037e64ea596ae37a806bee,
+    type: 3}
+  m_PrefabInstance: {fileID: 2038389379}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1639985982 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1639985982, guid: e733d5ac57037e64ea596ae37a806bee,
@@ -565,6 +577,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2141076193, guid: e733d5ac57037e64ea596ae37a806bee, type: 3}
+      propertyPath: keyCodeToClick
+      value: 113
+      objectReference: {fileID: 0}
     - target: {fileID: 2440416079733319385, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_RootOrder
@@ -635,6 +651,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: MainUI
       objectReference: {fileID: 0}
+    - target: {fileID: 4991222440534061786, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: ObjectiveControlText
+      value: 
+      objectReference: {fileID: 1312067576}
     - target: {fileID: 9175123667821927883, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_Camera
@@ -915,6 +936,12 @@ PrefabInstance:
       propertyPath: currentTurnText
       value: 
       objectReference: {fileID: 274185970}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: objectivePrefab
+      value: 
+      objectReference: {fileID: 8976141538973097456, guid: 06728e2dc1db32c4f993b2f6ad5d11a0,
+        type: 3}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: currentInitiative
@@ -1889,17 +1916,17 @@ PrefabInstance:
     - target: {fileID: 3897863834543741561, guid: 133312fb7b2512d469a3b3eb65b510b6,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3897863834543741561, guid: 133312fb7b2512d469a3b3eb65b510b6,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3897863834543741561, guid: 133312fb7b2512d469a3b3eb65b510b6,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3897863834543741561, guid: 133312fb7b2512d469a3b3eb65b510b6,
         type: 3}

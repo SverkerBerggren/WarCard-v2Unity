@@ -65,10 +65,17 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
         mainUI.selectedAbilityIndex = abilityIndex;
 
-        if(whichTargets != null)
+        if(whichTargets.Count != 0)
         {
             mainUI.requiredAbilityTargets =  new List<RuleManager.TargetCondition>(whichTargets); 
         }
+        else
+        {
+            mainUI.OnClick(ClickType.leftClick, new RuleManager.Coordinate(0, 0));
+            mainUI.requiredAbilityTargets = new List<RuleManager.TargetCondition>();
+        }
+
+
     }
 
     // Update is called once per frame

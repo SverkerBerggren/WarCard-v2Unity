@@ -33,8 +33,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private GameObject unitCard;
 
-    private GameObject unitActions; 
+    private GameObject unitActions;
 
+    public bool activateAbilityWithZeroTargets = false; 
 
     private int unitEtt;
 
@@ -62,6 +63,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public GameObject genericAbilityButton = null;
 
+    private Dictionary<Coordinate,Objective> dictionaryOfObjectiveCords = new Dictionary<Coordinate, Objective>();
 
     private List<GameObject> buttonDestroyList = new List<GameObject>();
 
@@ -116,12 +118,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public bool alwaysPassPriority = false; 
 
-
+    
 
     public GameObject EndScreenUI = null;
     public Sprite WinSprite = null;
     public Sprite DefeatSprite = null;
-
+    public GameObject objectivePrefab; 
 
     [Serializable]
     public struct UnitInArmy
@@ -217,6 +219,23 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f, 1f);
             }
 
+        }
+
+
+        foreach(Coordinate cord in dictionaryOfObjectiveCords.Keys)
+        {
+            if (ruleManager.GetObjectiveContestion(cord)[0] > ruleManager.GetObjectiveContestion(cord)[1])
+            {
+                dictionaryOfObjectiveCords[cord].setPlayer1Control();
+            }
+            if(ruleManager.GetObjectiveContestion(cord)[0] < ruleManager.GetObjectiveContestion(cord)[1])
+            {
+                dictionaryOfObjectiveCords[cord].setPlayer2Control();
+            }
+            if(ruleManager.GetObjectiveContestion(cord)[0] == ruleManager.GetObjectiveContestion(cord)[1])
+            {
+                dictionaryOfObjectiveCords[cord].setNeutralControl();
+            }
         }
     }
 
@@ -475,10 +494,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
     {
-    //    if(GameObject.Find("UnitActions") != null)
-    //    {
-    //        GameObject.Find("UnitActions").GetComponent<UnitActions>().sortChildren();
-    //    }
         if(ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective)
         {
             objectiveContestionIndicator.SetActive(true);
@@ -494,7 +509,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
         if (selectedUnit != null)
         {
-            if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
+            if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority() )
             {   
                 if (requiredAbilityTargets.Count == 0)
                 {
@@ -647,26 +662,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 //List )
             }
         }
-    
-     //   int unitId = ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID;
-     //   print(" vad blir ubnit id et " + unitId);
-     //   if(unitId != 0)
-     //   {
-     //
-     //   }
-     //
-     //   RuleManager.MoveAction hej = new RuleManager.MoveAction();
-     //
-     //   hej.UnitID = unitId;
-     //   RuleManager.Coordinate temp = ruleManager.GetUnitInfo(unitId).Position;
-     //   temp.X += 1; 
-     //   hej.NewPosition = temp;
-     //   hej.PlayerIndex = 0; 
-     //   
-     //
-     //   ruleManager.ExecuteAction(hej);
-     //
-     //   listOfImages[unitId].transform.position = gridManager.GetTilePosition(temp);
+
         if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0)
         {
            // RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
@@ -835,6 +831,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitCardInformation.ActivationCostText.text = unitInfo.Stats.ActivationCost.ToString();
             unitCardInformation.MovementText.text = unitInfo.Stats.Movement.ToString();
             unitCardInformation.RangeText.text = unitInfo.Stats.Range.ToString();
+            unitCardInformation.ObjectiveControlText.text = unitInfo.Stats.ObjectiveControll.ToString();
 
             unitCardInformation.gameObject.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].unitCardSprite;
             if((ruleManager.GetUnitInfo(selectedUnit.UnitID).Flags & RuleManager.UnitFlags.HasMoved )!= 0)
@@ -845,7 +842,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 GameObject.Find("MoveButton").GetComponent<Button>().interactable = true;
             }
-            
+            if ((ruleManager.GetUnitInfo(selectedUnit.UnitID).Flags & RuleManager.UnitFlags.HasAttacked) != 0)
+            {
+                GameObject.Find("AttackButton").GetComponent<Button>().interactable = false;
+            }
+            else
+            {
+                GameObject.Find("AttackButton").GetComponent<Button>().interactable = true;
+            }
+
 
             int padding = 150;
             int ogPadding = padding; 
@@ -901,7 +906,19 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                     }
 
                 //    abilityButton.whichTargets = activatedAbility.ActivationTargets.;
+
+
+                    
                 }
+                if(ruleManager.GetUnitInfo(selectedUnit.UnitID).AbilityActivated[i] )
+                {
+                    newButton.GetComponent<Button>().interactable = false;
+                }
+                else
+                {
+                    newButton.GetComponent<Button>().interactable = true;
+                }
+                
 
                 buttonDestroyList.Add(newButton);
 
@@ -1207,8 +1224,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective = true;
 
-            GameObject objectiveImage = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(cord), new Quaternion());
-            objectiveImage.GetComponent<SpriteRenderer>().sprite = theSprites[0];
+            GameObject objectiveImage = Instantiate(objectivePrefab, gridManager.GetTilePosition(cord), new Quaternion());
+
+            objectiveImage.GetComponent<Objective>().setNeutralControl();
+
+            dictionaryOfObjectiveCords.Add(cord,objectiveImage.GetComponent<Objective>());
 
         }
         //   RuleManager.UnitInfo officer = Militarium.GetOfficer();
