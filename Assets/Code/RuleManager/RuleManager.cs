@@ -1156,8 +1156,9 @@ namespace RuleManager
 
         void p_RefreshUnit(UnitInfo UnitToRefresh)
         {
-            UnitToRefresh.Flags &= ~(UnitFlags.HasAttacked);
-            UnitToRefresh.Flags &= ~(UnitFlags.HasMoved);
+            UnitToRefresh.Flags = 0;
+            //UnitToRefresh.Flags &= ~(UnitFlags.HasAttacked);
+            //UnitToRefresh.Flags &= ~(UnitFlags.HasMoved);
             //UnitToRefresh.HasAttacked = false;
             //UnitToRefresh.HasMoved = false;
             //UnitToRefresh.IsActivated = false;
