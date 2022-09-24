@@ -384,18 +384,19 @@ namespace RuleManager
 
     public class Target : MBJson.JSONTypeConverter,MBJson.JSONDeserializeable
     {
-        public Type GetType(int SerializedType)
+        public Type GetType(int IntegerToConvert)
         {
             Type ReturnValue = null;
-            if(Type == TargetType.Player)
+            TargetType SerializedType = (TargetType)IntegerToConvert;
+            if (SerializedType == TargetType.Player)
             {
                 ReturnValue = typeof(Target_Player);
             }
-            else if(Type == TargetType.Tile)
+            else if(SerializedType == TargetType.Tile)
             {
                 ReturnValue = typeof(Target_Tile);
             }
-            else if (Type == TargetType.Unit)
+            else if (SerializedType == TargetType.Unit)
             {
                 ReturnValue = typeof(Target_Unit);
             }
@@ -701,8 +702,8 @@ namespace RuleManager
         {
             return (rhs.X == X && rhs.Y == Y);
         }
-        public int X;
-        public int Y;
+        public int X = 0;
+        public int Y = 0;
         public Coordinate()
         {
             X = 0;
