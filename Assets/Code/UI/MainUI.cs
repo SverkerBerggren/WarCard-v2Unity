@@ -463,6 +463,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {
         listOfImages[UnitID].objectInScene.SetActive(false);
         listOfActivationIndicators[UnitID].SetActive(false);
+        listOfActivationIndicators.Remove(UnitID);
     }
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
