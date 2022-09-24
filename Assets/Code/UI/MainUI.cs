@@ -247,6 +247,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         SpriteRenderer spriteRenderer = visualObject.GetComponent<SpriteRenderer>();
         UnitSprites unitSprites = listOfImages[UnitID];
 
+        spriteRenderer.sortingOrder = Math.Abs( NewPosition.Y);
 
         int xChange = NewPosition.X - PreviousPosition.X;
 
@@ -313,7 +314,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         visualObject.transform.position  = gridManager.GetTilePosition(NewPosition);
         listOfActivationIndicators[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
-
+        
 
     }
 
@@ -835,7 +836,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             unitCardInformation.gameObject.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].unitCardSprite;
             if((ruleManager.GetUnitInfo(selectedUnit.UnitID).Flags & RuleManager.UnitFlags.HasMoved )!= 0)
-            {
+            {   
                 GameObject.Find("MoveButton").GetComponent<Button>().interactable = false;
             }
             else
@@ -1181,7 +1182,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             listOfImages.Add(unitInt, unitSprites);
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
-
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = Mathf.Abs( unitToCreate.Position.Y); 
         }
         foreach (UnitInArmy unitFromList in secondPlayerArmy)
         {
@@ -1216,7 +1217,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             listOfImages.Add(unitInt, unitSprites);
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
-
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = Mathf.Abs(unitToCreate.Position.Y);
         }
 
 
