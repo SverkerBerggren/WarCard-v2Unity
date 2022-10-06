@@ -38,7 +38,7 @@ public class GridManager : MonoBehaviour
             {
                 GameObject NewObject = Instantiate(TileObject);
                 float ObjectWidth = NewObject.GetComponent<BoxCollider>().size.x;
-                print("Bruh");
+              
                 NewObject.transform.localScale *= TileWidth / ObjectWidth;
                 Vector3 NewPosition = new Vector3(transform.position.x + XIndex * TileWidth, transform.position.y - YIndex * TileWidth, 0);
                 GridClick ClickObject = NewObject.GetComponent<GridClick>();

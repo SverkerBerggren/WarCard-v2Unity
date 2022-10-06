@@ -3303,6 +3303,12 @@ MonoBehaviour:
     type: 3}
   secondPlayerTopFrame: {fileID: 21300000, guid: d508cdc3054651b48a27f2a34c46dad7,
     type: 3}
+  unitCard: {fileID: 3550164189252336795}
+  unitActions: {fileID: 3992873604736126327}
+  unitAbilities: {fileID: 3544125286779993332}
+  genericAbilityButton: {fileID: 5536026639596192028, guid: 02b16227bbdf53e45b82cc1a8b162b7f,
+    type: 3}
+  mainUI: {fileID: 0}
   errorMessageScript: {fileID: 9075417540317712675}
   reactionText: {fileID: 6778536493084301911}
 --- !u!1 &7090964931013228364
