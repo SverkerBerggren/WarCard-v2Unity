@@ -44,21 +44,222 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ad034e31bc3328459a33872d84c3ae2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canvasUIScript: {fileID: 0}
   gridManager: {fileID: 0}
+  objectiveContestionIndicator: {fileID: 0}
   prefabToInstaniate: {fileID: 7271972871239344965, guid: a216ccb382f30f5478fa43d997be66b9,
     type: 3}
-  theSprites:
-  - {fileID: 21300000, guid: e205b0d97570c694eaae6c240ee98540, type: 3}
-  - {fileID: 21300000, guid: 3ab424268bf24f941ad0e407b2a00dc7, type: 3}
-  MovementRange: {fileID: 3963050006536340265, guid: c3f34dff8d6f2a34881e643f935d0000,
+  activationIndicatorPrefab: {fileID: 8884039404556159385, guid: 3a3204c3b170182429e9c67b173698d7,
     type: 3}
-  selectedUnit:
-    UnitID: 0
-    PlayerIndex: 0
-    Position:
-      X: 0
-      Y: 0
   MoveActionSelected: 0
   AttackActionSelected: 0
   m_playerid: 0
-  isOnline: 0
+  isOnline: 1
+  abilitySelectionStarted: 0
+  imageStackAbility: {fileID: 5604374477723187719, guid: 4b35b6618e61f974f91438e784b026d9,
+    type: 3}
+  stackPadding: 50
+  currentPlayerPriority: {fileID: 0}
+  currentTurnText: {fileID: 0}
+  initiativePlayer0: {fileID: 0}
+  initiativePlayer1: {fileID: 0}
+  firstPlayerArmy:
+  - unit: {fileID: 2328681444619416991, guid: 21c6077892903614791ca96b70fd9e04, type: 3}
+    cord:
+      X: 15
+      Y: 4
+  - unit: {fileID: -4918387599653147724, guid: 7939394343ea6604aace767f25129705, type: 3}
+    cord:
+      X: 14
+      Y: 5
+  - unit: {fileID: -5102523303156893806, guid: 2b9ac3f585a655f4b978a1485d8eae1f, type: 3}
+    cord:
+      X: 15
+      Y: 5
+  - unit: {fileID: -4918387599653147724, guid: 7939394343ea6604aace767f25129705, type: 3}
+    cord:
+      X: 16
+      Y: 5
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 14
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 13
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 12
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 16
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 17
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 18
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 11
+      Y: 6
+  - unit: {fileID: 4100975343328728565, guid: 3f9612a278c01734c9a1d4e732cd687e, type: 3}
+    cord:
+      X: 19
+      Y: 6
+  secondPlayerArmy:
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 1
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 0
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 2
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 3
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 4
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 5
+      Y: 36
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 3
+      Y: 37
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 2
+      Y: 37
+  - unit: {fileID: 1997003122916733536, guid: dc0f0c7970e024444b37e2c8b9a70906, type: 3}
+    cord:
+      X: 1
+      Y: 38
+  - unit: {fileID: 1997003122916733536, guid: dc0f0c7970e024444b37e2c8b9a70906, type: 3}
+    cord:
+      X: 2
+      Y: 38
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 14
+      Y: 36
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 15
+      Y: 36
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 16
+      Y: 36
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 17
+      Y: 36
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 15
+      Y: 37
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 29
+      Y: 35
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 29
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 28
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 27
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 26
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 25
+      Y: 36
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 27
+      Y: 37
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 29
+      Y: 37
+  - unit: {fileID: 1997003122916733536, guid: dc0f0c7970e024444b37e2c8b9a70906, type: 3}
+    cord:
+      X: 29
+      Y: 39
+  - unit: {fileID: 1997003122916733536, guid: dc0f0c7970e024444b37e2c8b9a70906, type: 3}
+    cord:
+      X: 27
+      Y: 40
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 24
+      Y: 36
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 23
+      Y: 36
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 6
+      Y: 36
+  - unit: {fileID: 2815680690424425828, guid: b250ff188463f744192cc2fe4f3ecb85, type: 3}
+    cord:
+      X: 7
+      Y: 36
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 8
+      Y: 36
+  - unit: {fileID: 1097541035429332939, guid: 42c69a26878efba469b84ee3a1bd1fa2, type: 3}
+    cord:
+      X: 22
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 21
+      Y: 36
+  - unit: {fileID: 1914969703185486697, guid: f21655559e7021b418185b90918baa29, type: 3}
+    cord:
+      X: 20
+      Y: 36
+  listOfObjectives:
+  - X: 15
+    Y: 21
+  - X: 7
+    Y: 13
+  - X: 23
+    Y: 13
+  - X: 7
+    Y: 30
+  - X: 23
+    Y: 30
+  alwaysPassPriority: 0
+  EndScreenUI: {fileID: 9167687509031472244, guid: 8b7419a8e80278a4a85e901483a8f059,
+    type: 3}
+  WinSprite: {fileID: 21300000, guid: 2ac8c6619728b314c8ce11a6ca93fb9f, type: 3}
+  DefeatSprite: {fileID: 21300000, guid: d5747c81a18d7e647adfc9e32ca934e1, type: 3}
+  objectivePrefab: {fileID: 8976141538973097456, guid: 06728e2dc1db32c4f993b2f6ad5d11a0,
+    type: 3}

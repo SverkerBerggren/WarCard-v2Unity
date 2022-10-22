@@ -98,7 +98,7 @@ public class CanvasUiScript : MonoBehaviour
             GameObject attackButton = GameObject.Find("AttackButton");
             //      genericAbilityButton.SetActive(true);
 
-            print("gar den igenom abilities");
+
 
             GameObject newButton = Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding, attackButton.transform.position.y, 0), new Quaternion());
             padding += ogPadding;
@@ -155,6 +155,17 @@ public class CanvasUiScript : MonoBehaviour
             unitAbilities.sortChildren();
         }
     }
+
+    public void DisableUnitCard()
+    {
+
+        unitCard.SetActive(false);
+
+        unitActions.SetActive(false);
+    }
+
+
+
     public void DestroyButtons()
     {
         foreach (GameObject obj in buttonDestroyList)

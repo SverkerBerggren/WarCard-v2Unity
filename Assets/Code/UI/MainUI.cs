@@ -10,6 +10,10 @@ using RuleManager;
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
 
+    public List<GameObject> clickHandlerPrefabs = new List<GameObject>();
+
+    private List<ClickHandler> clickHandlers    = new List<ClickHandler>();
+
     public CanvasUiScript canvasUIScript; 
 
     public RuleManager.RuleManager ruleManager;
@@ -22,62 +26,32 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public GameObject activationIndicatorPrefab;
 
-    public Sprite[] theSprites;
-
     private Dictionary<int, UnitSprites> listOfImages = new Dictionary<int, UnitSprites>();
 
     private Dictionary<int, GameObject> listOfActivationIndicators = new Dictionary<int, GameObject>();
 
-    private Dictionary<int, UIInfo> opaqueIntegerUIInfo = new Dictionary<int, UIInfo>();
 
 
-    private GameObject unitCard;
-
-    private GameObject unitActions;
-
-    public bool activateAbilityWithZeroTargets = false; 
-
-    private int unitEtt;
-
-    private int unitTva;
-
-    public GameObject MovementRange;
-
-    private List<GameObject> CreatedMovementRange = new List<GameObject>();
-
-    private Dictionary<int, Unit> m_OpaqueToUIInfo = new Dictionary<int, Unit>();
+    public Dictionary<int, Unit> m_OpaqueToUIInfo = new Dictionary<int, Unit>();
 
 
-    public RuleManager.UnitInfo selectedUnit;
 
     public bool MoveActionSelected = false;
 
     public bool AttackActionSelected = false;
 
-    public int m_playerid = 0;
+    public int m_playerid = 0; 
 
-    public bool isOnline = false; 
-
-    private Queue<RuleManager.Action> ExecutedActions = new Queue<RuleManager.Action>();
+    public Queue<RuleManager.Action> ExecutedActions = new Queue<RuleManager.Action>();
 
 
-    public GameObject genericAbilityButton = null;
 
     private Dictionary<Coordinate,Objective> dictionaryOfObjectiveCords = new Dictionary<Coordinate, Objective>();
 
-    private List<GameObject> buttonDestroyList = new List<GameObject>();
+    public ClickHandler clickHandler; 
 
     public bool abilitySelectionStarted = false;
 
-    public GameObject errorMessage;
-
-    private int currentTargetToSelect = 0; 
-
-    public List<RuleManager.TargetCondition> requiredAbilityTargets = new List<RuleManager.TargetCondition>();
-
-    private List<RuleManager.Target> selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
-
-    public int selectedAbilityIndex = -1;
 
     private List<GameObject> stackObjectsToDestroy = new List<GameObject>();
 
@@ -90,27 +64,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public int stackPadding = 40;
 
-    private TextMeshProUGUI initiativeText;
-
-    public Sprite firstPlayerTopFrameSprite;
-
-    public Sprite secondPlayerTopFrameSprite;
-
-    public TextMeshProUGUI currentPlayerTurnText;
-
     public TextMeshProUGUI currentPlayerPriority;
     public TextMeshProUGUI currentTurnText;
     public TextMeshProUGUI initiativePlayer0;
     public TextMeshProUGUI initiativePlayer1;
 
 
-    public int unitPerformingAbility; 
 
     public List<UnitInArmy> firstPlayerArmy;
     public List<UnitInArmy> secondPlayerArmy;
     public List<RuleManager.Coordinate> listOfObjectives;
 
-    private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
+   
 
     TextMeshProUGUI Player1Score;
     TextMeshProUGUI Player2Score;
@@ -147,8 +112,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     void Start()
     {
-      //  initiativeText = GameObject.Find("InitiativeText").GetComponent<TextMeshProUGUI>();
-      //  print(initiativeText);
+        gridManager = FindObjectOfType<GridManager>();
+
+        //  initiativeText = GameObject.Find("InitiativeText").GetComponent<TextMeshProUGUI>();
+        //  print(initiativeText);
+
 
         GameState GlobalState = FindObjectOfType<GameState>();
 
@@ -164,28 +132,25 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, GlobalNetworkState.OpponentActionRetriever);
             GlobalNetworkState.OpponentActionRetriever = null;
         }
-        if(GlobalState)
+        if (GlobalState)
 
-        //    gridManager = FindObjectOfType<GridManager>();
+            //    gridManager = FindObjectOfType<GridManager>();
 
-        unitCard = GameObject.FindGameObjectWithTag("UnitCard");
-        unitCard.SetActive(false);
-        unitActions = GameObject.FindGameObjectWithTag("UnitActions");
-        unitActions.SetActive(false);
-
+ 
 
         ruleManager.SetEventHandler(this);
-        
+
         gridManager.SetInputReciever(this);
 
-        errorMessage = GameObject.Find("ErrorMessage");
-        errorMessage.SetActive(false);
+        foreach (GameObject obj in clickHandlerPrefabs)
+        {
+           GameObject newClickHandler =  Instantiate(obj, new Vector3(), new Quaternion());
 
-        Player1Score = GameObject.Find("Player1Score").GetComponent<TextMeshProUGUI>();
-        Player2Score = GameObject.Find("Player2Score").GetComponent<TextMeshProUGUI>();
+            clickHandlers.Add(newClickHandler.GetComponent<ClickHandler>());
+            newClickHandler.GetComponent<ClickHandler>().Setup(this);
+        }
 
 
-        CreateMovementObjects();
         CreateArmies();
 
     }
@@ -334,45 +299,43 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {
         currentPlayerPriority.text = "Current Player priority: " + (currentPlayerString+1);
         if(alwaysPassPriority && currentPlayerString == GlobalNetworkState.LocalPlayerIndex && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
-        {   if(isOnline)
-            {
+        {   
                 canvasUIScript.changeReactionText(false, " nagonting sket sig");
 
                 RuleManager.PassAction passAction = new RuleManager.PassAction();
                 passAction.PlayerIndex = currentPlayerString;
 
                 ExecutedActions.Enqueue(passAction);
-            }
+            
         }
-        if(isOnline)
+
+        if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
         {
-            if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
-            {
-            //    canvasUIScript.changeReactionText(true, "Waiting...");
-                StartCoroutine(canvasUIScript.changeReactionText(true, "Waiting..."));
-
-            }
-            if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
-            {
-              //  canvasUIScript.changeReactionText(false, "Waiting...");
-                StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
-            }
-            if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
-            {
-                
-              //  canvasUIScript.changeReactionText(false, "Waiting...");
-                StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
-
-            }
-            if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
-            {
-                StartCoroutine(canvasUIScript.changeReactionText(true, "Reaction?"));
-             //   canvasUIScript.changeReactionText(true, "Reaction?");
-                
-        
-            }
+        //    canvasUIScript.changeReactionText(true, "Waiting...");
+            StartCoroutine(canvasUIScript.changeReactionText(true, "Waiting..."));
 
         }
+        if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
+        {
+          //  canvasUIScript.changeReactionText(false, "Waiting...");
+            StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
+        }
+        if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
+        {
+            
+          //  canvasUIScript.changeReactionText(false, "Waiting...");
+            StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
+
+        }
+        if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
+        {
+            StartCoroutine(canvasUIScript.changeReactionText(true, "Reaction?"));
+         //   canvasUIScript.changeReactionText(true, "Reaction?");
+            
+    
+        }
+
+        
     }
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
@@ -503,336 +466,31 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             objectiveContestionIndicator.transform.position += new Vector3(0, 20, 0);
             objectiveContestionIndicator.GetComponent<ObjectiveContestionIndicator>().setPoints(0, ruleManager.GetObjectiveContestion(cord)[0]);
             objectiveContestionIndicator.GetComponent<ObjectiveContestionIndicator>().setPoints(1, ruleManager.GetObjectiveContestion(cord)[1]);
+           
         }
         else
         {
             objectiveContestionIndicator.SetActive(false);
         }
+        if(clickHandler != null)
+        {
+            clickHandler.OnClick(clickType, cord);
+        }
+        else if(clickHandler == null)
+        {
+            foreach(ClickHandler obj in clickHandlers)
+            {
+                if(obj.OnHandleClick(clickType,cord))
+                {
+                    clickHandler = obj;
+                    clickHandler.OnClick(clickType, cord);
+                    break; 
+                }
+                
+            }
+        }
+
         
-        if (selectedUnit != null)
-        {
-            if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority() )
-            {   
-                if (requiredAbilityTargets.Count == 0)
-                {
-
-                    print("laggs abilities till med tom lista");
-                    RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
-
-                    abilityToExecute.EffectIndex = selectedAbilityIndex;
-                    abilityToExecute.PlayerIndex = ruleManager.getPlayerPriority();
-                    abilityToExecute.Targets = new List<RuleManager.Target>();
-
-                    abilityToExecute.UnitID = selectedUnit.UnitID;
-
-
-                    string errorMessageText = "";
-
-                    if (!ruleManager.ActionIsValid(abilityToExecute, out errorMessageText))
-                    {
-                        ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
-                        script.timer = script.originalTimer;
-
-                        script.errorMessageTextMesh.text = errorMessageText;
-
-                        errorMessage.SetActive(true);
-
-
-                    }
-                    else
-                    {
-                        if (!isOnline)
-                        {
-                            ruleManager.ExecuteAction(abilityToExecute);
-                        }
-                        else
-                        {
-                            ExecutedActions.Enqueue(abilityToExecute);
-                        }
-                    }
-
-
-
-                    resetSelection();
-
-                    return; 
-                }
-            }
-
-            if (abilitySelectionStarted && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-            {
-                RuleManager.Target_Tile targetTile = new RuleManager.Target_Tile(cord);
-             //   print();
-                RuleManager.Target_Unit targetUnit = new RuleManager.Target_Unit();
-
-                if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
-                {
-                    targetUnit = new RuleManager.Target_Unit(ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID).UnitID);
-                }
-
-                bool targetWasCorrect = false;
-                //    print(currentTargetToSelect);
-                //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
-
-                //FIX ME
-                List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
-                string ErrorString = "";
-                RuleManager.EffectSource_Unit EffectSource = new RuleManager.EffectSource_Unit(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex,selectedUnit.UnitID,selectedAbilityIndex);
-                if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile,out ErrorString))
-                {
-                    currentTargetToSelect += 1;
-                    targetWasCorrect = true;
-                    selectedTargetsForAbilityExecution.Add(targetTile);
-                }
-                if(currentTargetToSelect < requiredAbilityTargets.Count)
-                {
-                    if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetUnit, out ErrorString) && !targetWasCorrect)
-                    {
-                        currentTargetToSelect += 1;
-                        targetWasCorrect = true;
-                        selectedTargetsForAbilityExecution.Add(targetUnit);
-                    }
-
-                }
-
-                if (requiredAbilityTargets.Count == currentTargetToSelect)
-                {
-
-                 //   print("Executas ability");
-
-                    RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
-
-                    abilityToExecute.EffectIndex = selectedAbilityIndex;
-                    abilityToExecute.PlayerIndex = ruleManager.getPlayerPriority(); ;
-
-                    List<RuleManager.Target> argumentList = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
-
-                    abilityToExecute.Targets = argumentList;
-
-                    abilityToExecute.UnitID = selectedUnit.UnitID;
-
-
-                    string errorMessageText = "";
-
-                    if (!ruleManager.ActionIsValid(abilityToExecute, out errorMessageText))
-                    {
-                        ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
-                        script.timer = script.originalTimer;
-
-                        script.errorMessageTextMesh.text = errorMessageText;
-
-                        errorMessage.SetActive(true);
-
-
-                    }
-                    else
-                    {
-                        if (!isOnline)
-                        {
-                            ruleManager.ExecuteAction(abilityToExecute);
-                        }
-                        else
-                        {
-                            ExecutedActions.Enqueue(abilityToExecute);
-                         
-                        }
-                    }
-                    resetSelection();
-
-                    print("den gor abiliten");
-                    currentTargetToSelect = 0;
-                    //
-                    return;
-                    // abilityToExecute.
-
-                }
-
-                if(targetWasCorrect)
-                {
-                    return; 
-                }
-
-                if (!targetWasCorrect)
-                {
-                    canvasUIScript.errorMessage(ErrorString);
-                    resetSelection();
-                    return;
-                }
-
-
-               // return; 
-                //List )
-            }
-        }
-
-        if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0)
-        {
-           // RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-            if (MoveActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-            {
-                AttackActionSelected = false;
-                //  bool isActionValid = false; 
-             //   print(ruleManager.PossibleMoves(selectedUnit.UnitID));
-                foreach (RuleManager.Coordinate cords in ruleManager.PossibleMoves(selectedUnit.UnitID))
-                {
-                    if (cords.X == cord.X && cords.Y == cord.Y)
-                    {
-                        RuleManager.MoveAction moveAction = new RuleManager.MoveAction();
-
-                        moveAction.NewPosition = cord;
-                        moveAction.PlayerIndex = selectedUnit.PlayerIndex;
-                        moveAction.UnitID = selectedUnit.UnitID;
-                        MoveActionSelected = false;
-                        string errorMessageText = ""; 
-                   
-                        if(!ruleManager.ActionIsValid(moveAction,out errorMessageText))
-                        {
-                            ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
-                            script.timer = script.originalTimer;
-
-                            script.errorMessageTextMesh.text = errorMessageText;
-
-                            errorMessage.SetActive(true);
-
-                            
-                        }
-                        else
-                        {
-                            if (!isOnline)
-                            {
-                                ruleManager.ExecuteAction(moveAction);
-                            }
-                            else
-                            {
-                                ExecutedActions.Enqueue(moveAction);
-                            }
-                        }
-
-
-
-                  
-                        
-                        if(!isOnline)
-                        {
-                         //   listOfImages[selectedUnit.UnitID].transform.position = gridManager.GetTilePosition(cord);
-                        }
-                      
-
-                        //selectedUnit = null;
-                        selectedUnit = null;
-                        unitCard.SetActive(false);
-                        unitActions.SetActive(false);
-
-                        foreach(GameObject obj in buttonDestroyList)
-                        {
-                            Destroy(obj); // obj.SetActive(false);
-
-                            
-                        }
-                        buttonDestroyList.Clear();
-                        DestroyMovementRange();
-
-                        resetSelection();
-                        return;
-                    }
-                }
-
-              
-            }
-        }
-        MoveActionSelected = false;
-        if (ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
-        {   
-            DestroyMovementRange();
-            RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-       
-            if(selectedUnit != null)
-            {
-                if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-                {
-                    RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
-
-                    attackAction.AttackerID = selectedUnit.UnitID;
-                    attackAction.DefenderID = unitInfo.UnitID;
-                    attackAction.PlayerIndex = ruleManager.getPlayerPriority(); ;
-                    string actionInfo;
-
-
-
-                    if (ruleManager.ActionIsValid(attackAction, out actionInfo) && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-                    {
-                        string errorMessageText = "";
-
-                        if (!ruleManager.ActionIsValid(attackAction, out errorMessageText))
-                        {
-                            ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
-                            script.timer = script.originalTimer;
-
-                            script.errorMessageTextMesh.text = errorMessageText;
-
-                            errorMessage.SetActive(true);
-
-
-                        }
-                        else
-                        {
-                            if (!isOnline)
-                            {
-                                ruleManager.ExecuteAction(attackAction);
-                            }
-                            else
-                            {
-                                ExecutedActions.Enqueue(attackAction);
-                            }
-                        }
-
-                        selectedUnit = null;
-                        unitCard.SetActive(false);
-                        unitActions.SetActive(false);
-                        foreach (GameObject obj in buttonDestroyList)
-                        {
-                            obj.SetActive(false);
-                        }
-
-                        DestroyMovementRange();
-                        AttackActionSelected = false;
-                     //   print(actionInfo + "det hnde");
-                        return;
-                    }
-
-                    print(actionInfo);
-                }
-            }
-     
-            AttackActionSelected = false;
-            if(selectedUnit != null)
-            {
-                if (!abilitySelectionStarted && unitInfo.UnitID != selectedUnit.UnitID)
-                {
-                    foreach (GameObject obj in buttonDestroyList)
-                    {
-                        obj.SetActive(false);
-                    }
-                }
-            }
-
-            resetSelection();
-
-            selectedUnit = unitInfo;
-
-            canvasUIScript.createUnitCard(unitInfo, m_OpaqueToUIInfo);
-           
-            ConstructMovementRange(unitInfo);
-        }
-        else
-        {
-            selectedUnit = null; 
-            unitCard.SetActive(false);
-            unitActions.SetActive(false);
-            canvasUIScript.DestroyButtons();
-
-            DestroyMovementRange();
-        }
     }
 
 //    private void DestroyButtons()
@@ -859,69 +517,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             initiativePlayer1.text = "Player 2 Initiative " + newIntitiative + "/100";
         }
     }
-    private void ConstructMovementRange(RuleManager.UnitInfo info)
-    {   
 
 
-        int Height = info.Stats.Movement;
 
-    //    float xPosition = gridManager.GetTilePosition(info.Position).x;
-    //    float yPosition = gridManager.GetTilePosition(info.Position).y;
-        
-
-        foreach(RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
-        {
-            //   GameObject newObject = Instantiate(MovementRange);
-            //
-            //   newObject.transform.position = gridManager.GetTilePosition(cord);
-            //   CreatedMovementRange.Add(newObject);
-            movementIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
-           // movementIndicatorObjectDictionary[cord].SetActive(true);
-
-        }
-         
-
-    //   for (int YIndex = 0; YIndex < Height; YIndex++)
-    //   {
-    //       for (int XIndex = 0; XIndex < Height; XIndex++)
-    //       {
-    //           GameObject NewObject = Instantiate(MovementRange);
-    //           //Assumes that tiles are quadratic
-    //           float TileWidth = NewObject.GetComponent<SpriteRenderer>().size.x;
-    //        //   m_TileWidth = TileWidth;
-    //           Vector3 NewPosition = new Vector3(xPosition + XIndex * TileWidth, yPosition - YIndex * TileWidth, 0);
-    //         //  GridClick ClickObject = NewObject.GetComponent<GridClick>();
-    //         //  ClickObject.X = XIndex;
-    //         //  ClickObject.Y = YIndex;
-    //         //  ClickObject.AssociatedGrid = this;
-    //           NewObject.transform.position = NewPosition;
-    //
-    //           CreatedMovementRange.Add(NewObject);
-    //       }
-    //   }
-    }
-
-    private void DestroyMovementRange()
-    {       
-            
-            
-      
-            foreach(List<GameObject> obj in movementIndicatorObjectDictionary)
-            {
-                //obj.SetActive(false);
-
-                foreach(GameObject ob in obj)
-                {
-                    ob.SetActive(false);
-                }
-            }
-        
-    }
-
-    private void CreateAbility()
-    {
-
-    }
 
 //   private void ExecuteAbility(RuleManager.TargetInfo Info)
 //   {
@@ -946,21 +544,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 //    //   if()
 //   }
 
-    public void CreateFriendlyUnitInformation()
-    {
-
-    }
-
-    public void DestroyFriendlyUnitInformation()
-    {
-
-    }
-
-    public void CreateEnemyUnitInformation()
-    {
-
-    }
-
     public void SwitchPlayerPriority()
     {
         RuleManager.PassAction passAction = new RuleManager.PassAction();
@@ -981,25 +564,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         if (!ruleManager.ActionIsValid(passAction, out errorMessageText))
         {
-            ErrorMessageScript script = errorMessage.GetComponent<ErrorMessageScript>();
-            script.timer = script.originalTimer;
 
-            script.errorMessageTextMesh.text = errorMessageText;
-
-            errorMessage.SetActive(true);
-
+            canvasUIScript.errorMessage(errorMessageText);
 
         }
         else
         {
-            if (!isOnline)
-            {
-                ruleManager.ExecuteAction(passAction);
-            }
-            else
-            {
-                ExecutedActions.Enqueue(passAction);
-            }
+
+            ExecutedActions.Enqueue(passAction);
+            
         }
 
     }
@@ -1012,23 +585,23 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         return ExecutedActions.Count;
     }
 
-    public void resetSelection()
-    {
-        selectedUnit = null;
-        unitCard.SetActive(false);
-        unitActions.SetActive(false);
-        canvasUIScript.DestroyButtons();
-
-        DestroyMovementRange();
-
-        requiredAbilityTargets.Clear();
-
-        MoveActionSelected = false;
-        AttackActionSelected = false;
-        abilitySelectionStarted = false;
-        currentTargetToSelect = 0;
-        selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
-    } 
+ //   public void resetSelection()
+ //   {
+ //       selectedUnit = null;
+ //       unitCard.SetActive(false);
+ //       unitActions.SetActive(false);
+ //       canvasUIScript.DestroyButtons();
+ //
+ //       DestroyMovementRange();
+ //
+ //       requiredAbilityTargets.Clear();
+ //
+ //       MoveActionSelected = false;
+ //       AttackActionSelected = false;
+ //       abilitySelectionStarted = false;
+ //       currentTargetToSelect = 0;
+ //       selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
+ //   } 
 
 
     private void CreateArmies()
@@ -1134,33 +707,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
-    private void CreateMovementObjects()
-    {
-        for(int i = 0; i < gridManager.Width; i++)
-        {
-            movementIndicatorObjectDictionary.Add(new List<GameObject>());
 
-            for(int z = 0; z < gridManager.Height; z++)
-            {
-                movementIndicatorObjectDictionary[i].Add(null);
-            }
-        }
-
-        print(gridManager.Width);
-        for(int i = 0; i < gridManager.Width; i++)
-        {
-            for(int z = 0; z < gridManager.Height; z++)
-            {
-                GameObject newObject = Instantiate(MovementRange);
-                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-
-            //    print(tempCord.X + " " + tempCord.Y);
-                newObject.transform.position = gridManager.GetTilePosition(tempCord);
-                movementIndicatorObjectDictionary[i][z] = newObject;
-                newObject.SetActive(false);
-            }
-        }
-    }
 
     public void enableAlwaysPass()
     {
@@ -1181,6 +728,32 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 
             }
         }
+    }
+    public bool EnqueueAction(RuleManager.Action action)
+    {
+        string errorMessage; 
+
+        if(ruleManager.ActionIsValid(action, out errorMessage))
+        {
+            ExecutedActions.Enqueue(action);
+            return true;
+        }
+        else
+        {
+            canvasUIScript.errorMessage(errorMessage);
+        }
+
+
+        return false; 
+    }
+    public void DeactivateClickHandler()
+    {
+        if(clickHandler != null)
+        {
+            clickHandler.Deactivate();
+
+        }
+        clickHandler = null; 
     }
 
 

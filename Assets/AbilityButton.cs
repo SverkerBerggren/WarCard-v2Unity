@@ -27,17 +27,19 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public TextMeshProUGUI abilityDescriptionText;
     public TextMeshProUGUI abilityNameText;
 
+    public AbilityClickHandler clickHandlerAbility;
+
     // Start is called before the first frame update
     void Start()
     {
+        clickHandlerAbility = FindObjectOfType<AbilityClickHandler>();
+
         informationPopUp.SetActive(false);
 
         abilityFlavourText.text = abilityFlavour;
 
         abilityDescriptionText.text = abilityDescription;
 
-
-        print("vad heter abilityn i knappen");
 
         abilityNameText.text = abilityName;
 
@@ -63,16 +65,16 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     {
         mainUI.abilitySelectionStarted = true;
 
-        mainUI.selectedAbilityIndex = abilityIndex;
+        clickHandlerAbility.selectedAbilityIndex = abilityIndex;
 
         if(whichTargets.Count != 0)
         {
-            mainUI.requiredAbilityTargets =  new List<RuleManager.TargetCondition>(whichTargets); 
+            clickHandlerAbility.requiredAbilityTargets =  new List<RuleManager.TargetCondition>(whichTargets); 
         }
         else
         {
             mainUI.OnClick(ClickType.leftClick, new RuleManager.Coordinate(0, 0));
-            mainUI.requiredAbilityTargets = new List<RuleManager.TargetCondition>();
+            clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>();
         }
 
 
