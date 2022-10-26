@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ad8d0178a624fa4eaf65987dcb9d899, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitCardSprite: {fileID: 21300000, guid: 1f434770c8e902446838e8e8e6af4027, type: 3}
+  unitCardSprite: {fileID: 21300000, guid: 043fee403c27b6a4daac248507060289, type: 3}
   AbilityIcons: []
   sidewaySprite: {fileID: 21300000, guid: fe2cd50d33f94644b8fac314d589bb4a, type: 3}
   forwardSprite: {fileID: 21300000, guid: e06ea61c71f005c4ea761f66a28bcaa9, type: 3}

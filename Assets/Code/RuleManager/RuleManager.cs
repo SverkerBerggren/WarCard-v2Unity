@@ -108,7 +108,7 @@ namespace RuleManager
         {
 
         }
-        public Effect_RegisterContinousAbility(TargetRetriever Retriever,TargetCondition Condition,Effect NewEffect,int NewPassDuration = 0,int NewTurnDuration = 0)
+        public Effect_RegisterContinousAbility(TargetRetriever Retriever,TargetCondition Condition,Effect NewEffect,int NewPassDuration = 1,int NewTurnDuration = 1)
         {
             OptionalAffectedTarget = Retriever;
             ContinousCondition = Condition;
@@ -1448,6 +1448,10 @@ namespace RuleManager
             {
                 Effect_GainInitiative InitiativeToResolve = (Effect_GainInitiative)EffectToResolve;
                 m_PlayerIntitiative[Source.PlayerIndex] += InitiativeToResolve.InitiativeGain;
+                if(m_EventHandler != null)
+                {
+                    m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[Source.PlayerIndex], Source.PlayerIndex);
+                }
             }
             else if(EffectToResolve is Effect_DestroyUnits)
             {
@@ -1817,6 +1821,10 @@ namespace RuleManager
             {
                 m_PlayerIntitiative[i] = 0;
                 m_EmptyPassed[i] = false;
+                if(m_EventHandler != null)
+                {
+                    m_EventHandler.OnInitiativeChange(0, i);
+                }
             }
 
             for(int i = 0; i < m_PlayerCount;i++)
@@ -1885,7 +1893,7 @@ namespace RuleManager
             }
             foreach (int EffectToRemove in RegisteredEffectsToRemove)
             {
-                m_RegisteredContinousAbilities.Remove(EffectToRemove);
+                //m_RegisteredContinousAbilities.Remove(EffectToRemove);
             }
 
 
@@ -1979,7 +1987,7 @@ namespace RuleManager
             }
             foreach (int EffectToRemove in RegisteredEffectsToRemove)
             {
-                m_RegisteredContinousAbilities.Remove(EffectToRemove);
+                m_RegisteredTriggeredAbilities.Remove(EffectToRemove);
             }
             yield break;
         }
@@ -2077,9 +2085,9 @@ namespace RuleManager
             else if(ActionToExecute is AttackAction)
             {
                 AttackAction AttackToExecute = (AttackAction)ActionToExecute;
-                UnitInfo AttackerInfo = m_UnitInfos[AttackToExecute.AttackerID];
-                UnitInfo DefenderInfo = m_UnitInfos[AttackToExecute.DefenderID];
-                if(m_EventHandler != null)
+                UnitInfo AttackerInfo = p_GetProcessedUnitInfo(AttackToExecute.AttackerID); //m_UnitInfos[AttackToExecute.AttackerID];
+                UnitInfo DefenderInfo = p_GetProcessedUnitInfo(AttackToExecute.DefenderID);//m_UnitInfos[AttackToExecute.DefenderID];
+                if (m_EventHandler != null)
                 {
                     m_EventHandler.OnUnitAttack(AttackToExecute.AttackerID, AttackToExecute.DefenderID);
                 }
@@ -2289,6 +2297,13 @@ namespace RuleManager
                 }
                 UnitInfo DefenderInfo = p_GetProcessedUnitInfo(AttackToCheck.DefenderID);  //m_UnitInfos[AttackToCheck.DefenderID];
                 UnitInfo AttackerInfo = p_GetProcessedUnitInfo(AttackToCheck.AttackerID); //m_UnitInfos[AttackToCheck.AttackerID];
+                if(DefenderInfo.PlayerIndex == AttackerInfo.PlayerIndex)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can't attack friendly unit";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
                 if (Coordinate.Distance(AttackerInfo.Position,DefenderInfo.Position) > AttackerInfo.Stats.Range)
                 {
                     ReturnValue = false;

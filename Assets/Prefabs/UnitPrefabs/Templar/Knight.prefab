@@ -44,9 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d053ceecb61adc44a704d2f9f3e0ec0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitCardSprite: {fileID: 21300000, guid: 48d616bfedc124144a4b8a14e471dfc9, type: 3}
+  unitCardSprite: {fileID: 21300000, guid: 14ede77d74cf18f4699aae8633556e22, type: 3}
   AbilityIcons:
   - {fileID: 21300000, guid: 48d89e8db6f36ad4d952a762d424e3f8, type: 3}
-  sidewaySprite: {fileID: 21300000, guid: cea509055891e8d48adff5135b47a8f1, type: 3}
-  forwardSprite: {fileID: 21300000, guid: 5472c5d047cecf147bfa770bc7dab4c9, type: 3}
-  backWardSprite: {fileID: 21300000, guid: 0cdea3a9c8666034d9e8d2e4e3977e8a, type: 3}
+  sidewaySprite: {fileID: 21300000, guid: a9068e907062c774bb6441e75452d4ad, type: 3}
+  forwardSprite: {fileID: 21300000, guid: 330cd322010830844abc7bcff735789d, type: 3}
+  backWardSprite: {fileID: 21300000, guid: 52a01351c0f1e3b45b235735380e5115, type: 3}

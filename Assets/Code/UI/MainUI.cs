@@ -485,11 +485,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         GameObject EndScreen = Instantiate(EndScreenUI);
         if(WinningPlayerIndex == GlobalNetworkState.LocalPlayerIndex)
         {
-            EndScreen.GetComponent<UnityEngine.UI.Image>().sprite = WinSprite;
+            EndScreen.transform.Find("WinSprite").GetComponent<UnityEngine.UI.Image>().sprite = WinSprite;
         }
         else
         {
-            EndScreen.GetComponent<UnityEngine.UI.Image>().sprite = DefeatSprite;
+            EndScreen.transform.Find("WinSprite").GetComponent<UnityEngine.UI.Image>().sprite = DefeatSprite;
         }
         gameObject.SetActive(false);
     }
