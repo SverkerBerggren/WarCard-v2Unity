@@ -12,11 +12,13 @@ public class MoveButtonClick : MonoBehaviour
 
     private Button button;
 
+    private ClickHandlerUnitSelect unitSelectClickHandler; 
     // Start is called before the first frame update
     void Start()
     {
         button = gameObject.GetComponent<Button>();
         mainUI = GameObject.Find("UI").GetComponent<MainUI>();
+
     //    GetComponent<Button>().
     }
 
@@ -47,9 +49,18 @@ public class MoveButtonClick : MonoBehaviour
 
     public void moveButtonClick()
     {
+        ClickHandlerUnitSelect[] clickhandlers = FindObjectsOfType<ClickHandlerUnitSelect>();
+
+        print(clickhandlers.Length);
+
+        unitSelectClickHandler = clickhandlers[0];
         //print("hej");
         mainUI.MoveActionSelected = true;
 
         mainUI.AttackActionSelected = false;
+
+
+        unitSelectClickHandler.moveActionSelected = true;
+        unitSelectClickHandler.AttackActionSelected = false; 
     }
 }

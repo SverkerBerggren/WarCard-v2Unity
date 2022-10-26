@@ -38,7 +38,6 @@ public class UnitActions : MonoBehaviour
 
 
 
-        print(amountOfChildren);
 
         for(int i = 0; i < amountOfChildren; i++)
         {
