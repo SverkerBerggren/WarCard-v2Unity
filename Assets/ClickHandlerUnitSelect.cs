@@ -16,7 +16,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 
     public GameObject MovementRange;
     public GameObject ClickHandlerAbilityPrefab;
-    private ClickHandler ClickHandlerAbility;
+    private AbilityClickHandler ClickHandlerAbility;
 
     CanvasUiScript canvasUIScript;
     public void Start()
@@ -188,6 +188,15 @@ public class ClickHandlerUnitSelect : ClickHandler
     private void DestroyButtons()
     {
 
+    }
+
+    public void DeactivateAbilityClickHandler()
+    {
+        abilitySelectionActive = false;
+        if(ClickHandlerAbility.active)
+        {
+            ClickHandlerAbility.Deactivate();
+        }
     }
 
     private void ConstructMovementRange(RuleManager.UnitInfo info)
