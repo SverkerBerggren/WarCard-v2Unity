@@ -93,6 +93,10 @@ public class GameState : MonoBehaviour
         return ruleManager;
     }
 
+    public int t__GetRetrieverCount()
+    {
+        return (m_PlayerActionRetrievers.Count);
+    }
 
 }
 public interface ActionRetriever

@@ -45,5 +45,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitCardSprite: {fileID: 21300000, guid: cfa0b75c3311aee4e8fbdc46ccb47d54, type: 3}
-  AbilityIcons: []
+  AbilityIcons:
+  - {fileID: 21300000, guid: d1afa921f64b3604cac3a7e70cb04764, type: 3}
   SelectSound: {fileID: 8300000, guid: 0b2ec62049a02c64f8e556a6b49a6b70, type: 3}

@@ -1170,7 +1170,7 @@ namespace RuleManager
                     RegisteredContinousEffect EffectToRegister = new RegisteredContinousEffect();
                     EffectToRegister.AffectedEntities = AbilityToRegister.AffectedEntities;
                     EffectToRegister.AbilitySource = new EffectSource_Unit(PlayerIndex, NewID, i);
-                    m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
+                    EffectToRegister.EffectToApply = AbilityToRegister.EffectToApply;
                     m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
                 }
             }

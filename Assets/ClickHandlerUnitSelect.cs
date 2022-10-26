@@ -29,7 +29,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         CreateMovementObjects();
         ruleManager = mainUi.ruleManager; 
         GameObject tempObject = Instantiate(ClickHandlerAbilityPrefab, new Vector3(), new Quaternion());
-        ClickHandlerAbility = tempObject.GetComponent<ClickHandler>();
+        ClickHandlerAbility = (AbilityClickHandler) tempObject.GetComponent<ClickHandler>();
         ClickHandlerAbility.Setup(ui);
     }
 
@@ -47,7 +47,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 
         
 
-        Queue<RuleManager.Action> ExecutedActions = mainUi.ExecutedActions;
+        //Queue<RuleManager.Action> ExecutedActions = mainUi.ExecutedActions;
 
         canvasUIScript = mainUi.canvasUIScript;
 
@@ -58,11 +58,11 @@ public class ClickHandlerUnitSelect : ClickHandler
             RuleManager.MoveAction moveAction = new RuleManager.MoveAction();
             moveAction.NewPosition = cord;
             moveAction.UnitID = selectedUnit.UnitID;
-            moveAction.PlayerIndex = GlobalNetworkState.LocalPlayerIndex;
+            moveAction.PlayerIndex = ruleManager.getPlayerPriority();//GlobalNetworkState.LocalPlayerIndex;
             string moveInfo;
             if (ruleManager.ActionIsValid(moveAction, out moveInfo))
             {
-                ExecutedActions.Enqueue(moveAction);
+                mainUi.EnqueueAction(moveAction);
             }
             else
             {
@@ -76,7 +76,14 @@ public class ClickHandlerUnitSelect : ClickHandler
         {
             DestroyMovementRange();
             RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-            selectedUnit = unitInfo; 
+            //clicking on unit, play sound
+            Unit UIInfo = mainUi.GetUnitUIInfo(unitInfo);
+            if(UIInfo.SelectSound != null)
+            {
+                //UnityEngine.Audio.audios(UIInfo.SelectSound, FindObjectOfType<Camera>().transform.position);
+                GetComponent<AudioSource>().PlayOneShot(UIInfo.SelectSound);
+            }
+            selectedUnit = unitInfo;
             if (selectedUnit != null)
             {   
                 if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
@@ -85,7 +92,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 
                     attackAction.AttackerID = selectedUnit.UnitID;
                     attackAction.DefenderID = unitInfo.UnitID;
-                    attackAction.PlayerIndex = ruleManager.getPlayerPriority(); ;
+                    attackAction.PlayerIndex = ruleManager.getPlayerPriority();
                     string actionInfo;
 
 
@@ -103,8 +110,8 @@ public class ClickHandlerUnitSelect : ClickHandler
                         else
                         {
 
-                            ExecutedActions.Enqueue(attackAction);
-                            
+                            //ExecutedActions.Enqueue(attackAction);
+                            mainUi.EnqueueAction(attackAction);
                         }
 
                         resetSelection();

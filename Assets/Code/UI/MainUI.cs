@@ -132,6 +132,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, GlobalNetworkState.OpponentActionRetriever);
             GlobalNetworkState.OpponentActionRetriever = null;
         }
+        else
+        {
+            GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, this);
+        }
         if (GlobalState)
 
             //    gridManager = FindObjectOfType<GridManager>();
@@ -305,8 +309,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 RuleManager.PassAction passAction = new RuleManager.PassAction();
                 passAction.PlayerIndex = currentPlayerString;
 
-                ExecutedActions.Enqueue(passAction);
-            
+                //ExecutedActions.Enqueue(passAction);
+                EnqueueAction(passAction);
         }
 
         if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
@@ -571,8 +575,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         else
         {
 
-            ExecutedActions.Enqueue(passAction);
-            
+            //ExecutedActions.Enqueue(passAction);
+            EnqueueAction(passAction);
         }
 
     }
@@ -724,8 +728,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 RuleManager.PassAction passAction = new RuleManager.PassAction();
                 passAction.PlayerIndex = ruleManager.getPlayerPriority();
 
-                ExecutedActions.Enqueue(passAction);
-                
+                //ExecutedActions.Enqueue(passAction);
+                EnqueueAction(passAction);
             }
         }
     }
@@ -745,6 +749,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
         return false; 
+    }
+    public Unit GetUnitUIInfo(RuleManager.UnitInfo UnitToInspect)
+    {
+        return (m_OpaqueToUIInfo[UnitToInspect.OpaqueInteger]);
     }
     public void DeactivateClickHandler()
     {

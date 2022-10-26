@@ -913,6 +913,11 @@ PrefabInstance:
       objectReference: {fileID: 1639985982}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
+      propertyPath: firstPlayerArmy.Array.size
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
       propertyPath: objectiveContestionIndicator
       value: 
       objectReference: {fileID: 1077547881}
@@ -927,6 +932,22 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 6848895125422210675, guid: c5921afc3ff792649b989f1111228c33,
         type: 3}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: firstPlayerArmy.Array.data[12].unit
+      value: 
+      objectReference: {fileID: 3046135176407930439, guid: c1d67201f86ac1b42ae376050f380e41,
+        type: 3}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: firstPlayerArmy.Array.data[12].cord.X
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
+      propertyPath: firstPlayerArmy.Array.data[12].cord.Y
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3212706685785821691, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: m_RootOrder
