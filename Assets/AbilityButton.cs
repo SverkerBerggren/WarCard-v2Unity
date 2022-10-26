@@ -28,6 +28,12 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public TextMeshProUGUI abilityNameText;
 
     public AbilityClickHandler clickHandlerAbility;
+    public ClickHandlerUnitSelect clickHandlerUnitSelect;
+
+
+    
+
+
 
     // Start is called before the first frame update
     void Start()
@@ -44,7 +50,8 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         abilityNameText.text = abilityName;
 
         mainUI = GameObject.Find("UI").GetComponent<MainUI>();
-
+        clickHandlerAbility = FindObjectOfType<AbilityClickHandler>();
+        clickHandlerUnitSelect = FindObjectOfType<ClickHandlerUnitSelect>();
         
         
     // ruleManager.GetPossibleTargets(abilityInfo.ActivationTargets).;
@@ -66,16 +73,18 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         mainUI.abilitySelectionStarted = true;
 
         clickHandlerAbility.selectedAbilityIndex = abilityIndex;
+        clickHandlerUnitSelect.abilitySelectionActive = true;
+        clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>(whichTargets);
 
-        if(whichTargets.Count != 0)
-        {
-            clickHandlerAbility.requiredAbilityTargets =  new List<RuleManager.TargetCondition>(whichTargets); 
-        }
-        else
-        {
-            mainUI.OnClick(ClickType.leftClick, new RuleManager.Coordinate(0, 0));
-            clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>();
-        }
+    //    if(whichTargets.Count != 0)
+    //    {
+    //        clickHandlerAbility.requiredAbilityTargets =  new List<RuleManager.TargetCondition>(whichTargets); 
+    //    }
+    //    else
+    //    {
+    //        mainUI.OnClick(ClickType.leftClick, new RuleManager.Coordinate(0, 0));
+    //        clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>();
+    //    }
 
 
     }
