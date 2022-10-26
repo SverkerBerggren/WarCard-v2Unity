@@ -26,7 +26,8 @@ public class Militarium
         NewUnitInfo.Stats.HP = 200;
         NewUnitInfo.Stats.ObjectiveControll = 5;
         NewUnitInfo.Stats.ActivationCost = 15;
-        
+
+        NewUnitInfo.Abilities.Add(new RuleManager.Ability_Continous(new RuleManager.TargetCondition_Self(), new RuleManager.Effect_HeavyAttack()));
         
         return (NewUnitInfo);
     }
@@ -68,6 +69,7 @@ public class Militarium
         NewUnitInfo.Abilities.Add(BarrageAbility);
         return (NewUnitInfo);
     }
+
 
     public static RuleManager.UnitInfo GetOfficer()
     {

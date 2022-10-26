@@ -168,6 +168,12 @@ namespace RuleManager
         public TargetRetriever Attacker;
         public TargetRetriever Defender;
     }
+
+    //Borde vara modifier istället
+    public class Effect_HeavyAttack : Effect
+    {
+
+    }
     public class Effect_IncreaseDamage : Effect
     {
         public int DamageIncrease = 0;
@@ -373,8 +379,13 @@ namespace RuleManager
     }
     public class Ability_Continous : Ability
     {
-        public TargetCondition AffectedEntities = new TargetCondition_True();
+        public TargetCondition AffectedEntities = new TargetCondition_Self();
         public Effect EffectToApply;
+        public Ability_Continous(TargetCondition NewAffectedEntities,Effect NewEffectToApply)
+        {
+            AffectedEntities = NewAffectedEntities;
+            EffectToApply = NewEffectToApply;
+        }
         public Ability_Continous() : base(AbilityType.Continous)
         {
 
@@ -550,6 +561,10 @@ namespace RuleManager
         {
             NeededTarget = TargetToStore;
         }
+    }
+    public class TargetCondition_Self : TargetCondition
+    {
+
     }
     public class TargetCondition_And : TargetCondition
     {
@@ -994,7 +1009,7 @@ namespace RuleManager
             m_CurrentContinousID += 1;
             return (m_CurrentContinousID);
         }
-
+        //effects to remove on unit killed, continous id to remove
         Dictionary<int, int> m_UnitRegisteredContinousAbilityMap = new Dictionary<int, int>();
 
         const int m_PlayerMaxInitiative = 150;
@@ -1148,6 +1163,16 @@ namespace RuleManager
             for(int i = 0; i < NewUnit.Abilities.Count;i++)
             {
                 NewUnit.AbilityActivated.Add(false);
+                //if ability är continous
+                if(NewUnit.Abilities[i] is Ability_Continous)
+                {
+                    Ability_Continous AbilityToRegister = (Ability_Continous)NewUnit.Abilities[i];
+                    RegisteredContinousEffect EffectToRegister = new RegisteredContinousEffect();
+                    EffectToRegister.AffectedEntities = AbilityToRegister.AffectedEntities;
+                    EffectToRegister.AbilitySource = new EffectSource_Unit(PlayerIndex, NewID, i);
+                    m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
+                    m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
+                }
             }
             
             m_Tiles[NewUnit.Position.Y][NewUnit.Position.X].StandingUnitID = NewID;
@@ -1665,6 +1690,27 @@ namespace RuleManager
                     Error = "This should not be written";
                 }
             }
+            else if(Condition is TargetCondition_Self)
+            {
+                if(!(Source is EffectSource_Unit))
+                {
+                    Error = "self can only refer to a unit";
+                    return (false);
+                }
+                EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
+                if(!(TargetToVerify is Target_Unit))
+                {
+                    Error = "Self can only refer to a unit";
+                    return (false);
+                }
+                Target_Unit UnitTarget = (Target_Unit)TargetToVerify;
+                if(!(UnitTarget.UnitID == UnitSource.UnitID))
+                {
+                    Error = "Target isn't itself";
+                    return (false);
+                }
+                ReturnValue = true;
+            }
             else if(Condition is TargetCondition_UnitTag)
             {
                 TargetCondition_UnitTag TagCondition = (TargetCondition_UnitTag)Condition;
@@ -1761,6 +1807,11 @@ namespace RuleManager
             if(m_EventHandler != null)
             {
                 m_EventHandler.OnUnitDestroyed(UnitID);
+            }
+            if (m_UnitRegisteredContinousAbilityMap.ContainsKey(UnitID))
+            {
+                m_RegisteredContinousAbilities.Remove(m_UnitRegisteredContinousAbilityMap[UnitID]);
+                m_UnitRegisteredContinousAbilityMap.Remove(UnitID);
             }
             UnitToRemoveTile.StandingUnitID = 0;
         }
@@ -2499,6 +2550,10 @@ namespace RuleManager
             else if(Modifier is Effect_SilenceUnit)
             {
                 InfoToModify.Flags |= UnitFlags.Silenced;
+            }
+            else if(Modifier is Effect_HeavyAttack)
+            {
+                InfoToModify.Flags |= UnitFlags.CantAttack;
             }
             else
             {
