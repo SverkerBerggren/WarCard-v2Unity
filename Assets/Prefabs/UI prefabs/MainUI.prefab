@@ -3337,6 +3337,8 @@ MonoBehaviour:
   mainUI: {fileID: 0}
   errorMessageScript: {fileID: 9075417540317712675}
   reactionText: {fileID: 6778536493084301911}
+  Player1Score: {fileID: 2466894874100473410}
+  Player2Score: {fileID: 3464935164126683608}
 --- !u!1 &7090964931013228364
 GameObject:
   m_ObjectHideFlags: 0

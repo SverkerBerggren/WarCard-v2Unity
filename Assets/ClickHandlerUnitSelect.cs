@@ -1,6 +1,7 @@
 using RuleManager;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -31,6 +32,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         GameObject tempObject = Instantiate(ClickHandlerAbilityPrefab, new Vector3(), new Quaternion());
         ClickHandlerAbility = (AbilityClickHandler) tempObject.GetComponent<ClickHandler>();
         ClickHandlerAbility.Setup(ui);
+        ClickHandlerAbility.clickHandlerUnitSelect = this;
     }
 
     void Update()
@@ -71,74 +73,63 @@ public class ClickHandlerUnitSelect : ClickHandler
         }
         moveActionSelected = false;
 
+        if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority() && ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+        {
+            RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
 
-        if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+            attackAction.AttackerID = selectedUnit.UnitID;
+            attackAction.DefenderID = ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID;
+            attackAction.PlayerIndex = ruleManager.getPlayerPriority();
+            string attackInfo;
+
+
+
+            if (ruleManager.ActionIsValid(attackAction, out attackInfo))
+            {
+                mainUi.EnqueueAction(attackAction);
+            }
+            else
+            {
+                canvasUIScript.errorMessage(attackInfo);
+            }
+
+           
+        }
+
+
+
+
+        if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0 && !AttackActionSelected)
         {
             DestroyMovementRange();
-            RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+            selectedUnit = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
             //clicking on unit, play sound
-            Unit UIInfo = mainUi.GetUnitUIInfo(unitInfo);
+            Unit UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
             if(UIInfo.SelectSound != null)
             {
                 //UnityEngine.Audio.audios(UIInfo.SelectSound, FindObjectOfType<Camera>().transform.position);
                 GetComponent<AudioSource>().PlayOneShot(UIInfo.SelectSound);
             }
-            selectedUnit = unitInfo;
-            if (selectedUnit != null)
-            {   
-                if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-                {
-                    RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
-
-                    attackAction.AttackerID = selectedUnit.UnitID;
-                    attackAction.DefenderID = unitInfo.UnitID;
-                    attackAction.PlayerIndex = ruleManager.getPlayerPriority();
-                    string actionInfo;
-
-
-
-                    if (ruleManager.ActionIsValid(attackAction, out actionInfo) && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-                    {
-                        string errorMessageText = "";
-
-                        if (!ruleManager.ActionIsValid(attackAction, out errorMessageText))
-                        {
-                            mainUi.canvasUIScript.errorMessage(errorMessageText);
-
-
-                        }
-                        else
-                        {
-
-                            //ExecutedActions.Enqueue(attackAction);
-                            mainUi.EnqueueAction(attackAction);
-                        }
-
-                        resetSelection();
-                    }
-
-                    print(actionInfo);
-                }
-            }
-            AttackActionSelected = false;
-            if (selectedUnit != null)
-            {
-                if (!abilitySelectionActive && unitInfo.UnitID != selectedUnit.UnitID)
-                {
-                    foreach (GameObject obj in buttonDestroyList)
-                    {
-                        obj.SetActive(false);
-                    }
-                }
-            }
+       //     selectedUnit = unitInfo;
+            
+        //    if (selectedUnit != null)
+        //    {
+        //        if (!abilitySelectionActive && unitInfo.UnitID != selectedUnit.UnitID)
+        //        {
+        //            foreach (GameObject obj in buttonDestroyList)
+        //            {
+        //                obj.SetActive(false);
+        //            }
+        //        }
+        //    }
 
             resetSelection();
 
-            selectedUnit = unitInfo;
+            
 
-            canvasUIScript.createUnitCard(unitInfo, mainUi.m_OpaqueToUIInfo);
+            canvasUIScript.createUnitCard(selectedUnit, mainUi.m_OpaqueToUIInfo);
 
-            ConstructMovementRange(unitInfo);
+            ConstructMovementRange(selectedUnit);
         }
         else
         {
@@ -171,7 +162,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             return true; 
             
         }
-        if(moveActionSelected)
+        if(moveActionSelected || AttackActionSelected)
         {
             return true;
         }

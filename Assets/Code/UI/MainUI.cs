@@ -77,8 +77,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
    
 
-    TextMeshProUGUI Player1Score;
-    TextMeshProUGUI Player2Score;
 
 
     public bool alwaysPassPriority = false; 
@@ -409,16 +407,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnScoreChange(int PlayerIndex,int NewScore)
     {
-        print("Player index: " + PlayerIndex + " Player score: " + NewScore);
 
-        if(PlayerIndex == 0)
-        {
-            Player1Score.text = "Player 1 Score: " + NewScore;
-        }
-        else
-        {
-            Player2Score.text = "Player 2 Score: " + NewScore;
-        }
+
+        canvasUIScript.ChangePlayerScore(PlayerIndex, NewScore);
     }
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
