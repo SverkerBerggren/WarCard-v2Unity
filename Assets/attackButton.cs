@@ -58,7 +58,6 @@ public class attackButton : MonoBehaviour
         mainUI.AttackActionSelected = true;
 
 
-        unitSelectClickHandler.moveActionSelected = false;
-        unitSelectClickHandler.AttackActionSelected = true;
+        unitSelectClickHandler.ActivateAttackSelection();
     }
 }

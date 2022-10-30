@@ -2532,6 +2532,42 @@ namespace RuleManager
             ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);
         }
+        public List<Coordinate> PossibleAttacks(int UnitID)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+
+            if(m_UnitInfos.ContainsKey(UnitID) == false)
+            {
+                throw new Exception("Need valid unit to check possible moves");
+            }
+            UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
+            if((UnitToMove.Flags & UnitFlags.HasMoved) != 0)
+            {
+                return (ReturnValue);
+            }
+            ReturnValue.Add(UnitToMove.Position);
+            p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
+            ReturnValue = p_NormalizeMoves(ReturnValue);
+            return (ReturnValue);
+        }
+        public List<Coordinate> GetAbilityRange(int UnitID, int effectIndex, List<Target> currentTargets)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+
+            if(m_UnitInfos.ContainsKey(UnitID) == false)
+            {
+                throw new Exception("Need valid unit to check possible moves");
+            }
+            UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
+            if((UnitToMove.Flags & UnitFlags.HasMoved) != 0)
+            {
+                return (ReturnValue);
+            }
+            ReturnValue.Add(UnitToMove.Position);
+            p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
+            ReturnValue = p_NormalizeMoves(ReturnValue);
+            return (ReturnValue);
+        }
 
         void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier)
         {

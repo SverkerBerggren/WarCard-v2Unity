@@ -60,7 +60,6 @@ public class MoveButtonClick : MonoBehaviour
         mainUI.AttackActionSelected = false;
 
 
-        unitSelectClickHandler.moveActionSelected = true;
-        unitSelectClickHandler.AttackActionSelected = false; 
+        unitSelectClickHandler.ActivateMovementSelection();
     }
 }
