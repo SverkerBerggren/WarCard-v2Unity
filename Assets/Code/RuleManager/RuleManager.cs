@@ -2142,7 +2142,9 @@ namespace RuleManager
                 {
                     m_EventHandler.OnUnitAttack(AttackToExecute.AttackerID, AttackToExecute.DefenderID);
                 }
-                DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
+                UnitInfo UnderlyingDefenderInfo = m_UnitInfos[AttackToExecute.DefenderID];
+                //DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
+                UnderlyingDefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
                 if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0)
                 {
                     AttackerInfo.Flags |=UnitFlags.IsActivated;
@@ -2553,7 +2555,10 @@ namespace RuleManager
             }
             else if(Modifier is Effect_HeavyAttack)
             {
-                InfoToModify.Flags |= UnitFlags.CantAttack;
+                if((InfoToModify.Flags & UnitFlags.HasMoved) != 0)
+                {
+                    InfoToModify.Flags |= UnitFlags.CantAttack;
+                }
             }
             else
             {
