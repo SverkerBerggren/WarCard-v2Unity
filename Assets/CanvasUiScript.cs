@@ -120,6 +120,10 @@ public class CanvasUiScript : MonoBehaviour
 
             abilityButton.abilityName = ability.GetName();
 
+            abilityButton.playerIndex = unitInfo.PlayerIndex;
+
+            abilityButton.unitInfo = unitInfo;
+
             newButton.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].AbilityIcons[i];
 
             if (ability is RuleManager.Ability_Activated)

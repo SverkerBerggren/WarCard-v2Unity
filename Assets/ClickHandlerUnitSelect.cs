@@ -9,7 +9,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 {
     private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<GameObject> buttonDestroyList = new List<GameObject>();
-    private UnitInfo selectedUnit;
+    public UnitInfo selectedUnit;
 
     public bool abilitySelectionActive = false;
     public bool AttackActionSelected = false;
@@ -24,6 +24,11 @@ public class ClickHandlerUnitSelect : ClickHandler
     {
 
     }
+
+
+
+
+
     public override void Setup(MainUI ui)
     {
         mainUi = ui;
@@ -33,6 +38,8 @@ public class ClickHandlerUnitSelect : ClickHandler
         ClickHandlerAbility = (AbilityClickHandler) tempObject.GetComponent<ClickHandler>();
         ClickHandlerAbility.Setup(ui);
         ClickHandlerAbility.clickHandlerUnitSelect = this;
+        ClickHandlerAbility.ruleManager = ui.ruleManager;
+        
     }
 
     void Update()

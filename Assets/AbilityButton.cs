@@ -30,11 +30,9 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public AbilityClickHandler clickHandlerAbility;
     public ClickHandlerUnitSelect clickHandlerUnitSelect;
 
+    public int playerIndex;
 
-    
-
-
-
+    public RuleManager.UnitInfo unitInfo;
     // Start is called before the first frame update
     void Start()
     {
@@ -75,6 +73,28 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         clickHandlerAbility.selectedAbilityIndex = abilityIndex;
         clickHandlerUnitSelect.abilitySelectionActive = true;
         clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>(whichTargets);
+
+
+        if(whichTargets.Count == 0)
+        {
+           
+
+
+
+            RuleManager.EffectAction abilityToExecute = new RuleManager.EffectAction();
+
+            abilityToExecute.EffectIndex = abilityIndex;
+            abilityToExecute.PlayerIndex = playerIndex ;
+
+       //     List<RuleManager.Target> argumentList = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
+
+            abilityToExecute.Targets = new List<RuleManager.Target>();
+
+            abilityToExecute.UnitID = unitInfo.UnitID;
+
+            mainUI.EnqueueAction(abilityToExecute);
+
+        }
 
     //    if(whichTargets.Count != 0)
     //    {

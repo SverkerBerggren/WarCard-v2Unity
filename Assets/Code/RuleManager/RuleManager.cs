@@ -2142,7 +2142,7 @@ namespace RuleManager
                 {
                     m_EventHandler.OnUnitAttack(AttackToExecute.AttackerID, AttackToExecute.DefenderID);
                 }
-                DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
+                 DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
                 if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0)
                 {
                     AttackerInfo.Flags |=UnitFlags.IsActivated;
