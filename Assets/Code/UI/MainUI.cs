@@ -599,17 +599,23 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
  //   } 
 
 
-    private void CreateArmies()
+    void p_CreateArmy(Dictionary<string,int> UnitOpaqueIDMap,int CurrentUnitOpaqueID,out int UnitOpaqueID,int PlayerIndex,int FactionIndex)
     {
-
-        Dictionary<string, int> UnitOpaqueIDMap = new Dictionary<string, int>();
-        int CurrentUnitOpaqueID = 0;
-        foreach(UnitInArmy unitFromList in firstPlayerArmy)
+        List<UnitInArmy> ArmyToInstantiate = firstPlayerArmy;
+        if(FactionIndex == 0)
         {
-  
+            ArmyToInstantiate = firstPlayerArmy;
+        }
+        else if(FactionIndex == 1)
+        {
+            ArmyToInstantiate = secondPlayerArmy;
+        }
+        foreach (UnitInArmy unitFromList in ArmyToInstantiate)
+        {
+
             RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
-          
-            if(!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
+
+            if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
             {
                 UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
                 m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
@@ -619,10 +625,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
             unitToCreate.Position = unitFromList.cord;
-           
-         
+            if(PlayerIndex == 1)
+            {
+                unitToCreate.Position.X = (gridManager.Width-1)-unitToCreate.Position.X;
+            }
 
-            int unitInt = ruleManager.RegisterUnit(unitToCreate, 0);
+
+
+            int unitInt = ruleManager.RegisterUnit(unitToCreate, PlayerIndex);
             UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
 
             GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
@@ -641,43 +651,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             listOfImages.Add(unitInt, unitSprites);
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = Mathf.Abs( unitToCreate.Position.Y); 
-        }
-        foreach (UnitInArmy unitFromList in secondPlayerArmy)
-        {
-            RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
-
-            if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
-            {
-                UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
-                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
-                CurrentUnitOpaqueID += 1;
-            }
-            unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
-
-            unitToCreate.Position = unitFromList.cord;
-
-            int unitInt = ruleManager.RegisterUnit(unitToCreate, 1);
-
-            UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
-
-            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
-
-            unitSprites.objectInScene = unitToCreateVisualObject;
-
-            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
-            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
-            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
-            activationIndicator.GetComponent<SpriteRenderer>().color = Color.red;
-
-
-
-            listOfActivationIndicators.Add(unitInt, activationIndicator);
-
-            listOfImages.Add(unitInt, unitSprites);
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = Mathf.Abs(unitToCreate.Position.Y);
         }
+        UnitOpaqueID = CurrentUnitOpaqueID;
+    }
+
+    private void CreateArmies()
+    {
+
+        Dictionary<string, int> UnitOpaqueIDMap = new Dictionary<string, int>();
+        int CurrentUnitOpaqueID = 0;
+        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID,out CurrentUnitOpaqueID,0,1);
+        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1,0);
 
 
         foreach(RuleManager.Coordinate cord in listOfObjectives)
