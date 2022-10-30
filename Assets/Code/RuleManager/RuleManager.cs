@@ -2241,29 +2241,20 @@ namespace RuleManager
             }
             yield break;
         }
-        //public IEnumerable<Target> GetPossibleTargets(TargetInfo InfoToInspect)
-        //{
-        //    List<Target> ReturnValue = new List<Target>();
-        //
-        //    if(InfoToInspect is TargetInfo_List)
-        //    {
-        //        TargetInfo_List ListInfo = (TargetInfo_List)InfoToInspect;
-        //        if(ListInfo.Targets.Count == 1)
-        //        {
-        //            IEnumerator<Target> TargetEnumerator = p_TotalTargetIterator();
-        //            while (TargetEnumerator.MoveNext())
-        //            {
-        //                List<Target> TargetList = new List<Target>();
-        //                TargetList.Add(TargetEnumerator.Current);
-        //                if(p_VerifyTargets(InfoToInspect,new EffectSource_Empty(),TargetList))
-        //                {
-        //                    ReturnValue.Add(TargetEnumerator.Current);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    return (ReturnValue);
-        //}
+        public List<Target> GetPossibleTargets(TargetCondition CurrentCondition , EffectSource Source, List<Target> CurrentTargets)
+        {
+            List<Target> ReturnValue = new List<Target>();
+            IEnumerator<Target> TargetEnumerator = p_TotalTargetIterator();
+            while (TargetEnumerator.MoveNext())
+            {
+                string Error;
+                if(p_VerifyTarget(CurrentCondition,Source,CurrentTargets,TargetEnumerator.Current,out Error))
+                {
+                    ReturnValue.Add(TargetEnumerator.Current);
+                }
+            }
+            return (ReturnValue);
+        }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
             if(m_GameFinished)
@@ -2532,6 +2523,103 @@ namespace RuleManager
             ReturnValue.Add(UnitToMove.Position);
             p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
             ReturnValue = p_NormalizeMoves(ReturnValue);
+            return (ReturnValue);
+        }
+
+        List<Coordinate> p_GetTiles(int Range,Coordinate Origin)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            for (int i = -Range; i <= Range; i++)
+            {
+                for (int j = -Math.Abs(Range - Math.Abs(i)); j <= Math.Abs(Range - Math.Abs(i)); j++)
+                {
+                    Coordinate NewCoordinate = new Coordinate();
+                    NewCoordinate.X = Origin.X + i;
+                    NewCoordinate.Y = Origin.Y + j;
+                    if ((NewCoordinate.Y < 0 || NewCoordinate.X >= m_Tiles[0].Count) || (NewCoordinate.Y < 0 || NewCoordinate.Y >= m_Tiles.Count))
+                    {
+                        continue;
+                    }
+                    ReturnValue.Add(NewCoordinate);
+                }
+            }
+            return (ReturnValue);
+        }
+        public List<Coordinate> PossibleAttacks(int UnitID)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            UnitInfo AttackingUnit = p_GetProcessedUnitInfo(UnitID);
+            ReturnValue = p_GetTiles(AttackingUnit.Stats.Range,AttackingUnit.Position);
+            return (ReturnValue);
+        }
+
+        TargetCondition_Range p_GetRange(TargetCondition ConditionToInspect)
+        {
+            TargetCondition_Range ReturnValue = null;
+            if(ConditionToInspect is TargetCondition_Range)
+            {
+                return ((TargetCondition_Range) ConditionToInspect);
+            }
+            else if(ConditionToInspect is TargetCondition_And)
+            {
+                TargetCondition_And SubConditions = (TargetCondition_And)ConditionToInspect;
+                foreach(TargetCondition Condition in SubConditions.Conditions)
+                {
+                    ReturnValue = p_GetRange(Condition);
+                    if(ReturnValue != null)
+                    {
+                        return (ReturnValue);
+                    }
+                }
+            }
+            else if(ConditionToInspect is TargetCondition_Or)
+            {
+                TargetCondition_Or SubConditions = (TargetCondition_Or)ConditionToInspect;
+                foreach (TargetCondition Condition in SubConditions.Conditions)
+                {
+                    ReturnValue = p_GetRange(Condition);
+                    if (ReturnValue != null)
+                    {
+                        return (ReturnValue);
+                    }
+                }
+            }
+            return (ReturnValue);
+        }
+        
+        public List<Coordinate> GetAbilityRange(int UnitID, int effectIndex, List<Target> currentTargets)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(UnitID);
+            Ability AbilityToInspect = AssociatedUnit.Abilities[effectIndex];
+            if(!(AbilityToInspect is Ability_Activated))
+            {
+                return ReturnValue;
+            }
+            Ability_Activated ActivatedAbility = (Ability_Activated)AbilityToInspect;
+            TargetInfo_List TargetList = (TargetInfo_List)ActivatedAbility.ActivationTargets;
+            TargetCondition ConditionToSatsify = TargetList.Targets[currentTargets.Count];
+            EffectSource_Unit Source = new EffectSource_Unit(AssociatedUnit.PlayerIndex,UnitID,effectIndex);
+
+            TargetCondition_Range Range = p_GetRange(ConditionToSatsify);
+            if(Range == null)
+            {
+                return (ReturnValue);
+            }
+            Coordinate Origin = AssociatedUnit.Position;
+            if(Range.TargetIndex != -1)
+            {
+                Target OriginTarget = currentTargets[Range.TargetIndex];
+                if(OriginTarget is Target_Unit)
+                {
+                    Origin = p_GetProcessedUnitInfo(((Target_Unit)OriginTarget).UnitID).Position;
+                }
+                else if(OriginTarget is Target_Tile)
+                {
+                    Origin = ((Target_Tile)OriginTarget).TargetCoordinate;
+                }
+            }
+            ReturnValue = p_GetTiles(Range.Range, Origin);
             return (ReturnValue);
         }
 

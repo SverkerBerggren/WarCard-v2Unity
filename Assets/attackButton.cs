@@ -9,6 +9,8 @@ public class attackButton : MonoBehaviour
 
     private Button button;
     public KeyCode keyCodeToClick;
+
+    private ClickHandlerUnitSelect unitSelectClickHandler;
     // Start is called before the first frame update
     void Start()
     {
@@ -45,8 +47,17 @@ public class attackButton : MonoBehaviour
 
     public void attackButtonClick()
     {
+        ClickHandlerUnitSelect[] clickhandlers = FindObjectsOfType<ClickHandlerUnitSelect>();
+
+        print(clickhandlers.Length);
+
+        unitSelectClickHandler = clickhandlers[0];
+        //print("hej");
+        mainUI.MoveActionSelected = false;
+
         mainUI.AttackActionSelected = true;
 
-        mainUI.MoveActionSelected = false;
+
+        unitSelectClickHandler.ActivateAttackSelection();
     }
 }

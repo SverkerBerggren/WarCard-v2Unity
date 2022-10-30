@@ -29,6 +29,8 @@ public class CanvasUiScript : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI reactionText;
 
+    public TextMeshProUGUI Player1Score;
+    public TextMeshProUGUI Player2Score;
 
     // Start is called before the first frame update
     void Start()
@@ -118,6 +120,10 @@ public class CanvasUiScript : MonoBehaviour
 
             abilityButton.abilityName = ability.GetName();
 
+            abilityButton.playerIndex = unitInfo.PlayerIndex;
+
+            abilityButton.unitInfo = unitInfo;
+
             newButton.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].AbilityIcons[i];
 
             if (ability is RuleManager.Ability_Activated)
@@ -206,5 +212,18 @@ public class CanvasUiScript : MonoBehaviour
         errorMessageScript.errorMessageTextMesh.text = message;
         errorMessageScript.gameObject.SetActive(true);
 
+    }
+
+    public void ChangePlayerScore(int PlayerIndex, int newScore)
+    {
+
+        if (PlayerIndex == 0)
+        {
+            Player1Score.text = "Player 1 Score: " + newScore;
+        }
+        else
+        {
+            Player2Score.text = "Player 2 Score: " + newScore;
+        }
     }
 }

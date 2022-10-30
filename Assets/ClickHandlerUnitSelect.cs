@@ -1,20 +1,23 @@
 using RuleManager;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Events;
 
 public class ClickHandlerUnitSelect : ClickHandler
 {
     private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
+    private List<List<GameObject>> attackIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<GameObject> buttonDestroyList = new List<GameObject>();
-    private UnitInfo selectedUnit;
+    public UnitInfo selectedUnit;
 
-    public bool abilitySelectionActive = false;
-    public bool AttackActionSelected = false;
-    public bool moveActionSelected = false;
+    private bool abilityActionSelected = false;
+    private bool AttackActionSelected = false;
+    private bool moveActionSelected = false;
 
     public GameObject MovementRange;
+    public GameObject attackRange;
     public GameObject ClickHandlerAbilityPrefab;
     private AbilityClickHandler ClickHandlerAbility;
 
@@ -23,23 +26,37 @@ public class ClickHandlerUnitSelect : ClickHandler
     {
 
     }
+
+
+
+
+
     public override void Setup(MainUI ui)
     {
         mainUi = ui;
         CreateMovementObjects();
+        CreateAttackObjects();
         ruleManager = mainUi.ruleManager; 
         GameObject tempObject = Instantiate(ClickHandlerAbilityPrefab, new Vector3(), new Quaternion());
         ClickHandlerAbility = (AbilityClickHandler) tempObject.GetComponent<ClickHandler>();
         ClickHandlerAbility.Setup(ui);
+        ClickHandlerAbility.clickHandlerUnitSelect = this;
+        ClickHandlerAbility.ruleManager = ui.ruleManager;
+        
     }
 
     void Update()
     {
         print("ar moveActionSelected " + moveActionSelected);
+
+        if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            resetSelection();
+        }
     }
     public override void OnClick(ClickType clickType, Coordinate cord)
     {
-        if(abilitySelectionActive)
+        if(abilityActionSelected)
         {
             ClickHandlerAbility.OnClick(clickType, cord);
             return; 
@@ -71,74 +88,63 @@ public class ClickHandlerUnitSelect : ClickHandler
         }
         moveActionSelected = false;
 
+        if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority() && ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+        {
+            RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
 
-        if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+            attackAction.AttackerID = selectedUnit.UnitID;
+            attackAction.DefenderID = ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID;
+            attackAction.PlayerIndex = ruleManager.getPlayerPriority();
+            string attackInfo;
+
+
+
+            if (ruleManager.ActionIsValid(attackAction, out attackInfo))
+            {
+                mainUi.EnqueueAction(attackAction);
+            }
+            else
+            {
+                canvasUIScript.errorMessage(attackInfo);
+            }
+
+           
+        }
+
+
+
+
+        if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0 && !AttackActionSelected)
         {
             DestroyMovementRange();
-            RuleManager.UnitInfo unitInfo = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+            selectedUnit = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
             //clicking on unit, play sound
-            Unit UIInfo = mainUi.GetUnitUIInfo(unitInfo);
+            Unit UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
             if(UIInfo.SelectSound != null)
             {
                 //UnityEngine.Audio.audios(UIInfo.SelectSound, FindObjectOfType<Camera>().transform.position);
                 GetComponent<AudioSource>().PlayOneShot(UIInfo.SelectSound);
             }
-            selectedUnit = unitInfo;
-            if (selectedUnit != null)
-            {   
-                if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-                {
-                    RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
-
-                    attackAction.AttackerID = selectedUnit.UnitID;
-                    attackAction.DefenderID = unitInfo.UnitID;
-                    attackAction.PlayerIndex = ruleManager.getPlayerPriority();
-                    string actionInfo;
-
-
-
-                    if (ruleManager.ActionIsValid(attackAction, out actionInfo) && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
-                    {
-                        string errorMessageText = "";
-
-                        if (!ruleManager.ActionIsValid(attackAction, out errorMessageText))
-                        {
-                            mainUi.canvasUIScript.errorMessage(errorMessageText);
-
-
-                        }
-                        else
-                        {
-
-                            //ExecutedActions.Enqueue(attackAction);
-                            mainUi.EnqueueAction(attackAction);
-                        }
-
-                        resetSelection();
-                    }
-
-                    print(actionInfo);
-                }
-            }
-            AttackActionSelected = false;
-            if (selectedUnit != null)
-            {
-                if (!abilitySelectionActive && unitInfo.UnitID != selectedUnit.UnitID)
-                {
-                    foreach (GameObject obj in buttonDestroyList)
-                    {
-                        obj.SetActive(false);
-                    }
-                }
-            }
+       //     selectedUnit = unitInfo;
+            
+        //    if (selectedUnit != null)
+        //    {
+        //        if (!abilitySelectionActive && unitInfo.UnitID != selectedUnit.UnitID)
+        //        {
+        //            foreach (GameObject obj in buttonDestroyList)
+        //            {
+        //                obj.SetActive(false);
+        //            }
+        //        }
+        //    }
 
             resetSelection();
 
-            selectedUnit = unitInfo;
+            
 
-            canvasUIScript.createUnitCard(unitInfo, mainUi.m_OpaqueToUIInfo);
+            canvasUIScript.createUnitCard(selectedUnit, mainUi.m_OpaqueToUIInfo);
 
-            ConstructMovementRange(unitInfo);
+            ConstructMovementRange(selectedUnit);
         }
         else
         {
@@ -147,7 +153,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         //    unitActions.SetActive(false);
         //    canvasUIScript.DestroyButtons();
         //
-            DestroyMovementRange();
+
             resetSelection();
             mainUi.DeactivateClickHandler();
 
@@ -171,26 +177,53 @@ public class ClickHandlerUnitSelect : ClickHandler
             return true; 
             
         }
-        if(moveActionSelected)
+        if(moveActionSelected || AttackActionSelected)
         {
             return true;
         }
         return false; 
     }
     public  void resetSelection()
-    {
-        if(!abilitySelectionActive)
+    {   
+
+        if(abilityActionSelected)
+        {
+            abilityActionSelected = false;
+
+            DeactivateAbilityClickHandler();
+            return;
+        }
+        if(AttackActionSelected)
+        {
+            AttackActionSelected = false;
+            DestroyAttackRange();
+
+            ConstructMovementRange(selectedUnit);
+            return;
+        }
+        if(moveActionSelected)
+        {
+            moveActionSelected = false;
+            return;
+        }
+
+
+        if(!abilityActionSelected)
         {
             canvasUIScript.DisableUnitCard();
         }
+        DestroyMovementRange();
+        DestroyAttackRange();
 
-        if(abilitySelectionActive)
-        {
-            ClickHandlerAbility.Deactivate(); 
-        }
+        DeactivateAbilityClickHandler();
+ 
         print("deaktiveras den nagon going");
         moveActionSelected = false;
         AttackActionSelected = false;
+        abilityActionSelected = false;
+
+
+
     }
     private void DestroyButtons()
     {
@@ -199,7 +232,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 
     public void DeactivateAbilityClickHandler()
     {
-        abilitySelectionActive = false;
+        abilityActionSelected = false;
         if(ClickHandlerAbility.active)
         {
             ClickHandlerAbility.Deactivate();
@@ -212,40 +245,29 @@ public class ClickHandlerUnitSelect : ClickHandler
 
         int Height = info.Stats.Movement;
 
-        //    float xPosition = gridManager.GetTilePosition(info.Position).x;
-        //    float yPosition = gridManager.GetTilePosition(info.Position).y;
-
 
         foreach (RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
         {
-            //   GameObject newObject = Instantiate(MovementRange);
-            //
-            //   newObject.transform.position = gridManager.GetTilePosition(cord);
-            //   CreatedMovementRange.Add(newObject);
             movementIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
-            // movementIndicatorObjectDictionary[cord].SetActive(true);
-
+             
         }
 
 
-        //   for (int YIndex = 0; YIndex < Height; YIndex++)
-        //   {
-        //       for (int XIndex = 0; XIndex < Height; XIndex++)
-        //       {
-        //           GameObject NewObject = Instantiate(MovementRange);
-        //           //Assumes that tiles are quadratic
-        //           float TileWidth = NewObject.GetComponent<SpriteRenderer>().size.x;
-        //        //   m_TileWidth = TileWidth;
-        //           Vector3 NewPosition = new Vector3(xPosition + XIndex * TileWidth, yPosition - YIndex * TileWidth, 0);
-        //         //  GridClick ClickObject = NewObject.GetComponent<GridClick>();
-        //         //  ClickObject.X = XIndex;
-        //         //  ClickObject.Y = YIndex;
-        //         //  ClickObject.AssociatedGrid = this;
-        //           NewObject.transform.position = NewPosition;
-        //
-        //           CreatedMovementRange.Add(NewObject);
-        //       }
-        //   }
+    }
+    private void ConstructAttackRange(RuleManager.UnitInfo info)
+    {
+
+
+        int Height = info.Stats.Range;
+
+
+        foreach (RuleManager.Coordinate cord in ruleManager.PossibleAttacks(info.UnitID))
+        {
+            attackIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
+             
+        }
+
+
     }
 
     public void DestroyMovementRange()
@@ -254,6 +276,22 @@ public class ClickHandlerUnitSelect : ClickHandler
 
 
         foreach (List<GameObject> obj in movementIndicatorObjectDictionary)
+        {
+            //obj.SetActive(false);
+
+            foreach (GameObject ob in obj)
+            {
+                ob.SetActive(false);
+            }
+        }
+
+    }
+    public void DestroyAttackRange()
+    {
+
+
+
+        foreach (List<GameObject> obj in attackIndicatorObjectDictionary)
         {
             //obj.SetActive(false);
 
@@ -290,5 +328,57 @@ public class ClickHandlerUnitSelect : ClickHandler
                 newObject.SetActive(false);
             }
         }
+    }
+    private void CreateAttackObjects()
+    {
+        for (int i = 0; i < mainUi.gridManager.Width; i++)
+        {
+            attackIndicatorObjectDictionary.Add(new List<GameObject>());
+
+            for (int z = 0; z < mainUi.gridManager.Height; z++)
+            {
+                attackIndicatorObjectDictionary[i].Add(null);
+            }
+        }
+
+
+        for (int i = 0; i < mainUi.gridManager.Width; i++)
+        {
+            for (int z = 0; z < mainUi.gridManager.Height; z++)
+            {
+                GameObject newObject = Instantiate(attackRange);
+                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+
+                //    print(tempCord.X + " " + tempCord.Y);
+                newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
+                attackIndicatorObjectDictionary[i][z] = newObject;
+                newObject.SetActive(false);
+            }
+        }
+    }
+
+    public void ActivateAttackSelection()
+    {
+        moveActionSelected = false;
+        abilityActionSelected = false;
+        AttackActionSelected = true;
+        DestroyMovementRange();
+        ConstructAttackRange(selectedUnit);
+    }
+    public void ActivateMovementSelection()
+    {
+        moveActionSelected = true;
+        abilityActionSelected = false;
+        AttackActionSelected = false;
+        DestroyAttackRange();
+        ConstructMovementRange(selectedUnit);
+    }
+    public void ActivateAbilitySelection()
+    {
+        moveActionSelected = false;
+        abilityActionSelected = true;
+        AttackActionSelected = false;
+        DestroyAttackRange();
+        ConstructMovementRange(selectedUnit);
     }
 }

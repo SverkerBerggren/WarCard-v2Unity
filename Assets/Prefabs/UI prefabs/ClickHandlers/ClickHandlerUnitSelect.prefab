@@ -46,10 +46,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainUi: {fileID: 0}
-  abilitySelectionActive: 0
-  AttackActionSelected: 0
-  moveActionSelected: 0
+  selectedUnit:
+    UnitID: 0
+    PlayerIndex: 0
+    OpaqueInteger: -1
+    AbilityActivated: 
+    Position:
+      X: 0
+      Y: 0
+    Flags: 0
   MovementRange: {fileID: 3963050006536340265, guid: c3f34dff8d6f2a34881e643f935d0000,
+    type: 3}
+  attackRange: {fileID: 3963050006536340265, guid: 240df87e5ce68894faa27426b07a4c7d,
     type: 3}
   ClickHandlerAbilityPrefab: {fileID: 5644499052553384210, guid: 050b0fa9a8bd4cf4fbeb2d83f340467e,
     type: 3}
