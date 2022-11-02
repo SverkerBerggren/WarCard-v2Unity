@@ -10,6 +10,7 @@ public class ClickHandlerUnitSelect : ClickHandler
     public Color AttackColor;
     public Color ValidAttackColor;
 
+    private Color MovementColor;
     private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<List<GameObject>> attackIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<GameObject> buttonDestroyList = new List<GameObject>();
@@ -252,7 +253,10 @@ public class ClickHandlerUnitSelect : ClickHandler
         foreach (RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
         {
             movementIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
-             
+            if((info.Flags & UnitFlags.HasMoved) != 0)
+            {
+                movementIndicatorObjectDictionary[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = new Color(MovementColor.r,MovementColor.g,MovementColor.b,MovementColor.a/2);
+            }
         }
 
 
@@ -295,6 +299,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             foreach (GameObject ob in obj)
             {
                 ob.SetActive(false);
+                ob.GetComponent<SpriteRenderer>().color = MovementColor;
             }
         }
 
@@ -335,7 +340,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             {
                 GameObject newObject = Instantiate(MovementRange);
                 RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-
+                MovementColor = newObject.GetComponent<SpriteRenderer>().color;
                 //    print(tempCord.X + " " + tempCord.Y);
                 newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
                 movementIndicatorObjectDictionary[i][z] = newObject;

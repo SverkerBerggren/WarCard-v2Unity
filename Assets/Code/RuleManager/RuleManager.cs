@@ -2522,10 +2522,10 @@ namespace RuleManager
                 throw new Exception("Need valid unit to check possible moves");
             }
             UnitInfo UnitToMove = p_GetProcessedUnitInfo(UnitID);
-            if((UnitToMove.Flags & UnitFlags.HasMoved) != 0)
-            {
-                return (ReturnValue);
-            }
+            //if((UnitToMove.Flags & UnitFlags.HasMoved) != 0)
+            //{
+            //    return (ReturnValue);
+            //}
             ReturnValue.Add(UnitToMove.Position);
             p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
             ReturnValue = p_NormalizeMoves(ReturnValue);
