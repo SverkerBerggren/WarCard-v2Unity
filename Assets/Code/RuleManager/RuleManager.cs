@@ -811,6 +811,11 @@ namespace RuleManager
     public class AttackAction : Action
     {
         public AttackAction() : base(ActionType.Attack) { }
+        public AttackAction(int NewAttackID,int NewDefenderID) : base(ActionType.Attack) 
+        {
+            AttackerID = NewAttackID;
+            DefenderID = NewDefenderID;
+        }
         public int AttackerID = 0;
         public int DefenderID = 0;
     }

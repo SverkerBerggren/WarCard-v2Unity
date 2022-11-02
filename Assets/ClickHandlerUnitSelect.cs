@@ -7,6 +7,9 @@ using UnityEngine.Events;
 
 public class ClickHandlerUnitSelect : ClickHandler
 {
+    public Color AttackColor;
+    public Color ValidAttackColor;
+
     private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<List<GameObject>> attackIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<GameObject> buttonDestroyList = new List<GameObject>();
@@ -264,7 +267,17 @@ public class ClickHandlerUnitSelect : ClickHandler
         foreach (RuleManager.Coordinate cord in ruleManager.PossibleAttacks(info.UnitID))
         {
             attackIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
-             
+            if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
+            {
+                AttackAction ActionToTest = new AttackAction(info.UnitID, ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+                ActionToTest.PlayerIndex = info.PlayerIndex;
+                string Error;
+                if (ruleManager.ActionIsValid(ActionToTest, out Error))
+                {
+                    print("Defender ID: " + ActionToTest.DefenderID);
+                    attackIndicatorObjectDictionary[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = ValidAttackColor;
+                }
+            }
         }
 
 
@@ -298,6 +311,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             foreach (GameObject ob in obj)
             {
                 ob.SetActive(false);
+                ob.GetComponent<SpriteRenderer>().color = AttackColor;
             }
         }
 
@@ -348,7 +362,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             {
                 GameObject newObject = Instantiate(attackRange);
                 RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-
+                newObject.GetComponent<SpriteRenderer>().color = AttackColor;
                 //    print(tempCord.X + " " + tempCord.Y);
                 newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
                 attackIndicatorObjectDictionary[i][z] = newObject;

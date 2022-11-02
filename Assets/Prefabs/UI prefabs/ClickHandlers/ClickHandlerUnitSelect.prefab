@@ -46,6 +46,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainUi: {fileID: 0}
+  AttackColor: {r: 1, g: 0.05490196, b: 0, a: 0.31764707}
+  ValidAttackColor: {r: 1, g: 1, b: 0, a: 0.70980394}
   selectedUnit:
     UnitID: 0
     PlayerIndex: 0
