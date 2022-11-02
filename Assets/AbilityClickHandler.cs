@@ -139,9 +139,10 @@ public class AbilityClickHandler : ClickHandler
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
         active = false;
+        DestroyAbilityRangeIndicator();
         clickHandlerUnitSelect.DeactivateAbilityClickHandler();
 
-        DestroyAbilityRangeIndicator();
+        
 
     }
 
