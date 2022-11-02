@@ -18,6 +18,8 @@ public class AbilityClickHandler : ClickHandler
 
     public ClickHandlerUnitSelect clickHandlerUnitSelect;
 
+    public Color CorrectTargetColor = new Color(0,0.5f,0.5f);
+    public Color TargetRangeColor = new Color(0,0.5f,0.5f);
     private List<List<GameObject>> abilityRangeIndicators = new List<List<GameObject>>();
     public GameObject abilityRangeIndicator;
 
@@ -31,7 +33,6 @@ public class AbilityClickHandler : ClickHandler
 
         selectedUnit = clickHandlerUnitSelect.selectedUnit;
 
-        ShowAbilityRangeIndicators(ruleManager.GetAbilityRange(selectedUnit.UnitID, selectedAbilityIndex, selectedTargetsForAbilityExecution));
 
         RuleManager.Target_Tile targetTile = new RuleManager.Target_Tile(cord);
         //   print();
@@ -65,6 +66,10 @@ public class AbilityClickHandler : ClickHandler
             }
 
         }
+
+        ShowAbilityRangeIndicators(selectedUnit.UnitID, selectedAbilityIndex, selectedTargetsForAbilityExecution);
+        print("Targets count: " + selectedTargetsForAbilityExecution.Count);
+
 
         if (requiredAbilityTargets.Count == currentTargetToSelect)
         {
@@ -164,12 +169,24 @@ public class AbilityClickHandler : ClickHandler
     }
     
 
-    public void ShowAbilityRangeIndicators(List<RuleManager.Coordinate> listOfCords)
+    public void ShowAbilityRangeIndicators(int UnitID, int effectIndex, List<Target> currentTargets)
     {
+        List<Coordinate> listOfCords = ruleManager.GetAbilityRange(UnitID, effectIndex, currentTargets);
         foreach (RuleManager.Coordinate cord in listOfCords)
         {
             abilityRangeIndicators[cord.X][cord.Y].SetActive(true);
-
+            Target_Tile TileTarget = new Target_Tile(cord);
+            bool TargetIsValid = ruleManager.TargetIsValid(UnitID, effectIndex, currentTargets, TileTarget);
+            if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+            {
+                Target_Unit UnitTarget = new Target_Unit(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+                TargetIsValid = TargetIsValid || ruleManager.TargetIsValid(UnitID, effectIndex, currentTargets, UnitTarget);
+            }
+            if (TargetIsValid)
+            {
+                abilityRangeIndicators[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = CorrectTargetColor;
+                print("Changing color");
+            }
         }
     } 
     public void DestroyAbilityRangeIndicator()
@@ -181,6 +198,7 @@ public class AbilityClickHandler : ClickHandler
             foreach (GameObject ob in obj)
             {
                 ob.SetActive(false);
+                ob.GetComponent<SpriteRenderer>().color = TargetRangeColor;
             }
         }
     } 
@@ -203,7 +221,7 @@ public class AbilityClickHandler : ClickHandler
             {
                 GameObject newObject = Instantiate(abilityRangeIndicator);
                 RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-
+                newObject.GetComponent<SpriteRenderer>().color = TargetRangeColor;
                 //    print(tempCord.X + " " + tempCord.Y);
                 newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
                 abilityRangeIndicators[i][z] = newObject;

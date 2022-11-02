@@ -1546,7 +1546,7 @@ namespace RuleManager
             OutError = ErrorString;
             return (ReturnValue);
         }
-        public bool p_VerifyTarget(Target TargetToVerify,out string OutError)
+        private bool p_VerifyTarget(Target TargetToVerify,out string OutError)
         {
             bool ReturnValue = true;
             if(TargetToVerify is Target_Unit)
@@ -1725,6 +1725,7 @@ namespace RuleManager
                     if(!m_UnitInfos.ContainsKey(UnitToInspect))
                     {
                         Error = "Unit doesn't exist";
+                        OutError = Error;
                         return (false);
                     }
                     ReturnValue = m_UnitInfos[UnitToInspect].Tags.Contains(TagCondition.TagToContain);
@@ -2536,7 +2537,7 @@ namespace RuleManager
                     Coordinate NewCoordinate = new Coordinate();
                     NewCoordinate.X = Origin.X + i;
                     NewCoordinate.Y = Origin.Y + j;
-                    if ((NewCoordinate.Y < 0 || NewCoordinate.X >= m_Tiles[0].Count) || (NewCoordinate.Y < 0 || NewCoordinate.Y >= m_Tiles.Count))
+                    if ((NewCoordinate.X < 0 || NewCoordinate.X >= m_Tiles[0].Count) || (NewCoordinate.Y < 0 || NewCoordinate.Y >= m_Tiles.Count))
                     {
                         continue;
                     }
@@ -2587,6 +2588,39 @@ namespace RuleManager
             return (ReturnValue);
         }
         
+
+        TargetCondition p_GetCondition(int UnitID,int EffectIndex,List<Target> CurrentTargets)
+        {
+            TargetCondition ReturnValue = null;
+            UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(UnitID);
+            Ability AbilityToInspect = AssociatedUnit.Abilities[EffectIndex];
+            if (!(AbilityToInspect is Ability_Activated))
+            {
+                return ReturnValue;
+            }
+            Ability_Activated ActivatedAbility = (Ability_Activated)AbilityToInspect;
+            TargetInfo_List TargetList = (TargetInfo_List)ActivatedAbility.ActivationTargets;
+            if (TargetList.Targets.Count == 0)
+            {
+                return ReturnValue;
+            }
+            ReturnValue = TargetList.Targets[CurrentTargets.Count];
+
+            return (ReturnValue);
+        }
+        public bool TargetIsValid(int UnitID,int EffectIndex,List<Target> currentTargets,Target NewTarget)
+        {
+            bool ReturnValue = false;
+            EffectSource_Unit Source = new EffectSource_Unit(m_UnitInfos[UnitID].PlayerIndex, UnitID, EffectIndex);
+            string ErrorString = "";
+            TargetCondition Condition = p_GetCondition(UnitID, EffectIndex, currentTargets);
+            if(Condition == null)
+            {
+                return (ReturnValue);
+            }
+            ReturnValue = p_VerifyTarget(Condition, Source, currentTargets, NewTarget,out ErrorString);
+            return (ReturnValue);
+        }
         public List<Coordinate> GetAbilityRange(int UnitID, int effectIndex, List<Target> currentTargets)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
@@ -2598,6 +2632,10 @@ namespace RuleManager
             }
             Ability_Activated ActivatedAbility = (Ability_Activated)AbilityToInspect;
             TargetInfo_List TargetList = (TargetInfo_List)ActivatedAbility.ActivationTargets;
+            if(TargetList.Targets.Count == 0)
+            {
+                return ReturnValue;
+            }
             TargetCondition ConditionToSatsify = TargetList.Targets[currentTargets.Count];
             EffectSource_Unit Source = new EffectSource_Unit(AssociatedUnit.PlayerIndex,UnitID,effectIndex);
 

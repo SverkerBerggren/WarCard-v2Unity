@@ -363,6 +363,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         abilityActionSelected = false;
         AttackActionSelected = true;
         DestroyMovementRange();
+        ClickHandlerAbility.DestroyAbilityRangeIndicator();
         ConstructAttackRange(selectedUnit);
     }
     public void ActivateMovementSelection()
@@ -371,6 +372,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         abilityActionSelected = false;
         AttackActionSelected = false;
         DestroyAttackRange();
+        ClickHandlerAbility.DestroyAbilityRangeIndicator();
         ConstructMovementRange(selectedUnit);
     }
     public void ActivateAbilitySelection()
@@ -380,6 +382,6 @@ public class ClickHandlerUnitSelect : ClickHandler
         AttackActionSelected = false;
         DestroyAttackRange();
         DestroyMovementRange();
-        ClickHandlerAbility.ShowAbilityRangeIndicators(ruleManager.GetAbilityRange(selectedUnit.UnitID, ClickHandlerAbility.selectedAbilityIndex, new List<RuleManager.Target>()));
+        ClickHandlerAbility.ShowAbilityRangeIndicators(selectedUnit.UnitID, ClickHandlerAbility.selectedAbilityIndex, new List<RuleManager.Target>());
     }
 }
