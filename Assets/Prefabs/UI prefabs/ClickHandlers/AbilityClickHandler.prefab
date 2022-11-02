@@ -44,3 +44,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 766bd5891e88b624d8113484e5823f50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mainUi: {fileID: 0}
+  buttonDestroyList: []
+  selectedUnit:
+    UnitID: 0
+    PlayerIndex: 0
+    OpaqueInteger: -1
+    AbilityActivated: 
+    Position:
+      X: 0
+      Y: 0
+    Flags: 0
+  selectedAbilityIndex: 0
+  clickHandlerUnitSelect: {fileID: 0}
+  abilityRangeIndicator: {fileID: 3963050006536340265, guid: 31d8bff25b9c6c242861f28e8189cbe4,
+    type: 3}
+  active: 0

@@ -134,6 +134,8 @@ public class AbilityClickHandler : ClickHandler
         active = false;
         clickHandlerUnitSelect.DeactivateAbilityClickHandler();
 
+        DestroyAbilityRangeIndicator();
+
     }
 
     public void resetSelection()
@@ -147,7 +149,7 @@ public class AbilityClickHandler : ClickHandler
         
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
-
+        DestroyAbilityRangeIndicator();
         Deactivate();
     }
 
@@ -168,6 +170,18 @@ public class AbilityClickHandler : ClickHandler
         {
             abilityRangeIndicators[cord.X][cord.Y].SetActive(true);
 
+        }
+    } 
+    public void DestroyAbilityRangeIndicator()
+    {
+        foreach (List<GameObject> obj in abilityRangeIndicators)
+        {
+            //obj.SetActive(false);
+
+            foreach (GameObject ob in obj)
+            {
+                ob.SetActive(false);
+            }
         }
     } 
     public void CreateAbilityRangeIndicators()

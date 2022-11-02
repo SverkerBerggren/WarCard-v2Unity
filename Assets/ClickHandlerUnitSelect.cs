@@ -379,6 +379,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         abilityActionSelected = true;
         AttackActionSelected = false;
         DestroyAttackRange();
-        ConstructMovementRange(selectedUnit);
+        DestroyMovementRange();
+        ClickHandlerAbility.ShowAbilityRangeIndicators(ruleManager.GetAbilityRange(selectedUnit.UnitID, ClickHandlerAbility.selectedAbilityIndex, new List<RuleManager.Target>()));
     }
 }
