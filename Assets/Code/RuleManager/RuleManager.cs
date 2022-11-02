@@ -2151,16 +2151,17 @@ namespace RuleManager
                 UnitInfo UnderlyingDefenderInfo = m_UnitInfos[AttackToExecute.DefenderID];
                 //DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
                 UnderlyingDefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
+                UnitInfo InfoToModify = m_UnitInfos[AttackToExecute.AttackerID];
                 if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0)
                 {
-                    AttackerInfo.Flags |=UnitFlags.IsActivated;
+                    InfoToModify.Flags |=UnitFlags.IsActivated;
                     m_PlayerIntitiative[AttackerInfo.PlayerIndex] -= AttackerInfo.Stats.ActivationCost;
                     if (m_EventHandler != null)
                     {
                         m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[AttackerInfo.PlayerIndex], AttackerInfo.PlayerIndex);
                     }
                 }
-                AttackerInfo.Flags |= UnitFlags.HasAttacked;
+                InfoToModify.Flags |= UnitFlags.HasAttacked;
                 p_PassPriority();
             }
             else if(ActionToExecute is PassAction)
