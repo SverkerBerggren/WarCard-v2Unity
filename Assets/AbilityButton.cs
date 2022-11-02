@@ -68,11 +68,7 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
     public void AbilityButtonClick()
     {
-        mainUI.abilitySelectionStarted = true;
-
-        clickHandlerAbility.selectedAbilityIndex = abilityIndex;
-        clickHandlerUnitSelect.ActivateAbilitySelection();
-        clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>(whichTargets);
+     
 
 
         if(whichTargets.Count == 0)
@@ -94,6 +90,14 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
             mainUI.EnqueueAction(abilityToExecute);
 
+        }
+        else
+        {
+            mainUI.abilitySelectionStarted = true;
+
+            clickHandlerAbility.selectedAbilityIndex = abilityIndex;
+            clickHandlerUnitSelect.ActivateAbilitySelection();
+            clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>(whichTargets);
         }
 
     //    if(whichTargets.Count != 0)
