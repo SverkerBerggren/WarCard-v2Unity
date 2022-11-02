@@ -12,10 +12,10 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
-    path: Assets/Scenes/SverkerTestScene.unity
+    path: Assets/Scenes/InGame_Scene.unity
     guid: aeac16ccf1010504b9cd8fa78398931b
   - enabled: 1
-    path: Assets/Scenes/LobbyScene.unity
+    path: Assets/Scenes/Lobby_Scene.unity
     guid: eba9a152799613844b2216d229750da8
   - enabled: 1
     path: Assets/Prefabs/MainMenu/MainMenu.unity
