@@ -66,8 +66,10 @@ public class AbilityClickHandler : ClickHandler
             }
 
         }
+        if (requiredAbilityTargets.Count < currentTargetToSelect)
+            ShowAbilityRangeIndicators(selectedUnit.UnitID, selectedAbilityIndex, selectedTargetsForAbilityExecution);
 
-        ShowAbilityRangeIndicators(selectedUnit.UnitID, selectedAbilityIndex, selectedTargetsForAbilityExecution);
+
         print("Targets count: " + selectedTargetsForAbilityExecution.Count);
 
 
