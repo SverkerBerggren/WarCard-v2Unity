@@ -131,7 +131,7 @@ public class LobbyHost : MonoBehaviour
                 RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
                 GlobalNetworkState.LocalPlayerIndex = GameStartEvent.PlayerIndex;
                 GlobalNetworkState.OpponentActionRetriever = new NetworkActionRetriever(ServerConnection.GetUnderlyingConnection(), GameStartEvent.GameID, GameStartEvent.PlayerIndex == 0 ? 1 : 0);
-                UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/InGame_Scene.unity");
             }
         }
     }
@@ -160,7 +160,7 @@ public class LobbyHost : MonoBehaviour
     }
     public void Quit()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/LobbyScene.unity");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/Lobby_Scene.unity");
     }
     void p_HandleStartResponse(RuleServer.ServerMessage Response)
     {

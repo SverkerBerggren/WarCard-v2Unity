@@ -174,6 +174,7 @@ public class AbilityClickHandler : ClickHandler
 
     public void ShowAbilityRangeIndicators(int UnitID, int effectIndex, List<Target> currentTargets)
     {
+        DestroyAbilityRangeIndicator();
         List<Coordinate> listOfCords = ruleManager.GetAbilityRange(UnitID, effectIndex, currentTargets);
         foreach (RuleManager.Coordinate cord in listOfCords)
         {

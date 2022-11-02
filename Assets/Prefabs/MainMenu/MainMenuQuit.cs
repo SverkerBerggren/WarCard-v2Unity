@@ -11,7 +11,7 @@ public class MainMenuQuit : MonoBehaviour
     }
     public void LoadLobbyScene()
     {
-        SceneManager.LoadScene("Assets/Scenes/LobbyScene.unity");
+        SceneManager.LoadScene("Assets/Scenes/Lobby_Scene.unity");
     }
     public void Quit()
     {
