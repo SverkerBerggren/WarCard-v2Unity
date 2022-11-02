@@ -454,6 +454,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnClick(ClickType clickType, RuleManager.Coordinate cord)
     {
+        if(clickType == ClickType.rightClick)
+        {
+            return;
+        }
         if(ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective)
         {
             objectiveContestionIndicator.SetActive(true);

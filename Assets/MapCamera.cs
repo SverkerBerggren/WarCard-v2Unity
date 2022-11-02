@@ -45,7 +45,7 @@ public class MapCamera : MonoBehaviour
         {
             transform.position += new Vector3(CurrentScrollSpeed, 0, 0);
         }
-        if(Input.GetKey(KeyCode.Mouse0))
+        if(Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.Mouse1) || Input.GetKey(KeyCode.Mouse2))
         {
             Vector2 MouseDelta;
             MouseDelta.x = Input.GetAxis("Mouse X");
