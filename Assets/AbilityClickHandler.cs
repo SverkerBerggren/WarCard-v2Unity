@@ -18,6 +18,9 @@ public class AbilityClickHandler : ClickHandler
 
     public ClickHandlerUnitSelect clickHandlerUnitSelect;
 
+    private List<List<GameObject>> abilityRangeIndicators = new List<List<GameObject>>();
+    public GameObject abilityRangeIndicator;
+
     public bool active = false;
 
     CanvasUiScript canvasUIScript;
@@ -28,7 +31,7 @@ public class AbilityClickHandler : ClickHandler
 
         selectedUnit = clickHandlerUnitSelect.selectedUnit;
 
-
+        ShowAbilityRangeIndicators(ruleManager.GetAbilityRange(selectedUnit.UnitID, selectedAbilityIndex, selectedTargetsForAbilityExecution));
 
         RuleManager.Target_Tile targetTile = new RuleManager.Target_Tile(cord);
         //   print();
@@ -38,7 +41,7 @@ public class AbilityClickHandler : ClickHandler
         {
             targetUnit = new RuleManager.Target_Unit(ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID).UnitID);
         }
-
+      
         bool targetWasCorrect = false;
         //    print(currentTargetToSelect);
         //   if(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID == 0 && requiredAbilityTargets[currentTargetToSelect]  == )
@@ -152,7 +155,52 @@ public class AbilityClickHandler : ClickHandler
     public override void Setup(MainUI ui)
     {
         mainUi = ui;
-        canvasUIScript = ui.canvasUIScript; 
-        
+        canvasUIScript = ui.canvasUIScript;
+        CreateAbilityRangeIndicators();
+
+
     }
+    
+
+    public void ShowAbilityRangeIndicators(List<RuleManager.Coordinate> listOfCords)
+    {
+        foreach (RuleManager.Coordinate cord in listOfCords)
+        {
+            abilityRangeIndicators[cord.X][cord.Y].SetActive(true);
+
+        }
+    } 
+    public void CreateAbilityRangeIndicators()
+    {
+        for (int i = 0; i < mainUi.gridManager.Width; i++)
+        {
+            abilityRangeIndicators.Add(new List<GameObject>());
+
+            for (int z = 0; z < mainUi.gridManager.Height; z++)
+            {
+                abilityRangeIndicators[i].Add(null);
+            }
+        }
+
+
+        for (int i = 0; i < mainUi.gridManager.Width; i++)
+        {
+            for (int z = 0; z < mainUi.gridManager.Height; z++)
+            {
+                GameObject newObject = Instantiate(abilityRangeIndicator);
+                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+
+                //    print(tempCord.X + " " + tempCord.Y);
+                newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
+                abilityRangeIndicators[i][z] = newObject;
+                newObject.SetActive(false);
+            }
+        }
+    }    
+
+    public void CreateValidTargetIndicators()
+    {
+
+    }
+
 }
