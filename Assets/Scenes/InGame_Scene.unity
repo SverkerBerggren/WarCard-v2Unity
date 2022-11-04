@@ -189,6 +189,7 @@ MonoBehaviour:
   ScrollSpeed: 20
   MouseSpeed: 100
   ZoomSpeed: 10
+  MaxZoom: 5
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
@@ -565,10 +566,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2141076193, guid: e733d5ac57037e64ea596ae37a806bee, type: 3}
-      propertyPath: keyCodeToClick
-      value: 113
-      objectReference: {fileID: 0}
     - target: {fileID: 1010329206171707134, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_Type
@@ -641,12 +638,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2443121553228822175, guid: e733d5ac57037e64ea596ae37a806bee,
+    - target: {fileID: 2718154285080305577, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: a0734f8642f6ac14a8bbd2e90ed82095,
+      propertyPath: m_SizeDelta.x
+      value: 234.29
+      objectReference: {fileID: 0}
+    - target: {fileID: 2718154285080305577, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 67.8
+      objectReference: {fileID: 0}
     - target: {fileID: 3544125286779993332, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: heightPadding
@@ -656,6 +657,11 @@ PrefabInstance:
         type: 3}
       propertyPath: paddingBetweenButtons
       value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 4519728062291101603, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4665449774012896317, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}

@@ -677,6 +677,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             objectiveImage.GetComponent<Objective>().setNeutralControl();
 
+            objectiveImage.GetComponent<SpriteRenderer>().sortingOrder = cord.Y;
+
             dictionaryOfObjectiveCords.Add(cord,objectiveImage.GetComponent<Objective>());
 
         }
