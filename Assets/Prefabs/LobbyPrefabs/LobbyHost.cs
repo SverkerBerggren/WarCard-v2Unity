@@ -130,6 +130,8 @@ public class LobbyHost : MonoBehaviour
                 //start game
                 RuleServer.LobbyEvent_GameStart GameStartEvent = (RuleServer.LobbyEvent_GameStart)Event;
                 GlobalNetworkState.LocalPlayerIndex = GameStartEvent.PlayerIndex;
+                GlobalNetworkState.PlayerFactionIndex[GameStartEvent.PlayerIndex] = LobyStatuses[0].GetComponent<PlayerStatus>().GetFactionIndex();
+                GlobalNetworkState.PlayerFactionIndex[GameStartEvent.PlayerIndex == 0 ? 1 : 0] = LobyStatuses[1].GetComponent<PlayerStatus>().GetFactionIndex();
                 GlobalNetworkState.OpponentActionRetriever = new NetworkActionRetriever(ServerConnection.GetUnderlyingConnection(), GameStartEvent.GameID, GameStartEvent.PlayerIndex == 0 ? 1 : 0);
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Assets/Scenes/InGame_Scene.unity");
             }

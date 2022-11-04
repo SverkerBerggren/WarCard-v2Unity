@@ -73,6 +73,10 @@ public class PlayerStatus : MonoBehaviour
     {
         NameObject.text = NewName;
     }
+    public int GetFactionIndex()
+    {
+        return (m_FactionIndex);
+    }
     public void SetFactionIndex(int NewIndex)
     {
         m_FactionIndex = NewIndex;

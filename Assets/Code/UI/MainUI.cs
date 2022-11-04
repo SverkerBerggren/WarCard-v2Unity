@@ -655,6 +655,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             listOfImages.Add(unitInt, unitSprites);
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
+            if (PlayerIndex == 1)
+            {
+                unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
+            }
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = Mathf.Abs(unitToCreate.Position.Y);
         }
         UnitOpaqueID = CurrentUnitOpaqueID;
@@ -665,8 +669,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         Dictionary<string, int> UnitOpaqueIDMap = new Dictionary<string, int>();
         int CurrentUnitOpaqueID = 0;
-        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID,out CurrentUnitOpaqueID,0,1);
-        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1,0);
+        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID,out CurrentUnitOpaqueID,0,GlobalNetworkState.PlayerFactionIndex[0]);
+        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1,GlobalNetworkState.PlayerFactionIndex[1]);
 
 
         foreach(RuleManager.Coordinate cord in listOfObjectives)

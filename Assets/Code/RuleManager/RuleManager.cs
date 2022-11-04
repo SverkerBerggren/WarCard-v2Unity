@@ -729,6 +729,11 @@ namespace RuleManager
             X = NewX;
             Y = NewY;
         }
+        public Coordinate(Coordinate Copy)
+        {
+            X = Copy.X;
+            Y = Copy.Y;
+        }
         public static Coordinate operator+(Coordinate LHS,Coordinate RHS)
         {
             Coordinate ReturnValue = new Coordinate();
@@ -864,9 +869,9 @@ namespace RuleManager
         {
             HP = StatToCopy.HP;
             Movement = StatToCopy.Movement;
-            ActivationCost = StatToCopy.ActivationCost;
             Range = StatToCopy.Range;
             Damage = StatToCopy.Damage;
+            ActivationCost = StatToCopy.ActivationCost;
             ObjectiveControll = StatToCopy.ObjectiveControll;
         }
         public UnitStats()
@@ -913,15 +918,15 @@ namespace RuleManager
             UnitID = InfoToCopy.UnitID;
             PlayerIndex = InfoToCopy.PlayerIndex;
             OpaqueInteger = InfoToCopy.OpaqueInteger;
-            Position = InfoToCopy.Position;
             Abilities = new List<Ability>(InfoToCopy.Abilities);
             Stats = new UnitStats(InfoToCopy.Stats);
+            Tags = new HashSet<string>(InfoToCopy.Tags);
             //IsActivated =   InfoToCopy.IsActivated;
             //HasMoved    =   InfoToCopy.HasMoved   ;
             //HasAttacked =   InfoToCopy.HasAttacked;
-            Flags = InfoToCopy.Flags;
-            Tags = new HashSet<string>(InfoToCopy.Tags);
+            Position = new Coordinate(InfoToCopy.Position);
             AbilityActivated = new List<bool>(InfoToCopy.AbilityActivated);
+            Flags = InfoToCopy.Flags;
 
         }
     }
@@ -2527,7 +2532,7 @@ namespace RuleManager
             //{
             //    return (ReturnValue);
             //}
-            ReturnValue.Add(UnitToMove.Position);
+            ReturnValue.Add(new Coordinate(UnitToMove.Position));
             p_PossibleMoves(UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
             ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);

@@ -50,8 +50,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 
     void Update()
     {
-        print("ar moveActionSelected " + moveActionSelected);
-
+            
         if(Input.GetKeyDown(KeyCode.Escape))
         {
             resetSelection();
@@ -121,6 +120,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         {
             DestroyMovementRange();
             selectedUnit = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+            print("Selected ID: "+selectedUnit.UnitID);
             //clicking on unit, play sound
             Unit UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
             if(UIInfo.SelectSound != null)
@@ -247,7 +247,7 @@ public class ClickHandlerUnitSelect : ClickHandler
 
 
         int Height = info.Stats.Movement;
-
+        print("Movement range for ID: " + info.UnitID);
 
         foreach (RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
         {

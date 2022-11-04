@@ -6,7 +6,14 @@ using UnityEngine;
 public static class GlobalNetworkState
 {
     public static int LocalPlayerIndex = 0;
+    public static List<int> PlayerFactionIndex = new List<int>();
     public static ActionRetriever OpponentActionRetriever = null;
+
+    static GlobalNetworkState()
+    {
+        PlayerFactionIndex.Add(0);
+        PlayerFactionIndex.Add(0);
+    }
 }
 
 
