@@ -48,14 +48,20 @@ public class GridManager : MonoBehaviour
                 NewObject.transform.position = NewPosition;
             }
         }
-        for(int YIndex = 0; YIndex < Height / GrassMultiplier; YIndex++)
+        float XOffset = TileWidth;
+        float YOffset = TileWidth;
+        //float XDiff = -(Width % GrassMultiplier)*TileWidth / 2;
+        //float YDiff = -(Height % GrassMultiplier) *TileWidth/2;
+        //XOffset += XDiff;
+        //YOffset += YDiff;
+        for(int YIndex = 0; YIndex < Mathf.Ceil(Height / GrassMultiplier); YIndex++)
         {
-            for (int XIndex = 0; XIndex < Width/GrassMultiplier; XIndex++)
+            for (int XIndex = 0; XIndex < Mathf.Ceil(Width/GrassMultiplier); XIndex++)
             {
                 GameObject NewObject = Instantiate(GrassObject);
                 float ObjectWidth = NewObject.GetComponent<BoxCollider>().size.x;
                 NewObject.transform.localScale *= TileWidth*GrassMultiplier/ObjectWidth;
-                Vector3 NewPosition = new Vector3(transform.position.x + XIndex * TileWidth*GrassMultiplier, transform.position.y - YIndex * TileWidth*GrassMultiplier, 0);
+                Vector3 NewPosition = new Vector3(XOffset+ transform.position.x + XIndex * TileWidth*GrassMultiplier,-YOffset+ transform.position.y - YIndex * TileWidth*GrassMultiplier, 0);
                 NewObject.transform.position = NewPosition;
             }
         }

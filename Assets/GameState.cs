@@ -14,7 +14,7 @@ public class GameState : MonoBehaviour
 {
     //static GameState m_GlobalGamestate = null;
     // Start is called before the first frame update
-    private RuleManager.RuleManager ruleManager = new RuleManager.RuleManager((uint)30, (uint)42);
+    private RuleManager.RuleManager ruleManager = new RuleManager.RuleManager((uint)43, (uint)31);
     private List<ActionRetriever> m_PlayerActionRetrievers = new List<ActionRetriever>();
     int m_LocalPlayerIndex = 0;
     void Awake()

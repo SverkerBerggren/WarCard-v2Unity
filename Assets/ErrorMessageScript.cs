@@ -25,7 +25,10 @@ public class ErrorMessageScript : MonoBehaviour, IPointerClickHandler
     // Update is called once per frame
     void Update()
     {
-        
+        if(Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1))
+        {
+            gameObject.SetActive(false);
+        }
     }
     public void OnPointerClick(PointerEventData eventData)
     {
