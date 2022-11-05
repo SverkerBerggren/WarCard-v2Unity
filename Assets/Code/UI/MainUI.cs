@@ -9,7 +9,7 @@ using RuleManager;
 
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
-
+    public AudioClip PlaceUnitSound = null;
     public List<GameObject> clickHandlerPrefabs = new List<GameObject>();
 
     private List<ClickHandler> clickHandlers    = new List<ClickHandler>();
@@ -209,7 +209,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnUnitMove(int UnitID, RuleManager.Coordinate PreviousPosition, RuleManager.Coordinate NewPosition)
     {
         //    listOfImages[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
-
+        GetComponent<AudioSource>().PlayOneShot(PlaceUnitSound);
         GameObject visualObject = listOfImages[UnitID].objectInScene;
         SpriteRenderer spriteRenderer = visualObject.GetComponent<SpriteRenderer>();
         UnitSprites unitSprites = listOfImages[UnitID];

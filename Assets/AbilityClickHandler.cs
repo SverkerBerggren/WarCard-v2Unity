@@ -66,7 +66,7 @@ public class AbilityClickHandler : ClickHandler
             }
 
         }
-        if (requiredAbilityTargets.Count < currentTargetToSelect)
+        if (currentTargetToSelect < requiredAbilityTargets.Count)
             ShowAbilityRangeIndicators(selectedUnit.UnitID, selectedAbilityIndex, selectedTargetsForAbilityExecution);
 
 
@@ -139,7 +139,7 @@ public class AbilityClickHandler : ClickHandler
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
         active = false;
-        clickHandlerUnitSelect.DeactivateAbilityClickHandler();
+        //clickHandlerUnitSelect.DeactivateAbilityClickHandler();
 
         DestroyAbilityRangeIndicator();
 

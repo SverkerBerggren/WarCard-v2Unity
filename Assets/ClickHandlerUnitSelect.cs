@@ -236,9 +236,9 @@ public class ClickHandlerUnitSelect : ClickHandler
     public void DeactivateAbilityClickHandler()
     {
         abilityActionSelected = false;
+        ClickHandlerAbility.Deactivate();
         if(ClickHandlerAbility.active)
         {
-            ClickHandlerAbility.Deactivate();
         }
     }
 

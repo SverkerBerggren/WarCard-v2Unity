@@ -12,7 +12,7 @@ public static class GlobalNetworkState
     static GlobalNetworkState()
     {
         PlayerFactionIndex.Add(0);
-        PlayerFactionIndex.Add(0);
+        PlayerFactionIndex.Add(1);
     }
 }
 

@@ -47,7 +47,7 @@ MonoBehaviour:
   unitCardSprite: {fileID: 21300000, guid: f9e96857faa5e2246960bbacb57d660e, type: 3}
   AbilityIcons:
   - {fileID: 21300000, guid: c5085fbe7c844764396b4d3e0e7fc30c, type: 3}
-  SelectSound: {fileID: 0}
+  SelectSound: {fileID: 8300000, guid: 47aee42af17031a4f8ba81fbb42f0d7e, type: 3}
   sidewaySprite: {fileID: 21300000, guid: a508b3057847141438770ba587df9e37, type: 3}
   forwardSprite: {fileID: 21300000, guid: 3ee1d7c009045324bb616c4b2eeb1505, type: 3}
   backWardSprite: {fileID: 21300000, guid: 4f789835e20a6c242b32808bcb714fbf, type: 3}
