@@ -23,7 +23,6 @@ public class AbilityClickHandler : ClickHandler
     private List<List<GameObject>> abilityRangeIndicators = new List<List<GameObject>>();
     public GameObject abilityRangeIndicator;
 
-    public bool active = false;
 
     CanvasUiScript canvasUIScript;
     // Start is called before the first frame update
@@ -50,6 +49,11 @@ public class AbilityClickHandler : ClickHandler
         List<RuleManager.Target> EmptyTargets = new List<RuleManager.Target>(selectedTargetsForAbilityExecution);
         string ErrorString = "";
         RuleManager.EffectSource_Unit EffectSource = new RuleManager.EffectSource_Unit(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex, selectedUnit.UnitID, selectedAbilityIndex);
+        if(currentTargetToSelect == requiredAbilityTargets.Count)
+        {
+            Deactivate();
+            return;
+        }
         if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile, out ErrorString))
         {
             currentTargetToSelect += 1;
@@ -127,8 +131,6 @@ public class AbilityClickHandler : ClickHandler
     }
     public override void Deactivate()
     {
-
-
         buttonDestroyList = new List<GameObject>();
         selectedUnit = new RuleManager.UnitInfo();
          
@@ -138,8 +140,7 @@ public class AbilityClickHandler : ClickHandler
 
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
-        active = false;
-        //clickHandlerUnitSelect.DeactivateAbilityClickHandler();
+        clickHandlerUnitSelect.DeactivateAbilityClickHandler();
 
         DestroyAbilityRangeIndicator();
 
@@ -147,16 +148,6 @@ public class AbilityClickHandler : ClickHandler
 
     public void resetSelection()
     {
-        buttonDestroyList = new List<GameObject>();
-        selectedUnit = new RuleManager.UnitInfo();
-
-        requiredAbilityTargets = new List<RuleManager.TargetCondition>();
-        selectedAbilityIndex = 0;
-
-        
-        currentTargetToSelect = 0;
-        selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
-        DestroyAbilityRangeIndicator();
         Deactivate();
     }
 
