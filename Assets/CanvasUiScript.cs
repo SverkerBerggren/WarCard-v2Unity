@@ -145,13 +145,13 @@ public class CanvasUiScript : MonoBehaviour
 
 
             }
-            if (ruleManager.GetUnitInfo(unitInfo.UnitID).AbilityActivated[i])
+            if (ruleManager.GetUnitInfo(unitInfo.UnitID).Abilities[i] is RuleManager.Ability_Activated)
             {
-                newButton.GetComponent<Button>().interactable = false;
+                newButton.GetComponent<Button>().interactable = true;
             }
             else
             {
-                newButton.GetComponent<Button>().interactable = true;
+                newButton.GetComponent<Button>().interactable = false;
             }
 
 
