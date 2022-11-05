@@ -922,6 +922,11 @@ PrefabInstance:
       objectReference: {fileID: 1868169915}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
+      propertyPath: PlaceUnitSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 976966e62146f874d85755c14680cbee, type: 3}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
       propertyPath: currentTurnText
       value: 
       objectReference: {fileID: 274185970}
