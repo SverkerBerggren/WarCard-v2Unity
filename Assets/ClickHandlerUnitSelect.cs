@@ -339,6 +339,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             for (int z = 0; z < mainUi.gridManager.Height; z++)
             {
                 GameObject newObject = Instantiate(MovementRange);
+                newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
                 RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
                 MovementColor = newObject.GetComponent<SpriteRenderer>().color;
                 //    print(tempCord.X + " " + tempCord.Y);
@@ -367,6 +368,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             {
                 GameObject newObject = Instantiate(attackRange);
                 RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+                newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
                 newObject.GetComponent<SpriteRenderer>().color = AttackColor;
                 //    print(tempCord.X + " " + tempCord.Y);
                 newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);

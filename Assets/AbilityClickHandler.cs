@@ -217,6 +217,7 @@ public class AbilityClickHandler : ClickHandler
             for (int z = 0; z < mainUi.gridManager.Height; z++)
             {
                 GameObject newObject = Instantiate(abilityRangeIndicator);
+                newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
                 RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
                 newObject.GetComponent<SpriteRenderer>().color = TargetRangeColor;
                 //    print(tempCord.X + " " + tempCord.Y);

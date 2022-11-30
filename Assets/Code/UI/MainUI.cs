@@ -214,7 +214,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         SpriteRenderer spriteRenderer = visualObject.GetComponent<SpriteRenderer>();
         UnitSprites unitSprites = listOfImages[UnitID];
 
-        spriteRenderer.sortingOrder = Math.Abs( NewPosition.Y);
+        spriteRenderer.sortingOrder = p_GetSortingOrder(PreviousPosition);
 
         int xChange = NewPosition.X - PreviousPosition.X;
 
@@ -618,7 +618,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
  //       selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
  //   } 
 
-
+    int p_GetSortingOrder(Coordinate position)
+    {
+        Vector3 LowestPos = gridManager.GetTilePosition(new Coordinate(gridManager.Width-1, gridManager.Height-1));
+        return ((int)((-gridManager.GetTilePosition(position).y+Math.Abs(LowestPos.y))));
+    }
     void p_CreateArmy(Dictionary<string,int> UnitOpaqueIDMap,int CurrentUnitOpaqueID,out int UnitOpaqueID,int PlayerIndex,int FactionIndex)
     {
         List<UnitInArmy> ArmyToInstantiate = firstPlayerArmy;
@@ -663,7 +667,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
             activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
             activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
-
+            activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
 
 
             listOfActivationIndicators.Add(unitInt, activationIndicator);
@@ -675,7 +679,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
             }
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = Mathf.Abs(unitToCreate.Position.Y);
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.Position.X,unitToCreate.Position.Y));
         }
         UnitOpaqueID = CurrentUnitOpaqueID;
     }
@@ -697,7 +701,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             objectiveImage.GetComponent<Objective>().setNeutralControl();
 
-            objectiveImage.GetComponent<SpriteRenderer>().sortingOrder = cord.Y;
+            objectiveImage.GetComponent<SpriteRenderer>().sortingOrder =p_GetSortingOrder(cord);
 
             dictionaryOfObjectiveCords.Add(cord,objectiveImage.GetComponent<Objective>());
 
