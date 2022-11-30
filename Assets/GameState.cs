@@ -5,6 +5,7 @@ using UnityEngine;
 
 public static class GlobalNetworkState
 {
+    public static bool IsLocal = false;
     public static int LocalPlayerIndex = 0;
     public static List<int> PlayerFactionIndex = new List<int>();
     public static ActionRetriever OpponentActionRetriever = null;

@@ -93,10 +93,13 @@ public class AbilityClickHandler : ClickHandler
 
             abilityToExecute.UnitID = selectedUnit.UnitID;
 
-
-            mainUi.EnqueueAction(abilityToExecute);
-
-
+            if(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex == abilityToExecute.PlayerIndex)
+            {
+                if(GlobalNetworkState.IsLocal ||(selectedUnit.UnitID == GlobalNetworkState.LocalPlayerIndex))
+                {
+                    mainUi.EnqueueAction(abilityToExecute);
+                }
+            }
             Deactivate();
 
             print("den gor abiliten");

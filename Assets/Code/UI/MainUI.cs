@@ -132,9 +132,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         else
         {
+            GlobalNetworkState.IsLocal = true;
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, this);
         }
-        if (GlobalState)
 
             //    gridManager = FindObjectOfType<GridManager>();
 
@@ -313,24 +313,40 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
         {
-        //    canvasUIScript.changeReactionText(true, "Waiting...");
+            //    canvasUIScript.changeReactionText(true, "Waiting...");
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
             StartCoroutine(canvasUIScript.changeReactionText(true, "Waiting..."));
 
         }
         if(GlobalNetworkState.LocalPlayerIndex != currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
         {
           //  canvasUIScript.changeReactionText(false, "Waiting...");
+            if(!gameObject.activeInHierarchy)
+            {
+                return;
+            }
             StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
         }
         if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() == GlobalNetworkState.LocalPlayerIndex)
         {
-            
-          //  canvasUIScript.changeReactionText(false, "Waiting...");
+
+            //  canvasUIScript.changeReactionText(false, "Waiting...");
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
             StartCoroutine(canvasUIScript.changeReactionText(false, "Waiting..."));
 
         }
         if (GlobalNetworkState.LocalPlayerIndex == currentPlayerString && ruleManager.GetPlayerTurn() != GlobalNetworkState.LocalPlayerIndex)
         {
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
             StartCoroutine(canvasUIScript.changeReactionText(true, "Reaction?"));
          //   canvasUIScript.changeReactionText(true, "Reaction?");
             

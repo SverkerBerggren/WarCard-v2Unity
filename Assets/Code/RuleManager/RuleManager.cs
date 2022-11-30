@@ -982,6 +982,7 @@ namespace RuleManager
         private int m_CurrentPlayerPriority = 0;
 
         private int m_CurrentRoundCount = 1;
+        private int m_BattleRoundCount = 0;
         
         private bool m_EndOfTurnPass = false;
 
@@ -1879,7 +1880,10 @@ namespace RuleManager
             List<int> NewScore = new List<int>();
             m_FirstRound = m_PlayerCount;
             m_ActionIsPlayed = false;
-            for(int i = 0; i < m_PlayerCount; i++)
+            m_BattleRoundCount += 1;
+            m_CurrentPlayerTurn = m_BattleRoundCount % m_PlayerCount;
+            m_CurrentPlayerPriority = m_CurrentPlayerTurn;
+            for (int i = 0; i < m_PlayerCount; i++)
             {
                 m_PlayerIntitiative[i] = 0;
                 m_EmptyPassed[i] = false;
@@ -1992,6 +1996,9 @@ namespace RuleManager
                     break;
                 }
             }
+            m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
+            m_CurrentTurn += 1;
+            m_CurrentPlayerPriority = m_CurrentPlayerTurn;
             if (ChangeRound)
             {
                 IEnumerator ChangeEnum = p_ChangeBattleround();
@@ -2002,10 +2009,6 @@ namespace RuleManager
             }
 
             m_FirstRound -= 1;
-
-            m_CurrentPlayerTurn = (m_CurrentPlayerTurn + 1) % m_PlayerCount;
-            m_CurrentTurn += 1;
-            m_CurrentPlayerPriority = m_CurrentPlayerTurn;
 
 
             if (m_EventHandler != null)
