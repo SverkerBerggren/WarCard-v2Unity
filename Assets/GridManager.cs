@@ -22,6 +22,7 @@ public class GridManager : MonoBehaviour
     public float TileWidth = 1;
     public float GrassMultiplier = 4;
 
+    Matrix4x4 m_RotationMatrix;
     //Vector3 p_GridToWorldPosition(int X, int Y)
     //{
     //    Vector3 ReturnValue= new Vector3(0, 0, 0);
@@ -34,9 +35,10 @@ public class GridManager : MonoBehaviour
         ()
     {
         Angle *= -1;
+        m_RotationMatrix = Matrix4x4.Rotate(Quaternion.Euler(Tilt, 0, Angle));
         //m_RuleManager = FindObjectOfType<TheRuleManager>().ruleManager;  //new RuleManager.RuleManager( (uint)Width, (uint)Height);
-        Vector3 YDirection = new Vector3(Mathf.Cos(Mathf.Deg2Rad* (Angle+90)),Mathf.Sin(Mathf.Deg2Rad*(Angle+90)));
-        Vector3 XDirection = new Vector3(Mathf.Cos(Mathf.Deg2Rad*Angle),Mathf.Sin(Mathf.Deg2Rad*Angle));
+        //Vector3 YDirection = new Vector3(Mathf.Cos(Mathf.Deg2Rad* (Angle+90)),Mathf.Sin(Mathf.Deg2Rad*(Angle+90)));
+        //Vector3 XDirection = new Vector3(Mathf.Cos(Mathf.Deg2Rad*Angle),Mathf.Sin(Mathf.Deg2Rad*Angle));
         for (int YIndex = 0; YIndex < Height; YIndex++)
         {
             for(int XIndex = 0; XIndex < Width; XIndex++)
@@ -48,8 +50,10 @@ public class GridManager : MonoBehaviour
                 NewObject.transform.localScale *= TileWidth / ObjectWidth;
 
                 Vector3 NewPosition = new Vector3(transform.position.x, transform.position.y, 0);
-                NewPosition += XIndex * TileWidth * XDirection;
-                NewPosition += YIndex * TileWidth * YDirection*Mathf.Cos(Mathf.Deg2Rad * Tilt);
+                NewPosition.x += XIndex * TileWidth;
+                NewPosition.y += -YIndex * TileWidth;
+                NewPosition = m_RotationMatrix.MultiplyPoint3x4(NewPosition);
+                NewPosition.z = 0;
                 GridClick ClickObject = NewObject.GetComponent<GridClick>();
                 ClickObject.X = XIndex;
                 ClickObject.Y = YIndex;
@@ -59,9 +63,9 @@ public class GridManager : MonoBehaviour
         }
         //float XOffset = TileWidth;
         //float YOffset = TileWidth;
-        Vector3 Offset = new Vector3(0,0,0);
-        Offset += YDirection * TileWidth;
-        Offset += XDirection * TileWidth;
+        Vector3 Offset = new Vector3(TileWidth,-TileWidth,0);
+        //Offset += YDirection * TileWidth;
+        //Offset += XDirection * TileWidth;
         //float XDiff = -(Width % GrassMultiplier)*TileWidth / 2;
         //float YDiff = -(Height % GrassMultiplier) *TileWidth/2;
         //XOffset += XDiff;
@@ -76,9 +80,11 @@ public class GridManager : MonoBehaviour
                 NewObject.transform.localScale *= TileWidth*GrassMultiplier/ObjectWidth;
                 //Vector3 NewPosition = new Vector3(XOffset+ transform.position.x + XIndex * TileWidth*GrassMultiplier,-YOffset+ transform.position.y - YIndex * TileWidth*GrassMultiplier, 0);
                 Vector3 NewPosition = new Vector3(transform.position.x,transform.position.y, 0);
-                NewPosition += XIndex * TileWidth * GrassMultiplier * XDirection;
-                NewPosition += YIndex * TileWidth * GrassMultiplier * YDirection * Mathf.Cos(Mathf.Deg2Rad * Tilt);
+                NewPosition.x += XIndex * TileWidth * GrassMultiplier;
+                NewPosition.y += -YIndex * TileWidth * GrassMultiplier;
                 NewPosition += Offset;
+                NewPosition = m_RotationMatrix.MultiplyPoint3x4(NewPosition);
+                NewPosition.z = 0;
                 NewObject.transform.position = NewPosition;
             }
         }
@@ -127,13 +133,12 @@ public class GridManager : MonoBehaviour
 
     public Vector3 GetTilePosition(Coordinate cord)
     {
-        Vector3 YDirection = new Vector3(Mathf.Cos(Mathf.Deg2Rad * (Angle + 90)), Mathf.Sin(Mathf.Deg2Rad * (Angle + 90)));
-        Vector3 XDirection = new Vector3(Mathf.Cos(Mathf.Deg2Rad * Angle), Mathf.Sin(Mathf.Deg2Rad * Angle));
         Vector3 ReturnValue = transform.position;
-        ReturnValue += cord.X * TileWidth * XDirection;
-        ReturnValue += cord.Y * TileWidth * YDirection * Mathf.Cos(Mathf.Deg2Rad* Tilt);
-        //return transform.position + new Vector3(TileWidth * cord.X, TileWidth * -cord.Y);
-        return (ReturnValue);
+        ReturnValue.x += cord.X * TileWidth;
+        ReturnValue.y += -cord.Y * TileWidth;
+        ReturnValue = m_RotationMatrix.MultiplyPoint(ReturnValue);
+        ReturnValue.z = 0;
+        return(ReturnValue);
     }
     public Vector3 GetEulerAngle()
     {
