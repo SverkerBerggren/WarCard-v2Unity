@@ -902,9 +902,8 @@ namespace RuleManager
 
 
         //Dynamic stuff
-        public List<bool> AbilityActivated = new List<bool>();
-        public Coordinate Direction = new Coordinate(1, 0);
-        public List<Coordinate> Position = new List<Coordinate>();
+        public List<bool> AbilityActivated = new List<bool>(); 
+        public Coordinate Position = new Coordinate();
         //public bool IsActivated = false;
         //public bool HasMoved = false;
         //public bool HasAttacked = false;
@@ -925,12 +924,7 @@ namespace RuleManager
             //IsActivated =   InfoToCopy.IsActivated;
             //HasMoved    =   InfoToCopy.HasMoved   ;
             //HasAttacked =   InfoToCopy.HasAttacked;
-            //Position = new Coordinate(InfoToCopy.Position);
-            Direction = new Coordinate(InfoToCopy.Direction);
-            foreach(Coordinate CoordToCopy in InfoToCopy.Position)
-            {
-                Position.Add(new Coordinate(CoordToCopy));
-            }
+            Position = new Coordinate(InfoToCopy.Position);
             AbilityActivated = new List<bool>(InfoToCopy.AbilityActivated);
             Flags = InfoToCopy.Flags;
 
@@ -954,7 +948,7 @@ namespace RuleManager
     {
         void OnStackPush(StackEntity NewEntity);
         void OnStackPop(StackEntity PoppedEntity);
-        void OnUnitMove(int UnitID, List<Coordinate> PreviousPosition, List<Coordinate> NewPosition);
+        void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition);
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
@@ -1191,10 +1185,8 @@ namespace RuleManager
                     m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
                 }
             }
-            foreach(Coordinate Coord in NewUnit.Position)
-            {
-                m_Tiles[Coord.Y][Coord.X].StandingUnitID = NewID;
-            }
+            
+            m_Tiles[NewUnit.Position.Y][NewUnit.Position.X].StandingUnitID = NewID;
 
             return (NewID);
         }
@@ -1213,24 +1205,15 @@ namespace RuleManager
             }
         }
 
-        //NOTE could potentially modify the semantics of the unit, only moves which preserve its morphology should be allowed
-        //but this function doesnt provide any checks, just move it as specified
-        bool p_MoveUnit(int UnitID, List<Coordinate> TilePosition)
+        bool p_MoveUnit(int UnitID, Coordinate TilePosition)
         {
             bool ReturnValue = true;
             UnitInfo AssociatedInfo = m_UnitInfos[UnitID];
-            if(AssociatedInfo.Position.Count != TilePosition.Count)
-            {
-                throw new Exception("New position has to have the same amount of tiles as the original");
-            }
-            List<Coordinate> PrevPos = AssociatedInfo.Position;
-            for(int i = 0; i < AssociatedInfo.Position.Count;i++)
-            {
-                m_Tiles[AssociatedInfo.Position[i].Y][AssociatedInfo.Position[i].X].StandingUnitID = 0;
-                m_Tiles[TilePosition[i].Y][TilePosition[i].X].StandingUnitID = UnitID;
-            }
+            Coordinate PrevPos = new Coordinate(AssociatedInfo.Position.X, AssociatedInfo.Position.Y);
+            m_Tiles[AssociatedInfo.Position.Y][AssociatedInfo.Position.X].StandingUnitID = 0;
             AssociatedInfo.Position = TilePosition;
-            if (m_EventHandler != null)
+            m_Tiles[TilePosition.Y][TilePosition.X].StandingUnitID = UnitID;
+            if(m_EventHandler != null)
             {
                 m_EventHandler.OnUnitMove(UnitID, PrevPos, TilePosition);
             }
