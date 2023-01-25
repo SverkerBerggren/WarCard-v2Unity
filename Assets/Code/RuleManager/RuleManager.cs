@@ -741,6 +741,13 @@ namespace RuleManager
             ReturnValue.Y = LHS.Y + RHS.Y;
             return (ReturnValue);
         }
+        public static Coordinate operator -(Coordinate LHS, Coordinate RHS)
+        {
+            Coordinate ReturnValue = new Coordinate();
+            ReturnValue.X = LHS.X - RHS.X;
+            ReturnValue.Y = LHS.Y - RHS.Y;
+            return (ReturnValue);
+        }
         public static int Distance(Coordinate LeftCoordinate, Coordinate RightCoordinate)
         {
             return (Math.Abs(LeftCoordinate.X - RightCoordinate.X) + Math.Abs(LeftCoordinate.Y - RightCoordinate.Y));
@@ -810,6 +817,7 @@ namespace RuleManager
     {
         public MoveAction() : base(ActionType.Move) {}
         public int UnitID = 0;
+        //always assumes that the position moved is the top left corner
         public Coordinate NewPosition;
     }
     [Serializable]
@@ -904,6 +912,8 @@ namespace RuleManager
         //Dynamic stuff
         public List<bool> AbilityActivated = new List<bool>();
         public Coordinate Direction = new Coordinate(1, 0);
+        //used so that positions can be calculated with a simple diff
+        public Coordinate TopLeftCorner = new Coordinate(0, 0);
         public List<Coordinate> Position = new List<Coordinate>();
         //public bool IsActivated = false;
         //public bool HasMoved = false;
@@ -927,6 +937,7 @@ namespace RuleManager
             //HasAttacked =   InfoToCopy.HasAttacked;
             //Position = new Coordinate(InfoToCopy.Position);
             Direction = new Coordinate(InfoToCopy.Direction);
+            TopLeftCorner = new Coordinate(InfoToCopy.TopLeftCorner);
             foreach(Coordinate CoordToCopy in InfoToCopy.Position)
             {
                 Position.Add(new Coordinate(CoordToCopy));
@@ -954,7 +965,7 @@ namespace RuleManager
     {
         void OnStackPush(StackEntity NewEntity);
         void OnStackPop(StackEntity PoppedEntity);
-        void OnUnitMove(int UnitID, List<Coordinate> PreviousPosition, List<Coordinate> NewPosition);
+        void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition);
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
@@ -1213,23 +1224,20 @@ namespace RuleManager
             }
         }
 
-        //NOTE could potentially modify the semantics of the unit, only moves which preserve its morphology should be allowed
-        //but this function doesnt provide any checks, just move it as specified
-        bool p_MoveUnit(int UnitID, List<Coordinate> TilePosition)
+        //NOTE this function doesnt provide any checks, just move it as specified
+        bool p_MoveUnit(int UnitID, Coordinate TilePosition)
         {
             bool ReturnValue = true;
             UnitInfo AssociatedInfo = m_UnitInfos[UnitID];
-            if(AssociatedInfo.Position.Count != TilePosition.Count)
-            {
-                throw new Exception("New position has to have the same amount of tiles as the original");
-            }
-            List<Coordinate> PrevPos = AssociatedInfo.Position;
+            Coordinate Diff = TilePosition - AssociatedInfo.TopLeftCorner;
+            Coordinate PrevPos = AssociatedInfo.TopLeftCorner;
             for(int i = 0; i < AssociatedInfo.Position.Count;i++)
             {
                 m_Tiles[AssociatedInfo.Position[i].Y][AssociatedInfo.Position[i].X].StandingUnitID = 0;
-                m_Tiles[TilePosition[i].Y][TilePosition[i].X].StandingUnitID = UnitID;
+                AssociatedInfo.Position[i] += Diff;
+                m_Tiles[AssociatedInfo.Position[i].Y][AssociatedInfo.Position[i].X].StandingUnitID = UnitID;
             }
-            AssociatedInfo.Position = TilePosition;
+            AssociatedInfo.TopLeftCorner = TilePosition;
             if (m_EventHandler != null)
             {
                 m_EventHandler.OnUnitMove(UnitID, PrevPos, TilePosition);
@@ -1669,7 +1677,7 @@ namespace RuleManager
             else if(Condition is TargetCondition_Range)
             {
                 TargetCondition_Range RangeCondition = (TargetCondition_Range)Condition;
-                Coordinate SourceCoordinate = null;
+                List<Coordinate> SourceCoordinate = null;
                 if(RangeCondition.TargetIndex == -1)
                 {
                     SourceCoordinate = m_UnitInfos[((EffectSource_Unit)Source).UnitID].Position;
@@ -1683,23 +1691,25 @@ namespace RuleManager
                     }
                     else if(PreviousTarget is Target_Tile)
                     {
-                        SourceCoordinate = ((Target_Tile)PreviousTarget).TargetCoordinate;
+                        SourceCoordinate = new List<Coordinate>();
+                        SourceCoordinate.Add(((Target_Tile)PreviousTarget).TargetCoordinate);
                     }
                 }
-                Coordinate TargetCoordinate = null;
+                List<Coordinate> TargetCoordinate = null;
                 if(TargetToVerify is Target_Unit)
                 {
                     TargetCoordinate = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].Position;
                 }
                 else if(TargetToVerify is Target_Tile)
                 {
-                    TargetCoordinate = ((Target_Tile)TargetToVerify).TargetCoordinate;
+                    TargetCoordinate = new List<Coordinate>();
+                    TargetCoordinate .Add(((Target_Tile)TargetToVerify).TargetCoordinate);
                 }
                 else
                 {
                     throw new Exception("Target condition only applies to targets of type Unit and Tile");
                 }
-                if(!(Coordinate.Distance(SourceCoordinate,TargetCoordinate) <= RangeCondition.Range))
+                if(!(p_CalculateTileDistance(SourceCoordinate,TargetCoordinate) <= RangeCondition.Range))
                 {
                     ReturnValue = false;
                 }
@@ -1831,7 +1841,7 @@ namespace RuleManager
         void p_DestroyUnit(int UnitID)
         {
             UnitInfo UnitToRemoveInfo = m_UnitInfos[UnitID];
-            TileInfo UnitToRemoveTile = m_Tiles[UnitToRemoveInfo.Position.Y][UnitToRemoveInfo.Position.X];
+            List<Coordinate> UnitToRemoveTiles = UnitToRemoveInfo.Position;
             m_UnitInfos.Remove(UnitID);
             if(m_EventHandler != null)
             {
@@ -1842,7 +1852,11 @@ namespace RuleManager
                 m_RegisteredContinousAbilities.Remove(m_UnitRegisteredContinousAbilityMap[UnitID]);
                 m_UnitRegisteredContinousAbilityMap.Remove(UnitID);
             }
-            UnitToRemoveTile.StandingUnitID = 0;
+            //UnitToRemoveTile.StandingUnitID = 0;
+            foreach (Coordinate Position in UnitToRemoveTiles)
+            {
+                m_Tiles[Position.Y][Position.X].StandingUnitID = 0;
+            }
         }
         void p_DealDamage(int UnitID, int Damage)
         {
@@ -2142,12 +2156,10 @@ namespace RuleManager
             {
                 MoveAction MoveToExecute = (MoveAction)ActionToExecute;
                 UnitInfo UnitToMove = m_UnitInfos[MoveToExecute.UnitID];
-                Coordinate OldPosition = UnitToMove.Position;
-                TileInfo UnitTile = m_Tiles[UnitToMove.Position.Y][UnitToMove.Position.X];
-                UnitToMove.Position = MoveToExecute.NewPosition;
-                UnitTile.StandingUnitID = 0;
-                TileInfo NewTile = m_Tiles[MoveToExecute.NewPosition.Y][MoveToExecute.NewPosition.X];
-                NewTile.StandingUnitID = MoveToExecute.UnitID;
+                Coordinate OldPosition = UnitToMove.TopLeftCorner;
+                //Bounds alreay checked
+                p_MoveUnit(MoveToExecute.UnitID, MoveToExecute.NewPosition);
+                
                 if(m_EventHandler != null)
                 {
                     m_EventHandler.OnUnitMove(MoveToExecute.UnitID, OldPosition, MoveToExecute.NewPosition);
@@ -2287,6 +2299,19 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+        int p_CalculateTileDistance(List<Coordinate> SourceTiles,List<Coordinate> TargetTiles)
+        {
+            int ReturnValue = 0;
+
+            return (ReturnValue);
+        }
+        int p_CalculateUnitDistance(UnitInfo FirstUnit,UnitInfo SecondUnit)
+        {
+            int ReturnValue = 0;
+
+            asdasdasdas
+            return (ReturnValue);
+        }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
         {
             if(m_GameFinished)
@@ -2380,7 +2405,7 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if (Coordinate.Distance(AttackerInfo.Position,DefenderInfo.Position) > AttackerInfo.Stats.Range)
+                if (p_CalculateUnitDistance(DefenderInfo,AttackerInfo) > AttackerInfo.Stats.Range)
                 {
                     ReturnValue = false;
                     ErrorString = "Defender out of range for attacker";

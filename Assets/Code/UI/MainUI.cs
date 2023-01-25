@@ -630,63 +630,63 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     void p_CreateArmy(Dictionary<string,int> UnitOpaqueIDMap,int CurrentUnitOpaqueID,out int UnitOpaqueID,int PlayerIndex,int FactionIndex)
     {
         UnitOpaqueID = 1337;
-        //List<UnitInArmy> ArmyToInstantiate = firstPlayerArmy;
-        //if(FactionIndex == 0)
-        //{
-        //    ArmyToInstantiate = firstPlayerArmy;
-        //}
-        //else if(FactionIndex == 1)
-        //{
-        //    ArmyToInstantiate = secondPlayerArmy;
-        //}
-        //foreach (UnitInArmy unitFromList in ArmyToInstantiate)
-        //{
-        //
-        //    RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
-        //
-        //    if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
-        //    {
-        //        UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
-        //        m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
-        //        CurrentUnitOpaqueID += 1;
-        //    }
-        //    unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
-        //
-        //
-        //    unitToCreate.Position = unitFromList.cord;
-        //    if(PlayerIndex == 1)
-        //    {
-        //        unitToCreate.Position.X = (gridManager.Width-1)-unitToCreate.Position.X;
-        //    }
-        //
-        //
-        //
-        //    int unitInt = ruleManager.RegisterUnit(unitToCreate, PlayerIndex);
-        //    UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
-        //
-        //    GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
-        //
-        //    unitSprites.objectInScene = unitToCreateVisualObject;
-        //
-        //    GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
-        //    activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
-        //    activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
-        //    activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
-        //    activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
-        //
-        //
-        //    listOfActivationIndicators.Add(unitInt, activationIndicator);
-        //
-        //
-        //    listOfImages.Add(unitInt, unitSprites);
-        //    unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
-        //    if (PlayerIndex == 1)
-        //    {
-        //        unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
-        //    }
-        //    unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.Position.X,unitToCreate.Position.Y));
-        //}
-        //UnitOpaqueID = CurrentUnitOpaqueID;
+        List<UnitInArmy> ArmyToInstantiate = firstPlayerArmy;
+        if(FactionIndex == 0)
+        {
+            ArmyToInstantiate = firstPlayerArmy;
+        }
+        else if(FactionIndex == 1)
+        {
+            ArmyToInstantiate = secondPlayerArmy;
+        }
+        foreach (UnitInArmy unitFromList in ArmyToInstantiate)
+        {
+        
+            RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
+        
+            if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
+            {
+                UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
+                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
+                CurrentUnitOpaqueID += 1;
+            }
+            unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
+        
+        
+            unitToCreate.Position = unitFromList.cord;
+            if(PlayerIndex == 1)
+            {
+                unitToCreate.Position.X = (gridManager.Width-1)-unitToCreate.Position.X;
+            }
+        
+        
+        
+            int unitInt = ruleManager.RegisterUnit(unitToCreate, PlayerIndex);
+            UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
+        
+            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+        
+            unitSprites.objectInScene = unitToCreateVisualObject;
+        
+            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
+            activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
+        
+        
+            listOfActivationIndicators.Add(unitInt, activationIndicator);
+        
+        
+            listOfImages.Add(unitInt, unitSprites);
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
+            if (PlayerIndex == 1)
+            {
+                unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
+            }
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.Position.X,unitToCreate.Position.Y));
+        }
+        UnitOpaqueID = CurrentUnitOpaqueID;
     }
 
     private void CreateArmies()
