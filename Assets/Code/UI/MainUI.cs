@@ -653,22 +653,22 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
         
         
-            unitToCreate.Position = unitFromList.cord;
+            unitToCreate.TopLeftCorner = unitFromList.cord;
             if(PlayerIndex == 1)
             {
-                unitToCreate.Position.X = (gridManager.Width-1)-unitToCreate.Position.X;
+                unitToCreate.TopLeftCorner.X = (gridManager.Width-1)-unitToCreate.TopLeftCorner.X;
             }
-        
-        
-        
+            unitToCreate.Position.Add(new Coordinate(unitToCreate.TopLeftCorner));
+
+
             int unitInt = ruleManager.RegisterUnit(unitToCreate, PlayerIndex);
             UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
         
-            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.TopLeftCorner), new Quaternion());
         
             unitSprites.objectInScene = unitToCreateVisualObject;
         
-            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.Position), new Quaternion());
+            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.TopLeftCorner), new Quaternion());
             activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
             activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
             activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
@@ -684,7 +684,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
             }
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.Position.X,unitToCreate.Position.Y));
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.TopLeftCorner.X,unitToCreate.TopLeftCorner.Y));
         }
         UnitOpaqueID = CurrentUnitOpaqueID;
     }

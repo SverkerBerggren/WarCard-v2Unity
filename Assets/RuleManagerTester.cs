@@ -14,17 +14,17 @@ public class RuleManagerTester : MonoBehaviour
     void Start()
     {
         RuleManager.UnitInfo Player1Knight = Templars.GetKnight();
-        Player1Knight.Position = new RuleManager.Coordinate(0, 0);
+        Player1Knight.Position.Add(new RuleManager.Coordinate(0, 0) );
 
         RuleManager.UnitInfo Player2Knight = Templars.GetKnight();
-        Player2Knight.Position = new RuleManager.Coordinate(5, 5);
+        Player2Knight.Position.Add( new RuleManager.Coordinate(5, 5));
 
 
         m_Player1ID = m_ManagerToTest.RegisterUnit(Player1Knight, 0);
         m_Player2ID = m_ManagerToTest.RegisterUnit(Player2Knight, 1);
 
 
-
+        throw new System.Exception("All of these tests need to set TopLeftCorner...");
         print("Statik tests");
 
         RuleManager.RuleManager StaticTestManager = new RuleManager.RuleManager(42,30);
@@ -33,21 +33,22 @@ public class RuleManagerTester : MonoBehaviour
         RuleManager.UnitInfo Player1ArilleryInfos = Militarium.GetArtillery();
 
         RuleManager.UnitInfo Player2SoldierInfo = Militarium.GetFootSoldier();
-        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 0);
+        Player2SoldierInfo.Position.Add(new RuleManager.Coordinate(10, 0));
+        Player2SoldierInfo.TopLeftCorner = Player2SoldierInfo.Position[0];
         StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
-        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 1);
+        Player2SoldierInfo.Position.Add(new RuleManager.Coordinate(10, 1));
         StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
-        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 2);
+        Player2SoldierInfo.Position.Add(new RuleManager.Coordinate(10, 2));
         StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
-        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 3);
+        Player2SoldierInfo.Position.Add(new RuleManager.Coordinate(10, 3));
         int EnemySoldier = StaticTestManager.RegisterUnit(Player2SoldierInfo, 1);
-        Player2SoldierInfo.Position = new RuleManager.Coordinate(10, 4);
+        Player2SoldierInfo.Position.Add(new RuleManager.Coordinate(10, 4));
 
-        Player1SoldierInfo.Position = new RuleManager.Coordinate(0, 0);
+        Player1SoldierInfo.Position.Add(new RuleManager.Coordinate(0, 0));
         int Player1Soldier = StaticTestManager.RegisterUnit(Player1SoldierInfo, 0);
-        Player1OfficerInfo.Position = new RuleManager.Coordinate(0, 1);
+        Player1OfficerInfo.Position.Add(new RuleManager.Coordinate(0, 1));
         int Player1Officer = StaticTestManager.RegisterUnit(Player1OfficerInfo, 0);
-        Player1ArilleryInfos.Position = new RuleManager.Coordinate(0, 2);
+        Player1ArilleryInfos.Position.Add(new RuleManager.Coordinate(0, 2));
         int Player1Artillery = StaticTestManager.RegisterUnit(Player1ArilleryInfos, 0);
 
         print("Soldier attack: " + StaticTestManager.GetUnitInfo(Player1Soldier).Stats.Damage);
@@ -106,7 +107,7 @@ public class RuleManagerTester : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.M))
         {
             RuleManager.UnitInfo UnitToMove = m_ManagerToTest.GetUnitInfo(Player1);
-            RuleManager.Coordinate NewPosition = new RuleManager.Coordinate(UnitToMove.Position.X, UnitToMove.Position.Y+2);
+            RuleManager.Coordinate NewPosition = new RuleManager.Coordinate(UnitToMove.Position[0].X, UnitToMove.Position[0].Y+2);
             RuleManager.MoveAction MoveAction = new RuleManager.MoveAction();
             MoveAction.PlayerIndex = PlayerIndex;
             MoveAction.UnitID = Player1;
@@ -145,8 +146,8 @@ public class RuleManagerTester : MonoBehaviour
         }
         if (ActionExecuted)
         {
-            print("Player1 position: " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Position.X + " " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Position.Y);
-            print("Player2 position: " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Position.X + " " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Position.Y);
+            print("Player1 position: " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Position[0].X + " " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Position[0].Y);
+            print("Player2 position: " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Position[0].X + " " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Position[0].Y);
 
             print("Player1 HP: " + m_ManagerToTest.GetUnitInfo(m_Player1ID).Stats.HP);
             print("Player2 HP: " + m_ManagerToTest.GetUnitInfo(m_Player2ID).Stats.HP);
