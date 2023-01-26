@@ -936,6 +936,7 @@ namespace RuleManager
             //HasMoved    =   InfoToCopy.HasMoved   ;
             //HasAttacked =   InfoToCopy.HasAttacked;
             //Position = new Coordinate(InfoToCopy.Position);
+            UnitTileOffsets = new List<Coordinate>();
             Direction = new Coordinate(InfoToCopy.Direction);
             TopLeftCorner = new Coordinate(InfoToCopy.TopLeftCorner);
             foreach(Coordinate CoordToCopy in InfoToCopy.UnitTileOffsets)

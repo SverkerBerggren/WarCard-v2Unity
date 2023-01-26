@@ -28,7 +28,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private Dictionary<int, UnitSprites> listOfImages = new Dictionary<int, UnitSprites>();
 
-    private Dictionary<int, GameObject> listOfActivationIndicators = new Dictionary<int, GameObject>();
+    private Dictionary<int, List<GameObject>> listOfActivationIndicators = new Dictionary<int, List<GameObject>>();
 
 
 
@@ -171,19 +171,31 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         { 
             if((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) != 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 0)
             {
-                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(0f,0.7f,0f,0.7f);
+                foreach(GameObject Tile in listOfActivationIndicators[unitID])
+                {
+                    Tile.GetComponent<SpriteRenderer>().color = new Color(0f,0.7f,0f,0.7f);
+                }
             }
             if ((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) == 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 0)
             {
-                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f, 1f);
+                foreach (GameObject Tile in listOfActivationIndicators[unitID])
+                {
+                    Tile.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f, 1f);
+                }
             }  
             if((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) != 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 1)
             {
-                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(0.7f,0f,0f,0.7f);
+                foreach (GameObject Tile in listOfActivationIndicators[unitID])
+                {
+                    Tile.GetComponent<SpriteRenderer>().color = new Color(0.7f, 0f, 0f, 0.7f);
+                }
             }
             if ((ruleManager.GetUnitInfo(unitID).Flags & RuleManager.UnitFlags.IsActivated) == 0 && ruleManager.GetUnitInfo(unitID).PlayerIndex == 1)
             {
-                listOfActivationIndicators[unitID].GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f, 1f);
+                foreach (GameObject Tile in listOfActivationIndicators[unitID])
+                {
+                    Tile.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f, 1f);
+                }
             }
 
         }
@@ -282,9 +294,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
             }
         }
-
+        UnitInfo MovedUnit = ruleManager.GetUnitInfo(UnitID);
         visualObject.transform.position  = gridManager.GetTilePosition(NewPosition);
-        listOfActivationIndicators[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
+        for(int i = 0; i < MovedUnit.UnitTileOffsets.Count;i++)
+        {
+            Coordinate TilePos = NewPosition + MovedUnit.UnitTileOffsets[i];
+            listOfActivationIndicators[UnitID][i].transform.position = gridManager.GetTilePosition(TilePos);
+        }
         
 
     }
@@ -440,7 +456,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnUnitDestroyed(int UnitID)
     {
         listOfImages[UnitID].objectInScene.SetActive(false);
-        listOfActivationIndicators[UnitID].SetActive(false);
+        foreach(GameObject Tile in listOfActivationIndicators[UnitID])
+        {
+            Tile.SetActive(false);
+        }
         listOfActivationIndicators.Remove(UnitID);
     }
 
@@ -667,15 +686,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.TopLeftCorner), new Quaternion());
         
             unitSprites.objectInScene = unitToCreateVisualObject;
-        
-            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.TopLeftCorner), new Quaternion());
-            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
-            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
-            activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
-            activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
-        
-        
-            listOfActivationIndicators.Add(unitInt, activationIndicator);
+
+            List<GameObject> ActivationIndicators = new List<GameObject>();
+            foreach(Coordinate Offset in unitToCreate.UnitTileOffsets)
+            {
+                GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.TopLeftCorner+Offset), new Quaternion());
+                activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+                activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
+                activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
+                activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
+                ActivationIndicators.Add(activationIndicator);
+            }        
+            listOfActivationIndicators.Add(unitInt, ActivationIndicators);
         
         
             listOfImages.Add(unitInt, unitSprites);
