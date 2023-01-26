@@ -914,7 +914,7 @@ namespace RuleManager
         public Coordinate Direction = new Coordinate(1, 0);
         //used so that positions can be calculated with a simple diff
         public Coordinate TopLeftCorner = new Coordinate(0, 0);
-        public List<Coordinate> Position = new List<Coordinate>();
+        public List<Coordinate> UnitTileOffsets = new List<Coordinate>(new Coordinate[] { new Coordinate(0,0)});
         //public bool IsActivated = false;
         //public bool HasMoved = false;
         //public bool HasAttacked = false;
@@ -938,9 +938,9 @@ namespace RuleManager
             //Position = new Coordinate(InfoToCopy.Position);
             Direction = new Coordinate(InfoToCopy.Direction);
             TopLeftCorner = new Coordinate(InfoToCopy.TopLeftCorner);
-            foreach(Coordinate CoordToCopy in InfoToCopy.Position)
+            foreach(Coordinate CoordToCopy in InfoToCopy.UnitTileOffsets)
             {
-                Position.Add(new Coordinate(CoordToCopy));
+                UnitTileOffsets.Add(new Coordinate(CoordToCopy));
             }
             AbilityActivated = new List<bool>(InfoToCopy.AbilityActivated);
             Flags = InfoToCopy.Flags;
@@ -1202,9 +1202,10 @@ namespace RuleManager
                     m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
                 }
             }
-            foreach(Coordinate Coord in NewUnit.Position)
+            foreach(Coordinate Coord in NewUnit.UnitTileOffsets)
             {
-                m_Tiles[Coord.Y][Coord.X].StandingUnitID = NewID;
+                Coordinate CurrentTile = NewUnit.TopLeftCorner + Coord; 
+                m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID = NewID;
             }
 
             return (NewID);
@@ -1229,13 +1230,15 @@ namespace RuleManager
         {
             bool ReturnValue = true;
             UnitInfo AssociatedInfo = m_UnitInfos[UnitID];
-            Coordinate Diff = TilePosition - AssociatedInfo.TopLeftCorner;
+            //Coordinate Diff = TilePosition - AssociatedInfo.TopLeftCorner;
             Coordinate PrevPos = AssociatedInfo.TopLeftCorner;
-            for(int i = 0; i < AssociatedInfo.Position.Count;i++)
+            for(int i = 0; i < AssociatedInfo.UnitTileOffsets.Count;i++)
             {
-                m_Tiles[AssociatedInfo.Position[i].Y][AssociatedInfo.Position[i].X].StandingUnitID = 0;
-                AssociatedInfo.Position[i] += Diff;
-                m_Tiles[AssociatedInfo.Position[i].Y][AssociatedInfo.Position[i].X].StandingUnitID = UnitID;
+                Coordinate OldCoord = AssociatedInfo.UnitTileOffsets[i] + PrevPos;
+                m_Tiles[OldCoord.Y][OldCoord.X].StandingUnitID = 0;
+                Coordinate NewCoord = AssociatedInfo.UnitTileOffsets[i] + TilePosition;
+                //AssociatedInfo.Position[i] += Diff;
+                m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID = UnitID;
             }
             AssociatedInfo.TopLeftCorner = TilePosition;
             if (m_EventHandler != null)
@@ -1300,6 +1303,15 @@ namespace RuleManager
                 throw new Exception("Invalid target retriever type " + Retriever.GetType().Name);
             }
             yield break;
+        }
+        List<Coordinate> p_GetAbsolutePositions(Coordinate TopLeftCorner,List<Coordinate> CoordsToTransform)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            foreach(Coordinate Coord in CoordsToTransform)
+            {
+                ReturnValue.Add(Coord + TopLeftCorner);
+            }
+            return (ReturnValue);
         }
         IEnumerator p_ResolveEffect(List<Target> Targets,EffectSource Source,Effect EffectToResolve)
         {
@@ -1471,7 +1483,7 @@ namespace RuleManager
                 }
                 if (Origins[0].Type == TargetType.Unit)
                 {
-                    OriginTile = m_UnitInfos[((Target_Unit)Origins[0]).UnitID].Position;
+                    OriginTile =p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)Origins[0]).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)Origins[0]).UnitID].UnitTileOffsets);
                 }
                 foreach(Coordinate CurrentTile in p_GetTiles(AreaDamageEffect.Range,OriginTile))
                 {
@@ -1670,14 +1682,14 @@ namespace RuleManager
                 List<Coordinate> SourceCoordinate = null;
                 if(RangeCondition.TargetIndex == -1)
                 {
-                    SourceCoordinate = m_UnitInfos[((EffectSource_Unit)Source).UnitID].Position;
+                    SourceCoordinate = p_GetAbsolutePositions(m_UnitInfos[((EffectSource_Unit)Source).UnitID].TopLeftCorner,m_UnitInfos[((EffectSource_Unit)Source).UnitID].UnitTileOffsets);
                 }
                 else
                 {
                     Target PreviousTarget = CurrentTargets[RangeCondition.TargetIndex];
                     if(PreviousTarget is Target_Unit)
                     {
-                        SourceCoordinate = m_UnitInfos[((Target_Unit)PreviousTarget).UnitID].Position;
+                        SourceCoordinate = p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)PreviousTarget).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)PreviousTarget).UnitID].UnitTileOffsets);
                     }
                     else if(PreviousTarget is Target_Tile)
                     {
@@ -1688,7 +1700,7 @@ namespace RuleManager
                 List<Coordinate> TargetCoordinate = null;
                 if(TargetToVerify is Target_Unit)
                 {
-                    TargetCoordinate = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].Position;
+                    TargetCoordinate = p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].UnitTileOffsets);
                 }
                 else if(TargetToVerify is Target_Tile)
                 {
@@ -1831,7 +1843,7 @@ namespace RuleManager
         void p_DestroyUnit(int UnitID)
         {
             UnitInfo UnitToRemoveInfo = m_UnitInfos[UnitID];
-            List<Coordinate> UnitToRemoveTiles = UnitToRemoveInfo.Position;
+            List<Coordinate> UnitToRemoveTiles = p_GetAbsolutePositions(UnitToRemoveInfo.TopLeftCorner,UnitToRemoveInfo.UnitTileOffsets);
             m_UnitInfos.Remove(UnitID);
             if(m_EventHandler != null)
             {
@@ -2299,7 +2311,7 @@ namespace RuleManager
         int p_CalculateUnitDistance(UnitInfo FirstUnit,UnitInfo SecondUnit)
         {
             int ReturnValue = 0;
-            ReturnValue = p_CalculateTileDistance(FirstUnit.Position, SecondUnit.Position);
+            ReturnValue = p_CalculateTileDistance(p_GetAbsolutePositions(FirstUnit.TopLeftCorner,FirstUnit.UnitTileOffsets), p_GetAbsolutePositions(SecondUnit.TopLeftCorner,SecondUnit.UnitTileOffsets));
             return (ReturnValue);
         }
         public bool ActionIsValid(Action ActionToCheck,out string OutInfo)
@@ -2510,7 +2522,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        void p_PossibleMoves(Coordinate CurrentDif,Coordinate OriginCoord,List<Coordinate> UnitTiles,int CurrentMovement,List<Coordinate> OutPossibleMoves,Dictionary<Coordinate,int> VisitedSpaces)
+        void p_PossibleMoves(Coordinate CurrentDif,List<Coordinate> UnitTiles,int CurrentMovement,List<Coordinate> OutPossibleMoves,Dictionary<Coordinate,int> VisitedSpaces,int UnitID)
         {
             if(CurrentMovement == 0)
             {
@@ -2519,9 +2531,9 @@ namespace RuleManager
             foreach(Coordinate DiffDiff in new Coordinate[] {new Coordinate(1,0),new Coordinate(0,1),new Coordinate(-1,0),new Coordinate(0,-1)})
             {
                 Coordinate TotalDiff = CurrentDif+DiffDiff;
-                if(VisitedSpaces.ContainsKey(TotalDiff+OriginCoord))
+                if(VisitedSpaces.ContainsKey(TotalDiff))
                 {
-                    int PreviousMovement = VisitedSpaces[TotalDiff + OriginCoord];
+                    int PreviousMovement = VisitedSpaces[TotalDiff];
                     if(PreviousMovement >= CurrentMovement)
                     {
                         continue;
@@ -2536,7 +2548,7 @@ namespace RuleManager
                         ValidPosition = false;
                         break;
                     }
-                    if (m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != 0 || m_Tiles[NewCoord.Y][NewCoord.X].HasObjective)
+                    if ((m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != 0 && m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != UnitID) || m_Tiles[NewCoord.Y][NewCoord.X].HasObjective)
                     {
                         ValidPosition = false;
                         break;
@@ -2546,9 +2558,9 @@ namespace RuleManager
                 {
                     continue;
                 }
-                VisitedSpaces[TotalDiff + OriginCoord] = CurrentMovement;
-                OutPossibleMoves.Add(TotalDiff + OriginCoord);
-                p_PossibleMoves(TotalDiff,OriginCoord,UnitTiles, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces);
+                VisitedSpaces[TotalDiff] = CurrentMovement;
+                OutPossibleMoves.Add(TotalDiff);
+                p_PossibleMoves(TotalDiff,UnitTiles, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces,UnitID);
             }
         }
         List<Coordinate> p_NormalizeMoves(List<Coordinate> MovesToNormalize)
@@ -2562,7 +2574,10 @@ namespace RuleManager
                     ReturnValue.Add(MovesToNormalize[i]);
                 }
             }
-            ReturnValue.Add(MovesToNormalize[MovesToNormalize.Count - 1]);
+            if(MovesToNormalize.Count > 0)
+            {
+                ReturnValue.Add(MovesToNormalize[MovesToNormalize.Count - 1]);
+            }
             return (ReturnValue);
         }
         public List<Coordinate> PossibleMoves(int UnitID)
@@ -2579,7 +2594,7 @@ namespace RuleManager
             //    return (ReturnValue);
             //}
             //ReturnValue.Add(new Coordinate(UnitToMove.Position));
-            p_PossibleMoves(new Coordinate(0,0),UnitToMove.TopLeftCorner,UnitToMove.Position, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>());
+            p_PossibleMoves(UnitToMove.TopLeftCorner,UnitToMove.UnitTileOffsets, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>(),UnitID);
             ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);
         }
@@ -2622,7 +2637,7 @@ namespace RuleManager
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
             UnitInfo AttackingUnit = p_GetProcessedUnitInfo(UnitID);
-            ReturnValue = p_GetTiles(AttackingUnit.Stats.Range,AttackingUnit.Position);
+            ReturnValue = p_GetTiles(AttackingUnit.Stats.Range,p_GetAbsolutePositions(AttackingUnit.TopLeftCorner,AttackingUnit.UnitTileOffsets));
             return (ReturnValue);
         }
 
@@ -2716,13 +2731,14 @@ namespace RuleManager
             {
                 return (ReturnValue);
             }
-            List<Coordinate> OriginTiles = AssociatedUnit.Position;
+            List<Coordinate> OriginTiles = p_GetAbsolutePositions(AssociatedUnit.TopLeftCorner,AssociatedUnit.UnitTileOffsets);
             if(Range.TargetIndex != -1)
             {
                 Target OriginTarget = currentTargets[Range.TargetIndex];
                 if(OriginTarget is Target_Unit)
                 {
-                    OriginTiles = p_GetProcessedUnitInfo(((Target_Unit)OriginTarget).UnitID).Position;
+                    UnitInfo ProccessedInfo = p_GetProcessedUnitInfo(((Target_Unit)OriginTarget).UnitID);
+                    OriginTiles = p_GetAbsolutePositions(ProccessedInfo.TopLeftCorner,ProccessedInfo.UnitTileOffsets);
                 }
                 else if(OriginTarget is Target_Tile)
                 {

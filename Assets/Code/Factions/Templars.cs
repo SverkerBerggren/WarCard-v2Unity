@@ -46,6 +46,46 @@ public class Templars
         ActivatedAbility.SetName("Smite");
 
         ReturnValue.Abilities.Add(ActivatedAbility);
+
+        ReturnValue.TopLeftCorner = new RuleManager.Coordinate(0, 0);
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(0, 1));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(0, 2));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(1, 0));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(1, 1));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(1, 2));
+        return (ReturnValue);
+    }
+    static public RuleManager.UnitInfo GetHorse()
+    {
+        RuleManager.UnitInfo ReturnValue = new RuleManager.UnitInfo();
+        ReturnValue.Stats = new RuleManager.UnitStats();
+        ReturnValue.Stats.ActivationCost = 40;
+        ReturnValue.Stats.Damage = 100;
+        ReturnValue.Stats.HP = 300;
+        ReturnValue.Stats.Range = 2;
+        ReturnValue.Stats.Movement = 12;
+        ReturnValue.Stats.ObjectiveControll = 50;
+        ReturnValue.Tags.Add("Knight");
+
+        RuleManager.Ability_Activated ActivatedAbility = new RuleManager.Ability_Activated();
+        RuleManager.Effect_DealDamage DamageEffect = new RuleManager.Effect_DealDamage();
+        DamageEffect.Damage = 50;
+        DamageEffect.Targets = new RuleManager.TargetRetriever_Index(0);
+
+        ActivatedAbility.Speed = RuleManager.SpellSpeed.Speed2;
+        ActivatedAbility.ActivatedEffect = DamageEffect;
+        ActivatedAbility.ActivationTargets = new RuleManager.TargetInfo_List(
+            new RuleManager.TargetCondition_And(
+                new RuleManager.TargetCondition_Range(8),
+                new RuleManager.TargetCondition_Type(RuleManager.TargetType.Unit),
+                new RuleManager.TargetCondition_Enemy()));
+
+        ActivatedAbility.SetDescription("Target a enemy unit within 8 tiles: Deal 50 damage to it");
+        ActivatedAbility.SetFlavour("Templars be smighting");
+        ActivatedAbility.SetName("Smite");
+
+        ReturnValue.Abilities.Add(ActivatedAbility);
+
         return (ReturnValue);
     }
     public static RuleManager.UnitInfo GetPriest()

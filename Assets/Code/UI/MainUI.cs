@@ -658,7 +658,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 unitToCreate.TopLeftCorner.X = (gridManager.Width-1)-unitToCreate.TopLeftCorner.X;
             }
-            unitToCreate.Position.Add(new Coordinate(unitToCreate.TopLeftCorner));
+            //unitToCreate.Position.Add(new Coordinate(unitToCreate.TopLeftCorner));
 
 
             int unitInt = ruleManager.RegisterUnit(unitToCreate, PlayerIndex);
@@ -684,7 +684,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
             }
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.TopLeftCorner.X,unitToCreate.TopLeftCorner.Y));
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.TopLeftCorner.X,unitToCreate.TopLeftCorner .Y));
         }
         UnitOpaqueID = CurrentUnitOpaqueID;
     }
