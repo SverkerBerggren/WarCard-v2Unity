@@ -720,6 +720,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1,GlobalNetworkState.PlayerFactionIndex[1]);
 
 
+        foreach(RuleManager.Coordinate Coord in new Coordinate[] {
+            new Coordinate(20,10),
+            new Coordinate(20,9),
+            new Coordinate(20,8),
+            new Coordinate(21,10),
+            new Coordinate(21,9),
+            new Coordinate(21,8),
+        })
+        {
+            ruleManager.GetTileInfo(Coord.X, Coord.Y).Flags |= RuleManager.TileFlags.Impassable;
+        }
+
         foreach(RuleManager.Coordinate cord in listOfObjectives)
         {
             ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective = true;

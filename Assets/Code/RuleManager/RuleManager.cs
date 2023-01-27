@@ -948,10 +948,19 @@ namespace RuleManager
 
         }
     }
+    public enum TileFlags
+    {
+        Null = 0,
+        Impassable = 1<<1,
+        Obscuring = 1<<2,
+        LightCover = 1<<3,
+        Breachable = 1<<4
+    }
     public class TileInfo
     {
         public int StandingUnitID = 0;
         public bool HasObjective = false;
+        public TileFlags Flags = TileFlags.Null;
         public TileInfo()
         {
 
@@ -2304,9 +2313,19 @@ namespace RuleManager
         }
         int p_CalculateTileDistance(List<Coordinate> SourceTiles,List<Coordinate> TargetTiles)
         {
-            int ReturnValue = 0;
+            int ReturnValue = -1;
             //O(n^2) implementation where n is the amount of tiles, inefficient, but the most generic
-
+            foreach(Coordinate SourceCoord in SourceTiles)
+            {
+                foreach(Coordinate TargetCoord in TargetTiles)
+                {
+                    int NewDistance = Coordinate.Distance(SourceCoord, TargetCoord);
+                    if (ReturnValue == -1 || NewDistance < ReturnValue)
+                    {
+                        ReturnValue = NewDistance;
+                    }
+                }
+            }
             return (ReturnValue);
         }
         int p_CalculateUnitDistance(UnitInfo FirstUnit,UnitInfo SecondUnit)
@@ -2549,7 +2568,8 @@ namespace RuleManager
                         ValidPosition = false;
                         break;
                     }
-                    if ((m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != 0 && m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != UnitID) || m_Tiles[NewCoord.Y][NewCoord.X].HasObjective)
+                    if ((m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != 0 && m_Tiles[NewCoord.Y][NewCoord.X].StandingUnitID != UnitID) || m_Tiles[NewCoord.Y][NewCoord.X].HasObjective
+                        || (m_Tiles[NewCoord.Y][NewCoord.X].Flags & TileFlags.Impassable) != 0)
                     {
                         ValidPosition = false;
                         break;
@@ -2634,11 +2654,201 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+        bool p_CoordInField(Coordinate Coord)
+        {
+            bool ReturnValue = true;
+            if ((Coord.X < 0 || Coord.X >= m_Tiles[0].Count) || (Coord.Y < 0 || Coord.Y >= m_Tiles.Count))
+            {
+                ReturnValue = false;
+            }
+            return (ReturnValue);
+        }
+
+        class LinEqSolution
+        {
+            public double X = 0;
+            public double Y = 0;
+        }
+        class LinEq
+        {
+            public double X = 0;
+            public double Y = 0;
+            public double C = 0;
+
+            public LinEq()
+            {
+
+            }
+            public LinEq(double NewX,double NewY,double NewC)
+            {
+                X = NewX;
+                Y = NewY;
+                C = NewC;
+            }
+            public LinEq(LinEq OtherEq)
+            {
+                X = OtherEq.X;
+                Y = OtherEq.Y;
+                C = OtherEq.C;
+            }
+            public bool Solve(LinEq OtherEq,out LinEqSolution Solution)
+            {
+                bool ReturnValue = true;
+                LinEqSolution Result = new LinEqSolution();
+                double SolX = 0;
+                double SolY = 0;
+                double SolC = 0;
+                LinEq XPivot = null;
+                LinEq YPivot = null;
+                //cannot be infinite solutions, only paralell
+                if(X == 0)
+                {
+                    if(OtherEq.X == 0)
+                    {
+                        Solution = Result;
+                        return (false);
+                    }
+                    XPivot = new LinEq(OtherEq);
+                    YPivot = new LinEq(this);
+                }
+                else
+                {
+                    if(X == 0)
+                    {
+                        Solution = Result;
+                        return (false);
+                    }
+                    XPivot = new LinEq(this);
+                    YPivot = new LinEq(OtherEq);
+                }
+                YPivot.Y -= (YPivot.X / XPivot.X) * XPivot.Y;
+                YPivot.C -= (YPivot.X / XPivot.X) * XPivot.C;
+                if(YPivot.Y == 0)
+                {
+                    //can only exist parallell, never the same, lines
+                    Solution = Result;
+                    return (false);
+                }
+                XPivot.C -= (XPivot.Y / YPivot.Y)*YPivot.C;
+                XPivot.C /= XPivot.X;
+                YPivot.C /= YPivot.Y;
+                Result.X = XPivot.C;
+                Result.Y = YPivot.C;
+                Solution = Result;
+                return (ReturnValue);
+            }
+        }
+        bool p_HasLineOfSight(List<Coordinate> SourceTiles,List<Coordinate> BlockingTiles,Coordinate TargeTile)
+        {
+            bool ReturnValue = false;
+            foreach(Coordinate SourceTile in SourceTiles)
+            {
+                Coordinate DiffVector = TargeTile - SourceTile;
+                LinEq TargetLine = new LinEq();
+                if(DiffVector.Y != 0)
+                {
+                    TargetLine.Y = ((double)DiffVector.X) / DiffVector.Y;
+                    TargetLine.C = -(TargeTile.X - (TargetLine.Y * TargeTile.Y));
+                    TargetLine.X = -1;
+                }
+                else if(DiffVector.X != 0)
+                {
+                    TargetLine.X = ((double)DiffVector.Y) / DiffVector.X;
+                    TargetLine.C = -(TargeTile.Y - (TargetLine.X * TargeTile.X));
+                    TargetLine.Y = -1;
+                }
+                //always have line of sight to itself
+                else
+                {
+                    return (true);
+                }
+                bool Intersects = false;
+                foreach (Coordinate BlockingTile in BlockingTiles)
+                {
+                    //slightly complicated method to determine of square intersects
+                    float MaxHeight = BlockingTile.Y + 0.5f;
+                    float MinHeight = BlockingTile.Y - 0.5f;
+                    float MinX = BlockingTile.X - 0.5f;
+                    float MaxX = BlockingTile.X + 0.5f;
+                    //iterate through every possible eq
+                    foreach (LinEq Eq in new LinEq[] { new LinEq(1, 0, MinX), new LinEq(1, 0, MaxX), new LinEq(0, 1, MinHeight), new LinEq(0, 1, MaxHeight) }) 
+                    {
+                        LinEqSolution Solution = new LinEqSolution();
+                        if(Eq.Solve(TargetLine,out Solution))
+                        {
+                            LinEq SolutionDir = new LinEq();
+                            SolutionDir.X = Solution.X - SourceTile.X;
+                            SolutionDir.Y = Solution.Y - SourceTile.Y;
+                            if(Math.Sign(SolutionDir.X) != Math.Sign(DiffVector.X) || Math.Sign(SolutionDir.Y) != Math.Sign(DiffVector.Y))
+                            {
+                                continue;
+                            }
+                            if((Solution.X >= MinX && Solution.X <= MaxX) && (Solution.Y >= MinHeight && Solution.Y <= MaxHeight))
+                            {
+                                Intersects = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(Intersects)
+                    {
+                        break;
+                    }
+                }
+                if(!Intersects)
+                {
+                    ReturnValue = true;
+                    break;
+                }
+            }
+            return (ReturnValue);
+        }
         public List<Coordinate> PossibleAttacks(int UnitID)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
             UnitInfo AttackingUnit = p_GetProcessedUnitInfo(UnitID);
-            ReturnValue = p_GetTiles(AttackingUnit.Stats.Range,p_GetAbsolutePositions(AttackingUnit.TopLeftCorner,AttackingUnit.UnitTileOffsets));
+            List<Coordinate> BlockingTiles = new List<Coordinate>();
+            HashSet<Coordinate> VisitedTiles = new HashSet<Coordinate>();
+            List<Coordinate> SourceTiles = p_GetAbsolutePositions(AttackingUnit.TopLeftCorner, AttackingUnit.UnitTileOffsets);
+            Queue<Coordinate> TilesToExamine = new Queue<Coordinate>(SourceTiles);
+            VisitedTiles.UnionWith(TilesToExamine);
+            while (TilesToExamine.Count > 0)
+            {
+                Coordinate CurrentCoord = TilesToExamine.Dequeue();
+                TileInfo CurrentTile = m_Tiles[CurrentCoord.Y][CurrentCoord.X];
+                if((CurrentTile.Flags & TileFlags.Impassable) != 0)
+                {
+                    BlockingTiles.Add(CurrentCoord);
+                }
+                else
+                {
+                    //check of passable
+                    if(p_HasLineOfSight(SourceTiles,BlockingTiles,CurrentCoord))
+                    {
+                        ReturnValue.Add(CurrentCoord);
+                        foreach(Coordinate Offset in new Coordinate[] {new Coordinate(1,0), new Coordinate(-1, 0), new Coordinate(0, 1), new Coordinate(0, -1) })
+                        {
+                            Coordinate NewCoord = Offset+CurrentCoord;
+                            if(VisitedTiles.Contains(NewCoord))
+                            {
+                                continue;
+                            }
+                            if (!p_CoordInField(NewCoord))
+                            {
+                                continue;
+                            }
+                            int CoordDistance = p_CalculateTileDistance(SourceTiles, new List<Coordinate>(new[] { NewCoord }));
+                            if(CoordDistance > AttackingUnit.Stats.Range)
+                            {
+                                continue;
+                            }
+                            VisitedTiles.Add(NewCoord);
+                            TilesToExamine.Enqueue(NewCoord);
+                        }
+                    }
+                }
+            }
+            //ReturnValue = p_GetTiles(AttackingUnit.Stats.Range,p_GetAbsolutePositions(AttackingUnit.TopLeftCorner,AttackingUnit.UnitTileOffsets));
             return (ReturnValue);
         }
 
