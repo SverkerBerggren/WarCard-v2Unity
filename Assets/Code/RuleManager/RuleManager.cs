@@ -766,6 +766,7 @@ namespace RuleManager
         UnitEffect,
         Stratagem,
         Pass,
+        Rotate
     }
     [Serializable]
     public class Action  : MBJson.JSONDeserializeable,MBJson.JSONTypeConverter
@@ -819,6 +820,14 @@ namespace RuleManager
         public int UnitID = 0;
         //always assumes that the position moved is the top left corner
         public Coordinate NewPosition;
+    }
+    [Serializable]
+    public class RotateAction : Action
+    {
+        public RotateAction() : base(ActionType.Rotate) { }
+        public int UnitID = 0;
+        //always assumes that the position moved is the top left corner
+        public Coordinate NewRotation = new Coordinate(1,0);
     }
     [Serializable]
     public class AttackAction : Action
@@ -924,6 +933,71 @@ namespace RuleManager
         {
 
         }
+        int p_GetRotCount(Coordinate Rotation)
+        {
+            int ReturnValue = 0;
+            if(Rotation.X == 1)
+            {
+                ReturnValue = 0;
+            }
+            else if(Rotation.X == -1)
+            {
+                ReturnValue = 2;
+            }
+            else if(Rotation.Y == 1)
+            {
+                ReturnValue = 1;
+            }
+            else if(Rotation.Y == -1)
+            {
+                ReturnValue = 3;
+            }
+            return (ReturnValue);
+        }
+        int[,] p_GetRotationMatrix(int RotCount)
+        {
+            int[,] RotMatrix = new int[2, 2] { { 0, 1 }, { -1, 0 } };
+            int[,] ReturnValue = new int[2, 2] { { 0, 1 }, { -1, 0 } };
+            if(RotCount == 0)
+            {
+                return (new int[,] { { 1, 0 }, { 0, 1 } });
+            }
+            for(int i = 0; i < RotCount-1;i++)
+            {
+                int[,] NewReturnValue =(int[,]) ReturnValue.Clone();
+                NewReturnValue[0,0] = ReturnValue[0,0]*RotMatrix[0,0]+ReturnValue[0,1]*RotMatrix[1,0];
+                NewReturnValue[0,1] = ReturnValue[0,0]*RotMatrix[0,1]+ReturnValue[0,1]*RotMatrix[1,1];
+                NewReturnValue[1,0] = ReturnValue[1,0]*RotMatrix[0,0]+ReturnValue[1,1]*RotMatrix[1,0];
+                NewReturnValue[1,1] = ReturnValue[1,0]*RotMatrix[0,1]+ReturnValue[1,1]*RotMatrix[1,1];
+                ReturnValue = NewReturnValue;
+            }
+            return (ReturnValue);
+        }
+        public List<Coordinate> GetRotatedOffsets(Coordinate NewDirection)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            if((!(NewDirection.X == 1 || NewDirection.X == -1 || NewDirection.X == 0)) || !(NewDirection.Y == 1 || NewDirection.Y == -1 || NewDirection.Y == 0))
+            {
+                throw new Exception("Invalid rotation, X,Y must be 1 or -1: "+NewDirection.X + " "+NewDirection.Y);
+            }
+            int CurrentRotCount= p_GetRotCount(Direction);
+            int TargetCount = p_GetRotCount(NewDirection);
+            int RotCount = TargetCount - CurrentRotCount;
+            if(RotCount < 0)
+            {
+                RotCount += 4;
+            }
+            //ghetto ass manual matrix rotation
+            int[,] RotMatrix = p_GetRotationMatrix(RotCount);
+            foreach (Coordinate Offset in UnitTileOffsets)
+            {
+                Coordinate NewCoord = new Coordinate();
+                NewCoord.X = RotMatrix[0, 0] * Offset.X + RotMatrix[0, 1] * Offset.Y;
+                NewCoord.Y = RotMatrix[1, 0] * Offset.X + RotMatrix[1, 1] * Offset.Y;
+                ReturnValue.Add(NewCoord);
+            }
+            return (ReturnValue);
+        }
         public UnitInfo(UnitInfo InfoToCopy)
         {
             UnitID = InfoToCopy.UnitID;
@@ -976,6 +1050,7 @@ namespace RuleManager
         void OnStackPush(StackEntity NewEntity);
         void OnStackPop(StackEntity PoppedEntity);
         void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition);
+        void OnUnitRotation(int UnitID, Coordinate NewDirection);
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
@@ -1236,6 +1311,7 @@ namespace RuleManager
         }
 
         //NOTE this function doesnt provide any checks, just move it as specified
+
         bool p_MoveUnit(int UnitID, Coordinate TilePosition)
         {
             bool ReturnValue = true;
@@ -1257,7 +1333,27 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
-
+        void p_RotateUnit(int UnitID,Coordinate NewRotation)
+        {
+            UnitInfo AssociatedInfo = m_UnitInfos[UnitID];
+            List<Coordinate> NewCoords = AssociatedInfo.GetRotatedOffsets(NewRotation);
+            foreach(Coordinate Offset in AssociatedInfo.UnitTileOffsets)
+            {
+                Coordinate CurrentCoord = Offset + AssociatedInfo.TopLeftCorner;
+                m_Tiles[CurrentCoord.Y][CurrentCoord.X].StandingUnitID = 0;
+            }
+            foreach(Coordinate Offset in NewCoords)
+            {
+                Coordinate CurrentCoord = Offset + AssociatedInfo.TopLeftCorner;
+                m_Tiles[CurrentCoord.Y][CurrentCoord.X].StandingUnitID = UnitID;
+            }
+            AssociatedInfo.Direction = NewRotation;
+            AssociatedInfo.UnitTileOffsets = NewCoords;
+            if(m_EventHandler != null)
+            {
+                m_EventHandler.OnUnitRotation(UnitID, NewRotation);
+            }
+        }
         IEnumerator p_RetrieveTargets(List<Target> Targets,EffectSource Source,TargetRetriever Retriever)
         {
             if(Retriever is TargetRetriever_Index)
@@ -2188,6 +2284,25 @@ namespace RuleManager
                 UnitToMove.Flags |= UnitFlags.HasMoved;
                 p_PassPriority();
             }
+            else if (ActionToExecute is RotateAction)
+            {
+                RotateAction RotationToExecute = (RotateAction)ActionToExecute;
+                UnitInfo UnitToMove = m_UnitInfos[RotationToExecute.UnitID];
+                Coordinate OldPosition = UnitToMove.TopLeftCorner;
+                //Bounds alreay checked
+                p_RotateUnit(RotationToExecute.UnitID, RotationToExecute.NewRotation);
+                if ((UnitToMove.Flags & UnitFlags.IsActivated) == 0)
+                {
+                    UnitToMove.Flags |= UnitFlags.IsActivated;
+                    m_PlayerIntitiative[UnitToMove.PlayerIndex] -= UnitToMove.Stats.ActivationCost;
+                    if (m_EventHandler != null)
+                    {
+                        m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[UnitToMove.PlayerIndex], UnitToMove.PlayerIndex);
+                    }
+                }
+                UnitToMove.Flags |= UnitFlags.HasMoved;
+                p_PassPriority();
+            }
             else if(ActionToExecute is AttackAction)
             {
                 AttackAction AttackToExecute = (AttackAction)ActionToExecute;
@@ -2400,6 +2515,39 @@ namespace RuleManager
                     return (ReturnValue);
                 }
 
+            }
+            else if(ActionToCheck is RotateAction)
+            {
+                RotateAction RotationToCheck = (RotateAction)ActionToCheck;
+                if (RotationToCheck.PlayerIndex != m_CurrentPlayerTurn)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only move on your own turn";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if (!m_UnitInfos.ContainsKey(RotationToCheck.UnitID))
+                {
+                    ReturnValue = false;
+                    ErrorString = "Invalid unit id";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(RotationToCheck.UnitID); //m_UnitInfos[MoveToCheck.UnitID];
+                if ((AssociatedUnit.Flags & UnitFlags.HasMoved) != 0)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only move unit once per activation";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if ((AssociatedUnit.Flags & UnitFlags.IsActivated) == 0 && AssociatedUnit.Stats.ActivationCost > m_PlayerIntitiative[RotationToCheck.PlayerIndex])
+                {
+                    ReturnValue = false;
+                    ErrorString = "Not enough initiative to activate unit";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
             }
             else if(ActionToCheck is AttackAction)
             {

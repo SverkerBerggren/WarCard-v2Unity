@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-
-public class MoveButtonClick : MonoBehaviour
+public class RotateComponent : MonoBehaviour
 {
-    public KeyCode keyCodeToClick; 
-
+    public MainUI mainUI;
     private Button button;
-
-    private ClickHandlerUnitSelect unitSelectClickHandler; 
+    public KeyCode keyCodeToClick;
+    private ClickHandlerUnitSelect unitSelectClickHandler;
     // Start is called before the first frame update
     void Start()
     {
         button = gameObject.GetComponent<Button>();
+        mainUI = GameObject.Find("UI").GetComponent<MainUI>();
         ClickHandlerUnitSelect clickhandlers = FindObjectOfType<ClickHandlerUnitSelect>();
         unitSelectClickHandler = clickhandlers;
         //    GetComponent<Button>().
@@ -23,21 +22,22 @@ public class MoveButtonClick : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(keyCodeToClick))
+        if (Input.GetKeyDown(keyCodeToClick))
         {
 
             FadeToColor(button.colors.pressedColor);
 
             button.onClick.Invoke();
         }
-        else if(Input.GetKeyUp(keyCodeToClick))
+        else if (Input.GetKeyUp(keyCodeToClick))
         {
 
             FadeToColor(button.colors.normalColor);
 
-          //  button.onClick.Invoke();
+            //  button.onClick.Invoke();
         }
     }
+
 
     private void FadeToColor(Color color)
     {
@@ -45,8 +45,8 @@ public class MoveButtonClick : MonoBehaviour
         graphic.CrossFadeColor(color, gameObject.GetComponent<Button>().colors.fadeDuration, true, true);
     }
 
-    public void moveButtonClick()
+    public void RotateButtonClick()
     {
-        unitSelectClickHandler.ActivateMovementSelection();
+        unitSelectClickHandler.ActivateRotateAction();
     }
 }

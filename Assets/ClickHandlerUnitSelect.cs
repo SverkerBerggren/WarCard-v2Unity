@@ -18,6 +18,7 @@ public class ClickHandlerUnitSelect : ClickHandler
     private bool abilityActionSelected = false;
     private bool AttackActionSelected = false;
     private bool moveActionSelected = false;
+    private bool m_RotateActionSelected = false;
 
     public GameObject MovementRange;
     public GameObject attackRange;
@@ -55,6 +56,35 @@ public class ClickHandlerUnitSelect : ClickHandler
         {
             resetSelection();
         }
+        else if(m_RotateActionSelected)
+        {
+
+            if(Input.GetKeyDown(KeyCode.D))
+            {
+                m_CurrentRotation = new Coordinate(1, 0);
+                p_CreateRotationObjects(selectedUnit.UnitID,m_CurrentRotation);
+            }
+            else if (Input.GetKeyDown(KeyCode.A))
+            {
+                m_CurrentRotation = new Coordinate(-1, 0);
+                p_CreateRotationObjects(selectedUnit.UnitID, m_CurrentRotation);
+            }
+            else if (Input.GetKeyDown(KeyCode.S))
+            {
+                m_CurrentRotation = new Coordinate(0,-1);
+                p_CreateRotationObjects(selectedUnit.UnitID, m_CurrentRotation);
+            }
+            else if (Input.GetKeyDown(KeyCode.W))
+            {
+                m_CurrentRotation = new Coordinate(0, 1);
+                p_CreateRotationObjects(selectedUnit.UnitID, m_CurrentRotation);
+            }
+            else if(Input.GetKeyDown(KeyCode.Return))
+            {
+                p_CommitRotation();
+            }
+        }
+        
     }
     public override void OnClick(ClickType clickType, Coordinate cord)
     {
@@ -63,14 +93,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             ClickHandlerAbility.OnClick(clickType, cord);
             return; 
         }
-
-        
-
-        //Queue<RuleManager.Action> ExecutedActions = mainUi.ExecutedActions;
-
         canvasUIScript = mainUi.canvasUIScript;
-
-
         if (moveActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority())
         {
             print("kommer den hitr");
@@ -93,13 +116,10 @@ public class ClickHandlerUnitSelect : ClickHandler
         if (AttackActionSelected && selectedUnit.PlayerIndex == ruleManager.getPlayerPriority() && ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
         {
             RuleManager.AttackAction attackAction = new RuleManager.AttackAction();
-
             attackAction.AttackerID = selectedUnit.UnitID;
             attackAction.DefenderID = ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID;
             attackAction.PlayerIndex = ruleManager.getPlayerPriority();
             string attackInfo;
-
-
 
             if (ruleManager.ActionIsValid(attackAction, out attackInfo))
             {
@@ -109,12 +129,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             {
                 canvasUIScript.errorMessage(attackInfo);
             }
-
-           
         }
-
-
-
 
         if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0 && !AttackActionSelected)
         {
@@ -125,43 +140,17 @@ public class ClickHandlerUnitSelect : ClickHandler
             Unit UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
             if(UIInfo.SelectSound != null)
             {
-                //UnityEngine.Audio.audios(UIInfo.SelectSound, FindObjectOfType<Camera>().transform.position);
                 GetComponent<AudioSource>().PlayOneShot(UIInfo.SelectSound);
             }
-       //     selectedUnit = unitInfo;
-            
-        //    if (selectedUnit != null)
-        //    {
-        //        if (!abilitySelectionActive && unitInfo.UnitID != selectedUnit.UnitID)
-        //        {
-        //            foreach (GameObject obj in buttonDestroyList)
-        //            {
-        //                obj.SetActive(false);
-        //            }
-        //        }
-        //    }
-
             resetSelection();
-
-            
-
             canvasUIScript.createUnitCard(selectedUnit, mainUi.m_OpaqueToUIInfo);
-
             ConstructMovementRange(selectedUnit);
         }
         else
         {
-        //    selectedUnit = null;
-        //    unitCard.SetActive(false);
-        //    unitActions.SetActive(false);
-        //    canvasUIScript.DestroyButtons();
-        //
-
             resetSelection();
             mainUi.DeactivateClickHandler();
-
         }
-
     }
 
     public override void Deactivate()
@@ -188,7 +177,6 @@ public class ClickHandlerUnitSelect : ClickHandler
     }
     public  void resetSelection()
     {   
-
         if(abilityActionSelected)
         {
             abilityActionSelected = false;
@@ -210,23 +198,15 @@ public class ClickHandlerUnitSelect : ClickHandler
             return;
         }
 
-
         if(!abilityActionSelected)
         {
             canvasUIScript.DisableUnitCard();
         }
+        p_DestroySubElements();
         DestroyMovementRange();
         DestroyAttackRange();
 
         DeactivateAbilityClickHandler();
- 
-        print("deaktiveras den nagon going");
-        moveActionSelected = false;
-        AttackActionSelected = false;
-        abilityActionSelected = false;
-
-
-
     }
     private void DestroyButtons()
     {
@@ -377,32 +357,87 @@ public class ClickHandlerUnitSelect : ClickHandler
             }
         }
     }
-
-    public void ActivateAttackSelection()
+    public Color RotationColor;
+    public Color InvalidRotationColor;
+    List<GameObject> m_RotationObjects = new List<GameObject>();
+    Coordinate m_CurrentRotation = null;
+    private void p_CreateRotationObjects(int UnitID,Coordinate Rotation)
     {
-        moveActionSelected = false;
-        abilityActionSelected = false;
-        AttackActionSelected = true;
+        foreach(GameObject Object in m_RotationObjects)
+        {
+            Destroy(Object);
+        }
+        m_RotationObjects.Clear();
+        UnitInfo RotatedUnit = mainUi.ruleManager.GetUnitInfo(UnitID);
+        m_CurrentRotation = Rotation;
+        print("Rotation X: " + m_CurrentRotation.X + " Y: " + m_CurrentRotation.Y);
+        foreach (Coordinate Coord in RotatedUnit.GetRotatedOffsets(m_CurrentRotation))
+        {
+            GameObject newObject = Instantiate(attackRange);
+            RuleManager.Coordinate tempCord = Coord+RotatedUnit.TopLeftCorner;
+            newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
+            newObject.GetComponent<SpriteRenderer>().color = RotationColor;
+            newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
+            m_RotationObjects.Add(newObject);
+        }
+    }
+    private void p_DeactivateRotationObjects()
+    {
+        foreach(GameObject Object in m_RotationObjects)
+        {
+            Destroy(Object);
+        }
+        m_RotationObjects.Clear();
+    }
+    void p_DestroySubElements()
+    {
         DestroyMovementRange();
         ClickHandlerAbility.DestroyAbilityRangeIndicator();
+        DestroyAttackRange();
+        p_DeactivateRotationObjects();
+        moveActionSelected = false;
+        abilityActionSelected = false;
+        AttackActionSelected = false;
+        m_RotateActionSelected = false;
+    }
+    void p_CommitRotation()
+    {
+        string Error;
+        RotateAction ActionToExecute = new RotateAction();
+        ActionToExecute.PlayerIndex = selectedUnit.PlayerIndex;
+        ActionToExecute.UnitID = selectedUnit.UnitID;
+        ActionToExecute.NewRotation = m_CurrentRotation;
+        if(!mainUi.ruleManager.ActionIsValid(ActionToExecute,out Error))
+        {
+            canvasUIScript.errorMessage(Error);
+            resetSelection();
+            return;
+        }
+        mainUi.ruleManager.ExecuteAction(ActionToExecute);
+        resetSelection();
+    }
+    public void ActivateAttackSelection()
+    {
+        p_DestroySubElements();
+        AttackActionSelected = true;
         ConstructAttackRange(selectedUnit);
     }
     public void ActivateMovementSelection()
     {
+        p_DestroySubElements();
         moveActionSelected = true;
-        abilityActionSelected = false;
-        AttackActionSelected = false;
-        DestroyAttackRange();
-        ClickHandlerAbility.DestroyAbilityRangeIndicator();
         ConstructMovementRange(selectedUnit);
+    }
+    public void ActivateRotateAction()
+    {
+        p_DestroySubElements();
+        m_RotateActionSelected = true;
+        p_CreateRotationObjects(selectedUnit.UnitID,selectedUnit.Direction);
     }
     public void ActivateAbilitySelection()
     {
-        moveActionSelected = false;
+        p_DestroySubElements();
         abilityActionSelected = true;
-        AttackActionSelected = false;
-        DestroyAttackRange();
-        DestroyMovementRange();
         ClickHandlerAbility.ShowAbilityRangeIndicators(selectedUnit.UnitID, ClickHandlerAbility.selectedAbilityIndex, new List<RuleManager.Target>());
     }
 }

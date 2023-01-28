@@ -16,6 +16,8 @@ public class attackButton : MonoBehaviour
     {
         button = gameObject.GetComponent<Button>();
         mainUI = GameObject.Find("UI").GetComponent<MainUI>();
+        ClickHandlerUnitSelect clickhandlers = FindObjectOfType<ClickHandlerUnitSelect>();
+        unitSelectClickHandler = clickhandlers;
         //    GetComponent<Button>().
     }
 
@@ -47,17 +49,6 @@ public class attackButton : MonoBehaviour
 
     public void attackButtonClick()
     {
-        ClickHandlerUnitSelect[] clickhandlers = FindObjectsOfType<ClickHandlerUnitSelect>();
-
-        print(clickhandlers.Length);
-
-        unitSelectClickHandler = clickhandlers[0];
-        //print("hej");
-        mainUI.MoveActionSelected = false;
-
-        mainUI.AttackActionSelected = true;
-
-
         unitSelectClickHandler.ActivateAttackSelection();
     }
 }

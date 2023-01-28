@@ -36,10 +36,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
 
-    public bool MoveActionSelected = false;
-
-    public bool AttackActionSelected = false;
-
     public int m_playerid = 0; 
 
     public Queue<RuleManager.Action> ExecutedActions = new Queue<RuleManager.Action>();
@@ -217,10 +213,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             }
         }
     }
-
-    public void OnUnitMove(int UnitID, List<RuleManager.Coordinate> PreviousPosition, List<RuleManager.Coordinate> NewPosition)
+    public void OnUnitRotation(int UnitID, RuleManager.Coordinate NewRotation)
     {
-
+        UnitInfo MovedUnit = ruleManager.GetUnitInfo(UnitID);
+        for (int i = 0; i < MovedUnit.UnitTileOffsets.Count; i++)
+        {
+            Coordinate TilePos = MovedUnit.TopLeftCorner + MovedUnit.UnitTileOffsets[i];
+            listOfActivationIndicators[UnitID][i].transform.position = gridManager.GetTilePosition(TilePos);
+        }
     }
     public void OnUnitMove(int UnitID, RuleManager.Coordinate PreviousPosition, RuleManager.Coordinate NewPosition)
     {

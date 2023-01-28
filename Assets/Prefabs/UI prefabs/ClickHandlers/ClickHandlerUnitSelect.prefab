@@ -53,8 +53,14 @@ MonoBehaviour:
     PlayerIndex: 0
     OpaqueInteger: -1
     AbilityActivated: 
-    Position:
+    Direction:
+      X: 1
+      Y: 0
+    TopLeftCorner:
       X: 0
+      Y: 0
+    UnitTileOffsets:
+    - X: 0
       Y: 0
     Flags: 0
   MovementRange: {fileID: 3963050006536340265, guid: c3f34dff8d6f2a34881e643f935d0000,
@@ -63,6 +69,8 @@ MonoBehaviour:
     type: 3}
   ClickHandlerAbilityPrefab: {fileID: 5644499052553384210, guid: 050b0fa9a8bd4cf4fbeb2d83f340467e,
     type: 3}
+  RotationColor: {r: 1, g: 0, b: 0, a: 1}
+  InvalidRotationColor: {r: 1, g: 0, b: 0.93442965, a: 1}
 --- !u!82 &6317709519397557289
 AudioSource:
   m_ObjectHideFlags: 0
