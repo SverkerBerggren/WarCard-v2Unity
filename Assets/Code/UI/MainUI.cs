@@ -26,7 +26,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public GameObject activationIndicatorPrefab;
 
-    private Dictionary<int, UnitSprites> listOfImages = new Dictionary<int, UnitSprites>();
+    private Dictionary<string, UnitSceneUIInfo> m_UnitTypeUIInfo = new Dictionary<string, UnitSceneUIInfo>();
+
+    private Dictionary<int, UnitSceneInfo> listOfImages = new Dictionary<int, UnitSceneInfo>();
 
     private Dictionary<int, List<GameObject>> listOfActivationIndicators = new Dictionary<int, List<GameObject>>();
 
@@ -228,7 +230,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         GetComponent<AudioSource>().PlayOneShot(PlaceUnitSound);
         GameObject visualObject = listOfImages[UnitID].objectInScene;
         SpriteRenderer spriteRenderer = visualObject.GetComponent<SpriteRenderer>();
-        UnitSprites unitSprites = listOfImages[UnitID];
+        ResourceManager.UnitResource unitSprites = listOfImages[UnitID].Resource;
 
         spriteRenderer.sortingOrder = p_GetSortingOrder(PreviousPosition);
 
@@ -240,13 +242,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             if(xChange > 0)
             {
-                spriteRenderer.sprite = unitSprites.sidewaySprite;
                 spriteRenderer.flipX = false;
                 
             }
             else
             {
-                spriteRenderer.sprite = unitSprites.sidewaySprite;
                 spriteRenderer.flipX = true;
             }
         }
@@ -255,13 +255,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             if (yChange > 0)
             {
-                spriteRenderer.sprite = unitSprites.backwardSprite;
-            
+                spriteRenderer.sprite = m_UnitTypeUIInfo[unitSprites.Name].UpSprite;
             }
             else
             {
-                spriteRenderer.sprite = unitSprites.forwardSprite;
-                
+                spriteRenderer.sprite = m_UnitTypeUIInfo[unitSprites.Name].DownSprite;
+                //spriteRenderer.sprite = unitSprites.forwardSprite;
             }
         }
         bool xChangeIsBigEnough = Mathf.Abs(xChange) > 3;
@@ -272,28 +271,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             if (xChange > 0)
             {
-                spriteRenderer.sprite = unitSprites.sidewaySprite;
                 spriteRenderer.flipX = false;
             }
             else
             {
-                spriteRenderer.sprite = unitSprites.sidewaySprite;
                 spriteRenderer.flipX = true;
             }
         }
-        else if(yChangeIsBigEnough)
-        {
-            if (yChange > 0)
-            {
-                spriteRenderer.sprite = unitSprites.backwardSprite;
-
-            }
-            else
-            {
-                spriteRenderer.sprite = unitSprites.forwardSprite;
-
-            }
-        }
+        //else if(yChangeIsBigEnough)
+        //{
+        //    if (yChange > 0)
+        //    {
+        //        spriteRenderer.sprite = unitSprites.backwardSprite;
+        //
+        //    }
+        //    else
+        //    {
+        //        spriteRenderer.sprite = unitSprites.forwardSprite;
+        //
+        //    }
+        //}
         UnitInfo MovedUnit = ruleManager.GetUnitInfo(UnitID);
         visualObject.transform.position  = gridManager.GetTilePosition(NewPosition);
         for(int i = 0; i < MovedUnit.UnitTileOffsets.Count;i++)
@@ -661,7 +658,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         foreach (UnitInArmy unitFromList in ArmyToInstantiate)
         {
         
-            RuleManager.UnitInfo unitToCreate = unitFromList.unit.CreateUnitInfo();
+            ResourceManager.UnitResource unitToCreate = unitFromList.unit.CreateUnitInfo();
         
             if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
             {
@@ -669,28 +666,31 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
                 CurrentUnitOpaqueID += 1;
             }
-            unitToCreate.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
+            unitToCreate.GameInfo.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
         
         
-            unitToCreate.TopLeftCorner = unitFromList.cord;
+            unitToCreate.GameInfo.TopLeftCorner = unitFromList.cord;
             if(PlayerIndex == 1)
             {
-                unitToCreate.TopLeftCorner.X = (gridManager.Width-1)-unitToCreate.TopLeftCorner.X;
+                unitToCreate.GameInfo.TopLeftCorner.X = (gridManager.Width-1)- unitToCreate.GameInfo.TopLeftCorner.X;
             }
             //unitToCreate.Position.Add(new Coordinate(unitToCreate.TopLeftCorner));
 
 
-            int unitInt = ruleManager.RegisterUnit(unitToCreate, PlayerIndex);
-            UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
-        
-            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.TopLeftCorner), new Quaternion());
-        
-            unitSprites.objectInScene = unitToCreateVisualObject;
+            int unitInt = ruleManager.RegisterUnit(unitToCreate.GameInfo, PlayerIndex);
+            //UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
+
+            UnitSceneInfo SceneUnit = new UnitSceneInfo();
+            SceneUnit.Resource = unitToCreate;
+
+            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.GameInfo.TopLeftCorner), new Quaternion());
+
+            SceneUnit.objectInScene = unitToCreateVisualObject;
 
             List<GameObject> ActivationIndicators = new List<GameObject>();
-            foreach(Coordinate Offset in unitToCreate.UnitTileOffsets)
+            foreach(Coordinate Offset in unitToCreate.GameInfo.UnitTileOffsets)
             {
-                GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.TopLeftCorner+Offset), new Quaternion());
+                GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.GameInfo.TopLeftCorner+Offset), new Quaternion());
                 activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
                 activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
                 activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
@@ -700,13 +700,27 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             listOfActivationIndicators.Add(unitInt, ActivationIndicators);
         
         
-            listOfImages.Add(unitInt, unitSprites);
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
+            listOfImages.Add(unitInt, SceneUnit);
+
+            if(!m_UnitTypeUIInfo.ContainsKey(unitToCreate.Name))
+            {
+                UnitSceneUIInfo NewInfo = new UnitSceneUIInfo();
+                Texture2D Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.DownAnimation.VisualInfo).Sprite;
+                NewInfo.DownSprite = Sprite.Create(Texture,
+                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0));
+                Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.UpAnimation.VisualInfo).Sprite;
+                NewInfo.UpSprite = Sprite.Create(Texture,
+                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0));
+                m_UnitTypeUIInfo[unitToCreate.Name] = NewInfo;
+            }
+            SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();
+            spriteRenderer.sprite = m_UnitTypeUIInfo[unitToCreate.Name].UpSprite;
+            //unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
             if (PlayerIndex == 1)
             {
                 unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
             }
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.TopLeftCorner.X,unitToCreate.TopLeftCorner .Y));
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.GameInfo.TopLeftCorner.X,unitToCreate.GameInfo.TopLeftCorner .Y));
         }
         UnitOpaqueID = CurrentUnitOpaqueID;
     }
@@ -816,22 +830,34 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 }
 
-public struct UnitSprites
+class UnitSceneUIInfo
 {
-    public Sprite forwardSprite;
+    public Sprite UpSprite;
+    public Sprite DownSprite;
+}
 
-    public Sprite backwardSprite;
-
-    public Sprite sidewaySprite;
-
-    public Sprite activationIndicator;
-
+class UnitSceneInfo
+{
+    public ResourceManager.UnitResource Resource = null;
     public GameObject objectInScene;
 }
 
-
-public class UIInfo
-{
-    public Sprite WhichImage; 
-}
+//public struct UnitSprites
+//{
+//    public Sprite forwardSprite;
+//
+//    public Sprite backwardSprite;
+//
+//    public Sprite sidewaySprite;
+//
+//    public Sprite activationIndicator;
+//
+//    public GameObject objectInScene;
+//}
+//
+//
+//public class UIInfo
+//{
+//    public Sprite WhichImage; 
+//}
 

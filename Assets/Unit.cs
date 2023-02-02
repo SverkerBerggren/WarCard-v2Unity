@@ -14,17 +14,10 @@ public class Unit : MonoBehaviour
 
     }
 
-    public virtual RuleManager.UnitInfo CreateUnitInfo()
+    public virtual ResourceManager.UnitResource CreateUnitInfo()
     {
         return null;
     }
-
-    public virtual UnitSprites GetUnitSidewaySprite()
-    {
-        UnitSprites hej = new UnitSprites(); 
-        return hej;
-    }
-
      
 
     // Update is called once per frame

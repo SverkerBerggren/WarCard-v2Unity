@@ -13,20 +13,22 @@ public class OfficerScript : Unit
     {
 
     }
-    public override UnitSprites GetUnitSidewaySprite()
+    public override ResourceManager.UnitResource CreateUnitInfo()
     {
-        UnitSprites unitSpritesToReturn = new UnitSprites();
-        unitSpritesToReturn.sidewaySprite = sidewaySprite;
-        unitSpritesToReturn.forwardSprite = forwardSprite;
-        unitSpritesToReturn.backwardSprite = backWardSprite;
+        ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
+        ReturnValue.Name = "Officer";
+        ReturnValue.GameInfo = Militarium.GetOfficer();
+        ReturnValue.UIInfo = new ResourceManager.UnitUIInfo();
 
+        ReturnValue.UIInfo.UpAnimation = new ResourceManager.Animation();
+        ReturnValue.UIInfo.UpAnimation.VisualInfo = new ResourceManager.Visual_Image();
+        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.UpAnimation.VisualInfo).Sprite = backWardSprite.texture;
 
+        ReturnValue.UIInfo.DownAnimation = new ResourceManager.Animation();
+        ReturnValue.UIInfo.DownAnimation.VisualInfo = new ResourceManager.Visual_Image();
+        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.DownAnimation.VisualInfo).Sprite = forwardSprite.texture;
 
-        return unitSpritesToReturn;
-    }
-    public override RuleManager.UnitInfo CreateUnitInfo()
-    {
-        return Militarium.GetOfficer();
+        return (ReturnValue);
     }
 
     // Update is called once per frame
