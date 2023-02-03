@@ -447,7 +447,21 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
     {
+        UnitSceneUIInfo UnitInfo = m_UnitTypeUIInfo[listOfImages[AttackerID].Resource.Name];
+        GameObject SceneObject  = listOfImages[AttackerID].objectInScene;
+        ResourceManager.UnitResource Resource = listOfImages[AttackerID].Resource;
+        if(Resource.UIInfo.AttackAnimation == null)
+        {
+            return;
+        }
+        UnityEngine.Video.VideoPlayer Renderer = SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>();
+        if(Renderer == null)
+        {
+            Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
+        }
 
+        Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
+        Renderer.Play();
     }
 
     public void OnUnitDestroyed(int UnitID)
