@@ -68,7 +68,6 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
     public void AbilityButtonClick()
     {
-        mainUI.abilitySelectionStarted = true;
 
         clickHandlerAbility.selectedAbilityIndex = abilityIndex;
         clickHandlerUnitSelect.ActivateAbilitySelection();

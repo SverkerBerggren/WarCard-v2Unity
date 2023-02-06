@@ -7,8 +7,115 @@ using System;
 using System.Xml;
 using RuleManager;
 
+
+
+public interface UIAnimation
+{
+    void Initialize();
+    bool IsFinished();
+    void Increment(float DeltaTime);
+    void Finish();
+}
+
+
+
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
+    class DestroyUnitAnimation : UIAnimation
+    {
+
+    }
+    
+    class MoveCameraAnimation : UIAnimation
+    {
+        //unit vector
+        GameObject m_CameraToModify = null;
+        Vector2 m_Direction;
+        Vector2 m_TargetLocation;
+        float m_Margin = 0.05f;
+        float m_Speed = 0;
+
+        public void Increment(float DeltaTime)
+        {
+            float SpeedSize = 
+        }
+        public bool IsFinished()
+        {
+            return ((m_TargetLocation - (Vector2)m_CameraToModify.gameObject.transform.position).magnitude <= m_Margin);
+        }
+        public void Finish()
+        {
+
+        }
+        public void Initialize()
+        {
+
+        }
+
+        public MoveCameraAnimation(GameObject Camera, Vector2 TargetLocation,Vector2 CurrentLocation,float TargetDuration)
+        {
+            m_CameraToModify = Camera;
+            m_Direction = (TargetLocation - CurrentLocation).normalized;
+            m_TargetLocation = TargetLocation;
+            m_Speed = (TargetLocation - CurrentLocation).magnitude / TargetDuration;
+        }
+    }
+    class AttackAnimation : UIAnimation
+    {
+        MainUI m_AssociatedUI = null;
+
+        double m_TotalTime = 0;
+        double m_ElapsedTime = 0;
+        int m_AttackingUnit = 0;
+        int m_DefendingUnit = 0;
+        UnityEngine.Video.VideoPlayer m_AssociatedRender = null;
+        public AttackAnimation(MainUI AsssociatedUI, int AttackingUnit, int DefendingUnit)
+        {
+            m_AssociatedUI = AsssociatedUI;
+            m_AttackingUnit = AttackingUnit;
+            m_DefendingUnit = DefendingUnit;
+        }
+        public void Initialize()
+        {
+            UnitSceneUIInfo UnitInfo = m_AssociatedUI.m_UnitTypeUIInfo[m_AssociatedUI.listOfImages[m_AttackingUnit].Resource.Name];
+            GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
+            ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
+            if (Resource.UIInfo.AttackAnimation == null)
+            {
+                return;
+            }
+            UnityEngine.Video.VideoPlayer Renderer = SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>();
+            if (Renderer == null)
+            {
+                Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
+            }
+            Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
+            Renderer.Play();
+            m_AssociatedRender = Renderer;
+            m_TotalTime = Renderer.length;
+        }
+        public void Finish()
+        {
+            UnitSceneUIInfo UnitInfo = m_AssociatedUI.m_UnitTypeUIInfo[m_AssociatedUI.listOfImages[m_AttackingUnit].Resource.Name];
+            GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
+            ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
+            if (Resource.UIInfo.AttackAnimation == null)
+            {
+                return;
+            }
+            Destroy(SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>());
+        }
+        public bool IsFinished()
+        {
+            return (m_TotalTime != 0 && m_ElapsedTime >= m_TotalTime);
+        }
+        public void Increment(float DeltaTime)
+        {
+            m_TotalTime = m_AssociatedRender.length;
+            m_ElapsedTime += DeltaTime;
+        }
+    }
+    private MapCamera m_ActiveCamera = null;
     public AudioClip PlaceUnitSound = null;
     public List<GameObject> clickHandlerPrefabs = new List<GameObject>();
 
@@ -27,6 +134,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public GameObject activationIndicatorPrefab;
 
     private Dictionary<string, UnitSceneUIInfo> m_UnitTypeUIInfo = new Dictionary<string, UnitSceneUIInfo>();
+    private Queue<UIAnimation> m_ActiveAnimations = new Queue<UIAnimation>();
+
+
 
     private Dictionary<int, UnitSceneInfo> listOfImages = new Dictionary<int, UnitSceneInfo>();
 
@@ -48,7 +158,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public ClickHandler clickHandler; 
 
-    public bool abilitySelectionStarted = false;
 
 
     private List<GameObject> stackObjectsToDestroy = new List<GameObject>();
@@ -112,7 +221,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         //  initiativeText = GameObject.Find("InitiativeText").GetComponent<TextMeshProUGUI>();
         //  print(initiativeText);
-
+        m_ActiveCamera = FindObjectOfType<MapCamera>();
 
         GameState GlobalState = FindObjectOfType<GameState>();
 
@@ -156,9 +265,25 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
     // Update is called once per frame
+    int m_PreviousUICount = 0;
     void Update()
     {
    //     m_playerid = ruleManager.getPlayerPriority();
+
+        if(m_ActiveAnimations.Count != m_PreviousUICount && m_ActiveAnimations.Count > 0)
+        {
+            m_ActiveAnimations.Peek().Initialize();
+        }
+        m_PreviousUICount = m_ActiveAnimations.Count;
+        if (m_ActiveAnimations.Count > 0 && m_ActiveAnimations.Peek().IsFinished())
+        {
+            m_ActiveAnimations.Peek().Finish();
+            m_ActiveAnimations.Dequeue();
+        }
+        if (m_ActiveAnimations.Count  > 0)
+        {
+            m_ActiveAnimations.Peek().Increment(Time.deltaTime);
+        }
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
@@ -447,21 +572,22 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
     {
-        UnitSceneUIInfo UnitInfo = m_UnitTypeUIInfo[listOfImages[AttackerID].Resource.Name];
-        GameObject SceneObject  = listOfImages[AttackerID].objectInScene;
-        ResourceManager.UnitResource Resource = listOfImages[AttackerID].Resource;
-        if(Resource.UIInfo.AttackAnimation == null)
-        {
-            return;
-        }
-        UnityEngine.Video.VideoPlayer Renderer = SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>();
-        if(Renderer == null)
-        {
-            Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
-        }
-
-        Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
-        Renderer.Play();
+        //UnitSceneUIInfo UnitInfo = m_UnitTypeUIInfo[listOfImages[AttackerID].Resource.Name];
+        //GameObject SceneObject  = listOfImages[AttackerID].objectInScene;
+        //ResourceManager.UnitResource Resource = listOfImages[AttackerID].Resource;
+        //if(Resource.UIInfo.AttackAnimation == null)
+        //{
+        //    return;
+        //}
+        //UnityEngine.Video.VideoPlayer Renderer = SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>();
+        //if(Renderer == null)
+        //{
+        //    Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
+        //}
+        //
+        //Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
+        //Renderer.Play();
+        m_ActiveAnimations.Enqueue(new AttackAnimation(this, AttackerID, DefenderID));
     }
 
     public void OnUnitDestroyed(int UnitID)
