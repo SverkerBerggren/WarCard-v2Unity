@@ -48,6 +48,6 @@ MonoBehaviour:
   AbilityIcons:
   - {fileID: 21300000, guid: 48d89e8db6f36ad4d952a762d424e3f8, type: 3}
   SelectSound: {fileID: 8300000, guid: 67ff08ad86e16654ea32dd1c2f10553b, type: 3}
-  AttackAnimation: C:/Users/emanu/Desktop/Temp/Unity.webm
-  forwardSprite: {fileID: 21300000, guid: 330cd322010830844abc7bcff735789d, type: 3}
-  backWardSprite: {fileID: 21300000, guid: 52a01351c0f1e3b45b235735380e5115, type: 3}
+  AttackAnimation: {fileID: 32900000, guid: 7b93f5034c81cba4d906502d4c8ef353, type: 3}
+  forwardSprite: {fileID: 21300000, guid: bef1e292a3595884fae7a2844a5896fa, type: 3}
+  backWardSprite: {fileID: 21300000, guid: 51dd49745d0645842829bdedf7bdc645, type: 3}

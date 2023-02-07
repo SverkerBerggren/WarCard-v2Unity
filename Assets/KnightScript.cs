@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Video;
 public class KnightScript : Unit
 {
-    public string AttackAnimation;
+    public VideoClip AttackAnimation;
     public Sprite forwardSprite;
     public Sprite backWardSprite;
     // Start is called before the first frame update
@@ -31,7 +31,7 @@ public class KnightScript : Unit
 
         ReturnValue.UIInfo.AttackAnimation = new ResourceManager.Animation();
         ReturnValue.UIInfo.AttackAnimation.VisualInfo = new ResourceManager.Visual_Video();
-        ((ResourceManager.Visual_Video)ReturnValue.UIInfo.AttackAnimation.VisualInfo).VideoURL = AttackAnimation;
+        ((ResourceManager.Visual_Video)ReturnValue.UIInfo.AttackAnimation.VisualInfo).Clip = AttackAnimation;
 
         return (ReturnValue);
     }

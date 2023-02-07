@@ -22,6 +22,14 @@ public class MapCamera : MonoBehaviour
         print(m_Raycaster);
         m_EventSystem = GetComponent<EventSystem>();
     }
+
+    public void SetActive(bool IsActive)
+    {
+        m_Active = IsActive;
+    }
+
+    private bool m_Active = true;
+
     public float ScrollSpeed = 0.1f;
     public float MouseSpeed = 10;
     public float ZoomSpeed = 1;
@@ -31,6 +39,10 @@ public class MapCamera : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(!m_Active)
+        {
+            return;
+        }
         float CurrentScrollSpeed = ScrollSpeed * Time.deltaTime * (m_CameraComponent.orthographicSize / 5);
         if(Input.GetKey(KeyCode.W))
         {

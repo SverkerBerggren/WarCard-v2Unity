@@ -21,10 +21,10 @@ public interface UIAnimation
 
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
-    class DestroyUnitAnimation : UIAnimation
-    {
-
-    }
+    //class DestroyUnitAnimation : UIAnimation
+    //{
+    //
+    //}
     
     class MoveCameraAnimation : UIAnimation
     {
@@ -37,7 +37,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         public void Increment(float DeltaTime)
         {
-            float SpeedSize = 
+            if(IsFinished())
+            {
+                return;
+            }
+            float DistanceToIncrease = Math.Min((m_TargetLocation -(Vector2) m_CameraToModify.transform.position).magnitude,m_Speed*DeltaTime);
+            m_CameraToModify.transform.position = m_CameraToModify.transform.position + (Vector3) m_Direction * DistanceToIncrease;
         }
         public bool IsFinished()
         {
@@ -89,7 +94,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
             }
-            Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
+            Renderer.clip = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).Clip;
             Renderer.Play();
             m_AssociatedRender = Renderer;
             m_TotalTime = Renderer.length;
@@ -104,13 +109,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 return;
             }
             Destroy(SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>());
+            RuleManager.Coordinate Direction = m_AssociatedUI.ruleManager.GetUnitInfo(m_AttackingUnit).Direction;
+            if (Direction.X == 1 || Direction.Y == -1)
+            {
+                SceneObject.GetComponent<SpriteRenderer>().sprite = UnitInfo.DownSprite;
+            }
+            if (Direction.X == 1 || Direction.Y == -1)
+            {
+                SceneObject.GetComponent<SpriteRenderer>().sprite = UnitInfo.UpSprite;
+            }
         }
         public bool IsFinished()
         {
-            return (m_TotalTime != 0 && m_ElapsedTime >= m_TotalTime);
+            return (m_AssociatedRender == null ||( m_TotalTime != 0 && m_ElapsedTime >= m_TotalTime));
         }
         public void Increment(float DeltaTime)
         {
+            if(m_AssociatedRender == null)
+            {
+                return;
+            }
             m_TotalTime = m_AssociatedRender.length;
             m_ElapsedTime += DeltaTime;
         }
@@ -280,10 +298,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             m_ActiveAnimations.Peek().Finish();
             m_ActiveAnimations.Dequeue();
         }
-        if (m_ActiveAnimations.Count  > 0)
+        else if (m_ActiveAnimations.Count  > 0)
         {
             m_ActiveAnimations.Peek().Increment(Time.deltaTime);
         }
+
+        m_ActiveCamera.SetActive(m_ActiveAnimations.Count == 0);
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
@@ -587,6 +607,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         //
         //Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
         //Renderer.Play();
+        m_ActiveAnimations.Enqueue(new MoveCameraAnimation(m_ActiveCamera.gameObject,gridManager.GetTilePosition(ruleManager.GetUnitInfo(AttackerID).TopLeftCorner) 
+            ,m_ActiveCamera.gameObject.transform.position,0.4f));
         m_ActiveAnimations.Enqueue(new AttackAnimation(this, AttackerID, DefenderID));
     }
 
@@ -847,10 +869,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 UnitSceneUIInfo NewInfo = new UnitSceneUIInfo();
                 Texture2D Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.DownAnimation.VisualInfo).Sprite;
                 NewInfo.DownSprite = Sprite.Create(Texture,
-                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0));
+                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,0,SpriteMeshType.FullRect);
                 Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.UpAnimation.VisualInfo).Sprite;
                 NewInfo.UpSprite = Sprite.Create(Texture,
-                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0));
+                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,0,SpriteMeshType.FullRect);
                 m_UnitTypeUIInfo[unitToCreate.Name] = NewInfo;
             }
             SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();

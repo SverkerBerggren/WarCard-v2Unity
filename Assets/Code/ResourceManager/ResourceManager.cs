@@ -18,7 +18,8 @@ namespace ResourceManager
     }
     public class Visual_Video : Visual
     {
-        public string VideoURL;
+        public string VideoURL = null;
+        public UnityEngine.Video.VideoClip Clip = null;
     }
     public class Animation
     {
