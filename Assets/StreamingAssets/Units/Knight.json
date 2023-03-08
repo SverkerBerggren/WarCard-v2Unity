@@ -1,0 +1,22 @@
+{
+    "Name":"Knight",
+    "Stats":
+    {
+        "HP":10,
+        "Damage":10,
+        "Range":10,
+        "Movement":10,
+        "ObjectiveControll":10
+    },
+    "Visuals":
+    {
+        "AttackVisual":
+        {
+            "VisualType":"Animation",
+            "FPS":25,
+            "XCenter":37,
+            "YCenter":11,
+            "Directory":"KnightAttackAnimation"
+        }   
+    }
+}

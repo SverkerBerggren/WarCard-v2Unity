@@ -96,6 +96,14 @@ namespace MBJson
             }
             return ((Dictionary<string,JSONObject>)m_InternalData);
         }
+        public bool HasAttribute(string Key)
+        {
+            if (m_Type != JSONType.Aggregate)
+            {
+                throw new System.Exception("Object not of string type");
+            }
+            return (GetAggregateData().ContainsKey(Key));
+        }
         public JSONObject this[string MemberName]
         {
             get
@@ -144,7 +152,7 @@ namespace MBJson
             int ParseOffset = Offset;
             while(ParseOffset < Buffer.Length)
             {
-                if(Buffer[ParseOffset] == ' ' || Buffer[ParseOffset] == '\t' || Buffer[ParseOffset] == '\n')
+                if(Buffer[ParseOffset] == ' ' || Buffer[ParseOffset] == '\t' || Buffer[ParseOffset] == '\n' || Buffer[ParseOffset] == '\r')
                 {
                     ParseOffset += 1;
                 }

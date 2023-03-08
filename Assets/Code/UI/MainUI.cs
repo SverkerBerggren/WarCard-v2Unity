@@ -19,12 +19,15 @@ public interface UIAnimation
 
 
 
+
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
 {
     //class DestroyUnitAnimation : UIAnimation
     //{
     //
     //}
+
+    public static ResourceManager.ResourceManager g_ResourceManager = null;
     
     class MoveCameraAnimation : UIAnimation
     {
@@ -69,16 +72,19 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {
         MainUI m_AssociatedUI = null;
 
-        double m_TotalTime = 0;
         double m_ElapsedTime = 0;
         int m_AttackingUnit = 0;
-        int m_DefendingUnit = 0;
-        UnityEngine.Video.VideoPlayer m_AssociatedRender = null;
+        int m_CurrentIndex = -1;
+        Vector3 m_OldScale;
+        int FPS = 0;
+        SpriteRenderer m_AssociatedSpriteRenderer;
+        List<UnityEngine.Sprite> m_Frames = null;
+        
+        //UnityEngine.Video.VideoPlayer m_AssociatedRender = null;
         public AttackAnimation(MainUI AsssociatedUI, int AttackingUnit, int DefendingUnit)
         {
             m_AssociatedUI = AsssociatedUI;
             m_AttackingUnit = AttackingUnit;
-            m_DefendingUnit = DefendingUnit;
         }
         public void Initialize()
         {
@@ -89,20 +95,23 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 return;
             }
-            UnityEngine.Video.VideoPlayer Renderer = SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>();
-            if (Renderer == null)
-            {
-                Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
-            }
-            Renderer.clip = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).Clip;
-            Renderer.Play();
-            m_AssociatedRender = Renderer;
-            m_TotalTime = Renderer.length;
+            m_AssociatedSpriteRenderer = SceneObject.GetComponent<SpriteRenderer>();
+            m_OldScale = m_AssociatedSpriteRenderer.transform.localScale;
+            ResourceManager.Visual_Animation Animation = (ResourceManager.Visual_Animation)Resource.UIInfo.AttackAnimation.VisualInfo;
+            FPS = Animation.FPS;
+            m_Frames = Animation.AnimationContent;
+            float OldPixelRatio = m_AssociatedSpriteRenderer.sprite.texture.width / m_AssociatedSpriteRenderer.size.x;
+
+            m_AssociatedSpriteRenderer.sprite = m_Frames[0];
+            float NewPixelRation = m_AssociatedSpriteRenderer.sprite.texture.width / m_AssociatedSpriteRenderer.size.x;
+            m_AssociatedSpriteRenderer.transform.localScale = new Vector3(1,1, 1)*(1/(NewPixelRation/OldPixelRatio));
         }
         public void Finish()
         {
+            
             UnitSceneUIInfo UnitInfo = m_AssociatedUI.m_UnitTypeUIInfo[m_AssociatedUI.listOfImages[m_AttackingUnit].Resource.Name];
             GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
+            SceneObject.GetComponent<SpriteRenderer>().transform.localScale = m_OldScale;
             ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
             if (Resource.UIInfo.AttackAnimation == null)
             {
@@ -121,16 +130,23 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         public bool IsFinished()
         {
-            return (m_AssociatedRender == null ||( m_TotalTime != 0 && m_ElapsedTime >= m_TotalTime));
+            return ( m_AssociatedSpriteRenderer == null || (m_ElapsedTime >= (m_Frames.Count / (float)FPS)));
         }
         public void Increment(float DeltaTime)
         {
-            if(m_AssociatedRender == null)
-            {
-                return;
-            }
-            m_TotalTime = m_AssociatedRender.length;
             m_ElapsedTime += DeltaTime;
+            if(m_AssociatedSpriteRenderer != null)
+            {
+                if(!IsFinished())
+                {
+                    int NewIndex = (int)(m_ElapsedTime * FPS);
+                    if(NewIndex != m_CurrentIndex)
+                    { 
+                        m_AssociatedSpriteRenderer.sprite = m_Frames[(int) (m_ElapsedTime * FPS)];
+                    }
+                    m_CurrentIndex = NewIndex;
+                }
+            }
         }
     }
     private MapCamera m_ActiveCamera = null;
@@ -571,7 +587,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         GameObject.Find("StackAbilityHolder").GetComponent<UnitActions>().sortChildren();
     }
-
+    void Awake()
+    {
+        g_ResourceManager = new ResourceManager.ResourceManager(Application.streamingAssetsPath);
+    }
     private void DestroyStackUI()
     {
         foreach (GameObject obj in stackObjectsToDestroy)
