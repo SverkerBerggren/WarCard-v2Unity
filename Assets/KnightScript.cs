@@ -23,14 +23,21 @@ public class KnightScript : Unit
 
         ReturnValue.UIInfo.UpAnimation = new ResourceManager.Animation();
         ReturnValue.UIInfo.UpAnimation.VisualInfo = new ResourceManager.Visual_Image();
-        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.UpAnimation.VisualInfo).Sprite = backWardSprite.texture;
+        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.UpAnimation.VisualInfo).Sprite = backWardSprite;
 
         ReturnValue.UIInfo.DownAnimation = new ResourceManager.Animation();
         ReturnValue.UIInfo.DownAnimation.VisualInfo = new ResourceManager.Visual_Image();
-        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.DownAnimation.VisualInfo).Sprite = forwardSprite.texture;
+        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.DownAnimation.VisualInfo).Sprite = forwardSprite;
 
         ReturnValue.UIInfo.AttackAnimation = new ResourceManager.Animation();
-        ReturnValue.UIInfo.AttackAnimation.VisualInfo = MainUI.g_ResourceManager.GetUnitResource("Knight").UIInfo.AttackAnimation.VisualInfo; 
+        ReturnValue.UIInfo.AttackAnimation.VisualInfo = MainUI.g_ResourceManager.GetUnitResource("Knight").UIInfo.AttackAnimation.VisualInfo;
+
+        ReturnValue.UIInfo.UpAnimation.VisualInfo.Width = 20;
+        ReturnValue.UIInfo.DownAnimation.VisualInfo.Width = 20;
+        ReturnValue.UIInfo.UpAnimation.VisualInfo.YCenter = 2100 / 7195f;
+        ReturnValue.UIInfo.UpAnimation.VisualInfo.XCenter = 0.45f;
+        ReturnValue.UIInfo.DownAnimation.VisualInfo.YCenter = 2100 / 7195f;
+        ReturnValue.UIInfo.DownAnimation.VisualInfo.XCenter = 0.45f;
         //ReturnValue.UIInfo.AttackAnimation.VisualInfo = new ResourceManager.Visual_Video();
         //((ResourceManager.Visual_Video)ReturnValue.UIInfo.AttackAnimation.VisualInfo).Clip = AttackAnimation;
 

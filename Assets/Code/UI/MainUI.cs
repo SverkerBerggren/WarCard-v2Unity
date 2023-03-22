@@ -27,6 +27,31 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     //
     //}
 
+
+    void p_SetUnitVisual(int UnitID, ResourceManager.Visual VisualToSet)
+    {
+        GameObject ObjectToModify = listOfImages[UnitID].objectInScene;
+        SpriteRenderer spriteRenderer = ObjectToModify.GetComponent<SpriteRenderer>();
+        if (VisualToSet is ResourceManager.Visual_Image)
+        {
+            spriteRenderer.sprite = ((ResourceManager.Visual_Image)VisualToSet).Sprite;
+        }
+        spriteRenderer.transform.localScale = new Vector3(1, 1, 1) * (VisualToSet.Width) / (spriteRenderer.sprite.texture.width / spriteRenderer.sprite.pixelsPerUnit);
+        Vector3 NewPosition = new Vector3(0, 0, 0);
+        UnitInfo Info = ruleManager.GetUnitInfo(UnitID);
+        foreach(Coordinate Offset in Info.UnitTileOffsets)
+        {
+            NewPosition += gridManager.GetTilePosition(Offset + Info.TopLeftCorner);
+        }
+        NewPosition /= Info.UnitTileOffsets.Count;
+        //take offset into account
+        Vector2 OffsetDiff = new Vector2(0.5f - VisualToSet.XCenter, 0.5f - VisualToSet.YCenter);
+        OffsetDiff = OffsetDiff* (spriteRenderer.sprite.texture.width / spriteRenderer.sprite.pixelsPerUnit);
+        OffsetDiff.x *= Info.Direction.X;
+        spriteRenderer.transform.localPosition = NewPosition+(Vector3) OffsetDiff;
+        listOfImages[UnitID].AnimationOffset = OffsetDiff;
+    }
+
     public static ResourceManager.ResourceManager g_ResourceManager = null;
     
     class MoveCameraAnimation : UIAnimation
@@ -75,7 +100,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         double m_ElapsedTime = 0;
         int m_AttackingUnit = 0;
         int m_CurrentIndex = -1;
-        Vector3 m_OldScale;
         int FPS = 0;
         SpriteRenderer m_AssociatedSpriteRenderer;
         List<UnityEngine.Sprite> m_Frames = null;
@@ -88,7 +112,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         public void Initialize()
         {
-            UnitSceneUIInfo UnitInfo = m_AssociatedUI.m_UnitTypeUIInfo[m_AssociatedUI.listOfImages[m_AttackingUnit].Resource.Name];
+            UnitSceneInfo UnitInfo = m_AssociatedUI.listOfImages[m_AttackingUnit];
             GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
             ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
             if (Resource.UIInfo.AttackAnimation == null)
@@ -96,36 +120,32 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 return;
             }
             m_AssociatedSpriteRenderer = SceneObject.GetComponent<SpriteRenderer>();
-            m_OldScale = m_AssociatedSpriteRenderer.transform.localScale;
             ResourceManager.Visual_Animation Animation = (ResourceManager.Visual_Animation)Resource.UIInfo.AttackAnimation.VisualInfo;
             FPS = Animation.FPS;
             m_Frames = Animation.AnimationContent;
             float OldPixelRatio = m_AssociatedSpriteRenderer.sprite.texture.width / m_AssociatedSpriteRenderer.size.x;
-
+            m_AssociatedUI.p_SetUnitVisual(m_AttackingUnit, Animation);
             m_AssociatedSpriteRenderer.sprite = m_Frames[0];
-            float NewPixelRation = m_AssociatedSpriteRenderer.sprite.texture.width / m_AssociatedSpriteRenderer.size.x;
-            m_AssociatedSpriteRenderer.transform.localScale = new Vector3(1,1, 1)*(1/(NewPixelRation/OldPixelRatio));
         }
         public void Finish()
         {
-            
-            UnitSceneUIInfo UnitInfo = m_AssociatedUI.m_UnitTypeUIInfo[m_AssociatedUI.listOfImages[m_AttackingUnit].Resource.Name];
+
+            UnitSceneInfo UnitInfo = m_AssociatedUI.listOfImages[m_AttackingUnit];
             GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
-            SceneObject.GetComponent<SpriteRenderer>().transform.localScale = m_OldScale;
             ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
             if (Resource.UIInfo.AttackAnimation == null)
             {
                 return;
             }
-            Destroy(SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>());
             RuleManager.Coordinate Direction = m_AssociatedUI.ruleManager.GetUnitInfo(m_AttackingUnit).Direction;
             if (Direction.X == 1 || Direction.Y == -1)
             {
-                SceneObject.GetComponent<SpriteRenderer>().sprite = UnitInfo.DownSprite;
+                //SceneObject.GetComponent<SpriteRenderer>().sprite = UnitInfo.DownSprite;
+                m_AssociatedUI.p_SetUnitVisual(m_AttackingUnit, UnitInfo.Resource.UIInfo.DownAnimation.VisualInfo);
             }
             if (Direction.X == 1 || Direction.Y == -1)
             {
-                SceneObject.GetComponent<SpriteRenderer>().sprite = UnitInfo.UpSprite;
+                m_AssociatedUI.p_SetUnitVisual(m_AttackingUnit, UnitInfo.Resource.UIInfo.UpAnimation.VisualInfo);
             }
         }
         public bool IsFinished()
@@ -167,7 +187,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public GameObject activationIndicatorPrefab;
 
-    private Dictionary<string, UnitSceneUIInfo> m_UnitTypeUIInfo = new Dictionary<string, UnitSceneUIInfo>();
+    //private Dictionary<string, UnitSceneUIInfo> m_UnitTypeUIInfo = new Dictionary<string, UnitSceneUIInfo>();
     private Queue<UIAnimation> m_ActiveAnimations = new Queue<UIAnimation>();
 
 
@@ -384,6 +404,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             Coordinate TilePos = MovedUnit.TopLeftCorner + MovedUnit.UnitTileOffsets[i];
             listOfActivationIndicators[UnitID][i].transform.position = gridManager.GetTilePosition(TilePos);
         }
+        UnitSceneInfo UIInfo = listOfImages[UnitID];
+        if(NewRotation.Y == 1 || NewRotation.X == -1)
+        {
+            p_SetUnitVisual(UnitID, UIInfo.Resource.UIInfo.UpAnimation.VisualInfo);
+        }
+        else
+        {
+            p_SetUnitVisual(UnitID, UIInfo.Resource.UIInfo.DownAnimation.VisualInfo);
+        }
+        UIInfo.objectInScene.GetComponent<SpriteRenderer>().flipX = (NewRotation.X == -1 || NewRotation.Y == -1);
     }
     public void OnUnitMove(int UnitID, RuleManager.Coordinate PreviousPosition, RuleManager.Coordinate NewPosition)
     {
@@ -401,26 +431,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         if(Mathf.Abs(xChange) > 3 && Mathf.Abs(yChange) < 3)
         {
-            if(xChange > 0)
-            {
-                spriteRenderer.flipX = false;
-                
-            }
-            else
-            {
-                spriteRenderer.flipX = true;
-            }
+            //if(xChange > 0)
+            //{
+            //    spriteRenderer.flipX = false;
+            //    
+            //}
+            //else
+            //{
+            //    spriteRenderer.flipX = true;
+            //}
         }
 
         if (Mathf.Abs(yChange) > 3 && Mathf.Abs(xChange) < 3)
         {
             if (yChange > 0)
             {
-                spriteRenderer.sprite = m_UnitTypeUIInfo[unitSprites.Name].UpSprite;
+                //spriteRenderer.sprite = m_UnitTypeUIInfo[unitSprites.Name].UpSprite;
             }
             else
             {
-                spriteRenderer.sprite = m_UnitTypeUIInfo[unitSprites.Name].DownSprite;
+                //spriteRenderer.sprite = m_UnitTypeUIInfo[unitSprites.Name].DownSprite;
                 //spriteRenderer.sprite = unitSprites.forwardSprite;
             }
         }
@@ -430,14 +460,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         if(xChangeIsBigger && xChangeIsBigEnough)
         {
-            if (xChange > 0)
-            {
-                spriteRenderer.flipX = false;
-            }
-            else
-            {
-                spriteRenderer.flipX = true;
-            }
+            //if (xChange > 0)
+            //{
+            //    spriteRenderer.flipX = false;
+            //}
+            //else
+            //{
+            //    spriteRenderer.flipX = true;
+            //}
         }
         //else if(yChangeIsBigEnough)
         //{
@@ -453,7 +483,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         //    }
         //}
         UnitInfo MovedUnit = ruleManager.GetUnitInfo(UnitID);
-        visualObject.transform.position  = gridManager.GetTilePosition(NewPosition);
+        Vector3 NewWorldPosition = new Vector3(0, 0, 0);
+        foreach (Coordinate Offset in MovedUnit.UnitTileOffsets)
+        {
+            NewWorldPosition += gridManager.GetTilePosition(Offset + MovedUnit.TopLeftCorner);
+        }
+        NewWorldPosition /= MovedUnit.UnitTileOffsets.Count;
+        visualObject.transform.position = NewWorldPosition;
+        visualObject.transform.position += listOfImages[UnitID].AnimationOffset;
         for(int i = 0; i < MovedUnit.UnitTileOffsets.Count;i++)
         {
             Coordinate TilePos = NewPosition + MovedUnit.UnitTileOffsets[i];
@@ -645,8 +682,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {
         //    currentPlayerTurnText.text = "Current Player: " + (CurrentPlayerTurnIndex +1);
 
-        canvasUIScript.changeTopFrame();
-
+        canvasUIScript.changeTopFrame(CurrentPlayerTurnIndex);
         currentTurnText.text = "Turn: " + CurrentTurnCount;
     }
 
@@ -883,19 +919,21 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
             listOfImages.Add(unitInt, SceneUnit);
 
-            if(!m_UnitTypeUIInfo.ContainsKey(unitToCreate.Name))
-            {
-                UnitSceneUIInfo NewInfo = new UnitSceneUIInfo();
-                Texture2D Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.DownAnimation.VisualInfo).Sprite;
-                NewInfo.DownSprite = Sprite.Create(Texture,
-                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,0,SpriteMeshType.FullRect);
-                Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.UpAnimation.VisualInfo).Sprite;
-                NewInfo.UpSprite = Sprite.Create(Texture,
-                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,0,SpriteMeshType.FullRect);
-                m_UnitTypeUIInfo[unitToCreate.Name] = NewInfo;
-            }
+            //if(!m_UnitTypeUIInfo.ContainsKey(unitToCreate.Name))
+            //{
+                //UnitSceneUIInfo NewInfo = new UnitSceneUIInfo();
+                //NewInfo.Width = unitToCreate.UIInfo.UpAnimation.VisualInfo.Width;
+                //Texture2D Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.DownAnimation.VisualInfo).Sprite;
+                //NewInfo.DownSprite = Sprite.Create(Texture,
+                //    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,0,SpriteMeshType.FullRect);
+                //Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.UpAnimation.VisualInfo).Sprite;
+                //NewInfo.UpSprite = Sprite.Create(Texture,
+                //    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,1,SpriteMeshType.FullRect);
+                //m_UnitTypeUIInfo[unitToCreate.Name] = NewInfo;
+            //}
             SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();
-            spriteRenderer.sprite = m_UnitTypeUIInfo[unitToCreate.Name].UpSprite;
+            p_SetUnitVisual(unitInt, unitToCreate.UIInfo.UpAnimation.VisualInfo);
+
             //unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
             if (PlayerIndex == 1)
             {
@@ -1011,6 +1049,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 }
 
+
 class UnitSceneUIInfo
 {
     public Sprite UpSprite;
@@ -1021,6 +1060,7 @@ class UnitSceneInfo
 {
     public ResourceManager.UnitResource Resource = null;
     public GameObject objectInScene;
+    public Vector3 AnimationOffset = new Vector3(0, 0, 0);
 }
 
 //public struct UnitSprites

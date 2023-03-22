@@ -10,17 +10,18 @@ namespace ResourceManager
 {
     public class Visual
     {
-
+        public float XCenter = 0.5f;
+        public float YCenter = 0.5f;
+        public float Width = 10;
     }
     public class Visual_Image : Visual
     {
-        public UnityEngine.Texture2D Sprite;
+        public UnityEngine.Sprite Sprite;
     }
     public class Visual_Animation : Visual
     {
         public int FPS = 0;
-        public float XCenter = 0.5f;
-        public float YCenter = 0.5f;
+
         public List<UnityEngine.Sprite> AnimationContent = new List<Sprite>();
     }
     public class Visual_Video : Visual
@@ -42,7 +43,7 @@ namespace ResourceManager
 
     public class UnitResource
     {
-        public string Name = "";
+        public string Name = ""; 
         public RuleManager.UnitInfo GameInfo = new RuleManager.UnitInfo();
         public UnitUIInfo UIInfo = new UnitUIInfo();
     }
@@ -99,8 +100,7 @@ namespace ResourceManager
         {
             Visual_Animation ReturnValue = new Visual_Animation();
             ReturnValue.FPS = VisualAnimation["FPS"].GetIntegerData();
-            ReturnValue.XCenter = VisualAnimation["XCenter"].GetIntegerData()/100f;
-            ReturnValue.YCenter = VisualAnimation["YCenter"].GetIntegerData()/100f;
+
             string AnimationDir = p_GetRelativePath(UnitFilePath, VisualAnimation["Directory"].GetStringData());
             List<string> DirectionContent = new List<string>(UnitDirectoryIterator.GetDirectoryFiles_Recursive(AnimationDir));
             DirectionContent.Sort();
@@ -119,6 +119,12 @@ namespace ResourceManager
             }
             return (ReturnValue);
         }
+
+        static public Sprite SpriteFromTexture(Texture2D TextureToConvert)
+        {
+            return (Sprite.Create(TextureToConvert,
+                    new Rect(0, 0, TextureToConvert.width, TextureToConvert.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect));
+        }
         //used only in the case of the JSON format
         Visual p_ParseVisual(MBJson.JSONObject UIInfo,string UnitFilePath)
         {
@@ -128,8 +134,10 @@ namespace ResourceManager
                 Visual_Image NewImage = new Visual_Image();
                 string SpritePath = p_GetRelativePath(UnitFilePath, UIInfo["File"].GetStringData());
                 byte[] ImageData = File.ReadAllBytes(SpritePath);
-                NewImage.Sprite = new UnityEngine.Texture2D(2,2);
-                NewImage.Sprite.LoadImage(ImageData);
+                Texture2D Texture = new UnityEngine.Texture2D(2, 2);
+                Texture.LoadImage(ImageData);
+                NewImage.Sprite = Sprite.Create(Texture,
+                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect);
                 ReturnValue = NewImage;
             }
             else if (UIInfo["VisualType"].GetStringData() == "Video")
@@ -146,6 +154,18 @@ namespace ResourceManager
             else
             {
                 throw new System.Exception("Invalid visual type");
+            }
+            if (UIInfo.HasAttribute("XCenter"))
+            {
+                ReturnValue.XCenter = UIInfo["XCenter"].GetIntegerData();
+            }
+            if (UIInfo.HasAttribute("YCenter"))
+            {
+                ReturnValue.YCenter = UIInfo["YCenter"].GetIntegerData();
+            }
+            if(UIInfo.HasAttribute("Width"))
+            {
+                ReturnValue.Width = UIInfo["Width"].GetIntegerData();
             }
             return (ReturnValue);
         }

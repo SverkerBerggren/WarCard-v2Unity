@@ -48,11 +48,12 @@ public class Templars
         ReturnValue.Abilities.Add(ActivatedAbility);
 
         ReturnValue.TopLeftCorner = new RuleManager.Coordinate(0, 0);
-        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(0, 1));
-        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(0, 2));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(0, 0));
         ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(1, 0));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(2,0));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(0, 1));
         ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(1, 1));
-        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(1, 2));
+        ReturnValue.UnitTileOffsets.Add(new RuleManager.Coordinate(2, 1));
         return (ReturnValue);
     }
     static public RuleManager.UnitInfo GetHorse()

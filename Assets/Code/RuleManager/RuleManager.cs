@@ -2690,7 +2690,21 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        void p_PossibleMoves(Coordinate CurrentDif,List<Coordinate> UnitTiles,int CurrentMovement,List<Coordinate> OutPossibleMoves,Dictionary<Coordinate,int> VisitedSpaces,int UnitID)
+        public enum TraversalFlags
+        {
+            Null = 0,
+            StartedInObscuring = 1,
+            TraversedObscuring = 1<<2
+        }
+
+        void p_PossibleMoves(Coordinate CurrentDif,
+            List<Coordinate> UnitTiles,
+            int CurrentMovement,
+            List<Coordinate> OutPossibleMoves,
+            Dictionary<(Coordinate, TraversalFlags),int> VisitedSpaces,
+            int UnitID,
+            TraversalFlags CurrentTraversalFlags
+            )
         {
             if(CurrentMovement == 0)
             {
@@ -2699,9 +2713,9 @@ namespace RuleManager
             foreach(Coordinate DiffDiff in new Coordinate[] {new Coordinate(1,0),new Coordinate(0,1),new Coordinate(-1,0),new Coordinate(0,-1)})
             {
                 Coordinate TotalDiff = CurrentDif+DiffDiff;
-                if(VisitedSpaces.ContainsKey(TotalDiff))
+                if(VisitedSpaces.ContainsKey( (TotalDiff, CurrentTraversalFlags) ))
                 {
-                    int PreviousMovement = VisitedSpaces[TotalDiff];
+                    int PreviousMovement = VisitedSpaces[(TotalDiff, CurrentTraversalFlags)];
                     if(PreviousMovement >= CurrentMovement)
                     {
                         continue;
@@ -2727,9 +2741,22 @@ namespace RuleManager
                 {
                     continue;
                 }
-                VisitedSpaces[TotalDiff] = CurrentMovement;
+                TileInfo CurrentTileInfo = m_Tiles[TotalDiff.Y][TotalDiff.X];
+                if((CurrentTraversalFlags &  TraversalFlags.StartedInObscuring) == TraversalFlags.Null && 
+                    (CurrentTraversalFlags & TraversalFlags.TraversedObscuring) != TraversalFlags.Null &&
+                        (CurrentTileInfo.Flags & TileFlags.Obscuring) == TileFlags.Null)
+
+                {
+                    //starting from outside obscuring, traversed in obscuring, and the going out is not allowed
+                    continue;
+                }
+                VisitedSpaces[(TotalDiff,CurrentTraversalFlags)] = CurrentMovement;
+                if((CurrentTileInfo.Flags & TileFlags.Obscuring) != TileFlags.Null)
+                {
+                    CurrentTraversalFlags = CurrentTraversalFlags | TraversalFlags.TraversedObscuring;
+                }
                 OutPossibleMoves.Add(TotalDiff);
-                p_PossibleMoves(TotalDiff,UnitTiles, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces,UnitID);
+                p_PossibleMoves(TotalDiff,UnitTiles, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces,UnitID, CurrentTraversalFlags);
             }
         }
         List<Coordinate> p_NormalizeMoves(List<Coordinate> MovesToNormalize)
@@ -2763,7 +2790,17 @@ namespace RuleManager
             //    return (ReturnValue);
             //}
             //ReturnValue.Add(new Coordinate(UnitToMove.Position));
-            p_PossibleMoves(UnitToMove.TopLeftCorner,UnitToMove.UnitTileOffsets, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>(),UnitID);
+            TraversalFlags InitialTraversalFlags = 0;
+            foreach(Coordinate Offset in UnitToMove.UnitTileOffsets)
+            {
+                Coordinate NewCoord = Offset + UnitToMove.TopLeftCorner;
+                if((m_Tiles[NewCoord.Y][NewCoord.X].Flags & TileFlags.Obscuring) != TileFlags.Null)
+                {
+                    InitialTraversalFlags = TraversalFlags.StartedInObscuring;
+                    break;
+                }
+            }
+            p_PossibleMoves(UnitToMove.TopLeftCorner,UnitToMove.UnitTileOffsets, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<(Coordinate,TraversalFlags), int>(),UnitID,InitialTraversalFlags);
             ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);
         }
