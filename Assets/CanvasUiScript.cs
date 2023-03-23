@@ -182,19 +182,16 @@ public class CanvasUiScript : MonoBehaviour
         }
         buttonDestroyList.Clear();
     }
-    public void changeTopFrame()
+    public void changeTopFrame(int PlayerTurn)
     {
-        if(isFirstPlayerTopFrame)
+        if(PlayerTurn == 0)
         {
-            isFirstPlayerTopFrame = false;
+            topFrame.sprite = firstPlayerTopFrame;
+        }
+        else if(PlayerTurn == 1)
+        {
             topFrame.sprite = secondPlayerTopFrame;
         }
-        else
-        {
-            isFirstPlayerTopFrame = true;
-            topFrame.sprite = firstPlayerTopFrame; 
-        }
-
     }
 
     public IEnumerator changeReactionText(bool active, string text)

@@ -1,0 +1,38 @@
+{
+    "Name":"Knight",
+    "Stats":
+    {
+        "HP":10,
+        "Damage":10,
+        "Range":10,
+        "Movement":10,
+        "ObjectiveControll":10
+    },
+    "Visuals":
+    {
+        "AttackVisual": {
+            "VisualType": "Animation",
+            "FPS": 25,
+            "XCenter": 37,
+            "YCenter": 11,
+            "Width": 15,
+            "Directory": "KnightAttackAnimation"
+        },
+        "LightningPose": {
+            "VisualType": "Animation",
+            "FPS": 25,
+            "XCenter": 50,
+            "Width": 15,
+            "YCenter": 5,
+            "Directory": "LightningPose"
+        },
+        "LightningStrike": {
+            "VisualType": "Animation",
+            "FPS": 25,
+            "XCenter": 50,
+            "YCenter": 2,
+            "Width": 15,
+            "Directory": "LightningStrike"
+        }
+    }
+}

@@ -16,11 +16,11 @@ public class HeavyWeaponInfo : Unit
 
         ReturnValue.UIInfo.UpAnimation = new ResourceManager.Animation();
         ReturnValue.UIInfo.UpAnimation.VisualInfo = new ResourceManager.Visual_Image();
-        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.UpAnimation.VisualInfo).Sprite = backwardSprite.texture;
+        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.UpAnimation.VisualInfo).Sprite = backwardSprite;
 
         ReturnValue.UIInfo.DownAnimation = new ResourceManager.Animation();
         ReturnValue.UIInfo.DownAnimation.VisualInfo = new ResourceManager.Visual_Image();
-        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.DownAnimation.VisualInfo).Sprite = forwardSprite.texture;
+        ((ResourceManager.Visual_Image)ReturnValue.UIInfo.DownAnimation.VisualInfo).Sprite = forwardSprite;
 
         return (ReturnValue);
     }

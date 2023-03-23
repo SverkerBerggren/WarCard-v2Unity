@@ -23,6 +23,7 @@ namespace RuleManager
     {
         int PlayerIndex = 0;
         string m_Text = "test";
+        public AnimationSpecification Animation = null;
         public virtual string GetText()
         {
             return m_Text;
@@ -33,6 +34,42 @@ namespace RuleManager
         }
     }
 
+
+    public interface AnimationPlayer
+    {
+        void PlayAnimation(Coordinate AnimationCoordinate,object Animation);
+        void PlayAnimation(int UnitID,object Animation);
+    }
+
+    public class AnimationSpecification
+    {
+
+    };
+    public class Animation_List : AnimationSpecification
+    {
+        public List<AnimationSpecification> AnimationsToPlay;
+
+        public Animation_List()
+        {
+
+        }
+        public Animation_List(params AnimationSpecification[] AnimationSpecifications)
+        {
+            AnimationsToPlay = new List<AnimationSpecification>(AnimationSpecifications);
+        }
+    }
+    public class Animation_AbilityTarget : AnimationSpecification
+    {
+        //-1 means the source, depends on the type of target
+        public int TargetIndex = -1;
+        public object AnimationToPlay = null;
+        public Animation_AbilityTarget() { }
+        public Animation_AbilityTarget(int NewTargetIndex, object NewAnimation)
+        {
+            TargetIndex = NewTargetIndex;
+            AnimationToPlay = NewAnimation;
+        }
+    }
     //public class Effect_DestroyTargets : Effect
     //{
     //    TargetRetriever Targets;
@@ -356,6 +393,7 @@ namespace RuleManager
         public ActivationCondition Conditions = new ActivationCondition_True();
         public TargetInfo ActivationTargets;
         public Effect ActivatedEffect;
+        public AnimationSpecification Animation = null;
 
         public Ability_Activated() : base(AbilityType.Activated)
         {
@@ -1149,6 +1187,7 @@ namespace RuleManager
 
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
+        AnimationPlayer m_AnimationPlayer;
 
         List<Target> m_ChoosenTargets = null;
 
@@ -1231,6 +1270,10 @@ namespace RuleManager
         public void SetEventHandler(RuleEventHandler NewHandler)
         {
             m_EventHandler = NewHandler;
+        }
+        public void SetAnimationPlayer(AnimationPlayer Player)
+        {
+            m_AnimationPlayer = Player;
         }
 
         public int getPlayerPriority()
@@ -1419,8 +1462,51 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+
+        //can assume that m_AnimationPlayer != null
+        void p_PlayAnimations(List<Target> Targets, EffectSource Source, AnimationSpecification AnimationToPlay)
+        {
+            if(AnimationToPlay is Animation_List)
+            {
+                foreach(AnimationSpecification Animation in ((Animation_List) AnimationToPlay).AnimationsToPlay)
+                {
+                    p_PlayAnimations(Targets,Source, Animation);
+                }
+            }
+            else if(AnimationToPlay is Animation_AbilityTarget)
+            {
+                Animation_AbilityTarget AbilityTarget = (Animation_AbilityTarget)AnimationToPlay;
+                if(AbilityTarget.TargetIndex == -1)
+                {
+                    if(Source is EffectSource_Unit)
+                    {
+                        EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
+                        m_AnimationPlayer.PlayAnimation(UnitSource.UnitID, AbilityTarget.AnimationToPlay);
+                    }
+                }
+                else
+                {
+                    Target TargetToAnimate = Targets[AbilityTarget.TargetIndex];
+                    Coordinate CoordinateToPlay = new Coordinate(0,0);
+                    if(TargetToAnimate is Target_Tile)
+                    {
+                        CoordinateToPlay = ((Target_Tile)TargetToAnimate).TargetCoordinate;
+                    }
+                    else if(TargetToAnimate is Target_Unit)
+                    {
+                        CoordinateToPlay = m_UnitInfos[((Target_Unit)TargetToAnimate).UnitID].TopLeftCorner;
+                    }
+                    m_AnimationPlayer.PlayAnimation(CoordinateToPlay, AbilityTarget.AnimationToPlay);
+                }
+            }
+        }
+
         IEnumerator p_ResolveEffect(List<Target> Targets,EffectSource Source,Effect EffectToResolve)
         {
+            if(m_AnimationPlayer != null && EffectToResolve.Animation != null)
+            {
+                p_PlayAnimations(Targets, Source, EffectToResolve.Animation);
+            }
             if (EffectToResolve is Effect_DealDamage)
             {
                 Effect_DealDamage DamageEffect = (Effect_DealDamage)EffectToResolve;
@@ -2352,6 +2438,7 @@ namespace RuleManager
                 Ability_Activated AbilityToActivate =(Ability_Activated) UnitWithEffect.Abilities[EffectToExecute.EffectIndex];
                 StackEntity NewEntity = new StackEntity();
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
+                NewEntity.EffectToResolve.Animation = AbilityToActivate.Animation;
                 NewEntity.EffectToResolve.SetText(AbilityToActivate.GetDescription());
                 NewEntity.Targets = EffectToExecute.Targets;
                 NewEntity.Source = new EffectSource_Unit(ActionToExecute.PlayerIndex,EffectToExecute.UnitID,EffectToExecute.EffectIndex);
@@ -2690,7 +2777,21 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        void p_PossibleMoves(Coordinate CurrentDif,List<Coordinate> UnitTiles,int CurrentMovement,List<Coordinate> OutPossibleMoves,Dictionary<Coordinate,int> VisitedSpaces,int UnitID)
+        public enum TraversalFlags
+        {
+            Null = 0,
+            StartedInObscuring = 1,
+            TraversedObscuring = 1<<2
+        }
+
+        void p_PossibleMoves(Coordinate CurrentDif,
+            List<Coordinate> UnitTiles,
+            int CurrentMovement,
+            List<Coordinate> OutPossibleMoves,
+            Dictionary<(Coordinate, TraversalFlags),int> VisitedSpaces,
+            int UnitID,
+            TraversalFlags CurrentTraversalFlags
+            )
         {
             if(CurrentMovement == 0)
             {
@@ -2699,9 +2800,9 @@ namespace RuleManager
             foreach(Coordinate DiffDiff in new Coordinate[] {new Coordinate(1,0),new Coordinate(0,1),new Coordinate(-1,0),new Coordinate(0,-1)})
             {
                 Coordinate TotalDiff = CurrentDif+DiffDiff;
-                if(VisitedSpaces.ContainsKey(TotalDiff))
+                if(VisitedSpaces.ContainsKey( (TotalDiff, CurrentTraversalFlags) ))
                 {
-                    int PreviousMovement = VisitedSpaces[TotalDiff];
+                    int PreviousMovement = VisitedSpaces[(TotalDiff, CurrentTraversalFlags)];
                     if(PreviousMovement >= CurrentMovement)
                     {
                         continue;
@@ -2727,9 +2828,22 @@ namespace RuleManager
                 {
                     continue;
                 }
-                VisitedSpaces[TotalDiff] = CurrentMovement;
+                TileInfo CurrentTileInfo = m_Tiles[TotalDiff.Y][TotalDiff.X];
+                if((CurrentTraversalFlags &  TraversalFlags.StartedInObscuring) == TraversalFlags.Null && 
+                    (CurrentTraversalFlags & TraversalFlags.TraversedObscuring) != TraversalFlags.Null &&
+                        (CurrentTileInfo.Flags & TileFlags.Obscuring) == TileFlags.Null)
+
+                {
+                    //starting from outside obscuring, traversed in obscuring, and the going out is not allowed
+                    continue;
+                }
+                VisitedSpaces[(TotalDiff,CurrentTraversalFlags)] = CurrentMovement;
+                if((CurrentTileInfo.Flags & TileFlags.Obscuring) != TileFlags.Null)
+                {
+                    CurrentTraversalFlags = CurrentTraversalFlags | TraversalFlags.TraversedObscuring;
+                }
                 OutPossibleMoves.Add(TotalDiff);
-                p_PossibleMoves(TotalDiff,UnitTiles, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces,UnitID);
+                p_PossibleMoves(TotalDiff,UnitTiles, CurrentMovement - 1, OutPossibleMoves,VisitedSpaces,UnitID, CurrentTraversalFlags);
             }
         }
         List<Coordinate> p_NormalizeMoves(List<Coordinate> MovesToNormalize)
@@ -2763,7 +2877,17 @@ namespace RuleManager
             //    return (ReturnValue);
             //}
             //ReturnValue.Add(new Coordinate(UnitToMove.Position));
-            p_PossibleMoves(UnitToMove.TopLeftCorner,UnitToMove.UnitTileOffsets, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<Coordinate, int>(),UnitID);
+            TraversalFlags InitialTraversalFlags = 0;
+            foreach(Coordinate Offset in UnitToMove.UnitTileOffsets)
+            {
+                Coordinate NewCoord = Offset + UnitToMove.TopLeftCorner;
+                if((m_Tiles[NewCoord.Y][NewCoord.X].Flags & TileFlags.Obscuring) != TileFlags.Null)
+                {
+                    InitialTraversalFlags = TraversalFlags.StartedInObscuring;
+                    break;
+                }
+            }
+            p_PossibleMoves(UnitToMove.TopLeftCorner,UnitToMove.UnitTileOffsets, UnitToMove.Stats.Movement, ReturnValue, new Dictionary<(Coordinate,TraversalFlags), int>(),UnitID,InitialTraversalFlags);
             ReturnValue = p_NormalizeMoves(ReturnValue);
             return (ReturnValue);
         }

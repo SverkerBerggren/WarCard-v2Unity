@@ -49,5 +49,5 @@ MonoBehaviour:
   - {fileID: 21300000, guid: b4e7b78c9441cb64483e8b663059e4af, type: 3}
   SelectSound: {fileID: 8300000, guid: 9a630d895c6d76b449a43c52f29efd0e, type: 3}
   sidewaySprite: {fileID: 21300000, guid: 00847b9d067a98f449184135544fb03a, type: 3}
-  forwardSprite: {fileID: 21300000, guid: 3b924c26134106a4a95b9a2f8489251c, type: 3}
-  backWardSprite: {fileID: 21300000, guid: f9eac47c9f8c815438ea165568332b80, type: 3}
+  forwardSprite: {fileID: 21300000, guid: c5ceea7c8566ce44aaf52f911a50a42e, type: 3}
+  backWardSprite: {fileID: 21300000, guid: 81234fd6251cdce43ab4d62dd1ef921b, type: 3}

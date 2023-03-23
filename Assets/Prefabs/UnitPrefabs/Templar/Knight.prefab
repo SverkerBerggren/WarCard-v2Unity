@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7980893054289460447}
-  - component: {fileID: 4100975343328728565}
+  - component: {fileID: -6054030177228325439}
   m_Layer: 0
   m_Name: Knight
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4100975343328728565
+--- !u!114 &-6054030177228325439
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,13 +41,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 2018351516066808521}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d053ceecb61adc44a704d2f9f3e0ec0, type: 3}
+  m_Script: {fileID: 11500000, guid: 800968e1da856c9438d6632e37c5bf81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   unitCardSprite: {fileID: 21300000, guid: 14ede77d74cf18f4699aae8633556e22, type: 3}
   AbilityIcons:
   - {fileID: 21300000, guid: 48d89e8db6f36ad4d952a762d424e3f8, type: 3}
   SelectSound: {fileID: 8300000, guid: 67ff08ad86e16654ea32dd1c2f10553b, type: 3}
-  AttackAnimation: {fileID: 32900000, guid: 7b93f5034c81cba4d906502d4c8ef353, type: 3}
   forwardSprite: {fileID: 21300000, guid: bef1e292a3595884fae7a2844a5896fa, type: 3}
   backWardSprite: {fileID: 21300000, guid: 51dd49745d0645842829bdedf7bdc645, type: 3}
