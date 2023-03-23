@@ -167,6 +167,17 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             m_AssociatedObject = new GameObject();
             m_AssociatedObject.transform.position = Location;
             m_AssociatedObject.AddComponent<SpriteRenderer>();
+
+            SpriteRenderer spriteRenderer = m_AssociatedObject.GetComponent<SpriteRenderer>();
+            spriteRenderer.sprite = Animation.AnimationContent[0];
+
+            spriteRenderer.transform.localScale = new Vector3(1, 1, 1) * (Animation.Width) / (spriteRenderer.sprite.texture.width / spriteRenderer.sprite.pixelsPerUnit);
+            Vector2 OffsetDiff = new Vector2(0.5f - Animation.XCenter, 0.5f - Animation.YCenter);
+            OffsetDiff = OffsetDiff * spriteRenderer.transform.localScale;
+            OffsetDiff.x *= (spriteRenderer.sprite.texture.width / spriteRenderer.sprite.pixelsPerUnit);
+            OffsetDiff.y *= (spriteRenderer.sprite.texture.height / spriteRenderer.sprite.pixelsPerUnit);
+            spriteRenderer.transform.localPosition = Location + (Vector3)OffsetDiff;
+
             m_SubAnimation = new SpriteAnimation(m_AssociatedObject.GetComponent<SpriteRenderer>(), Animation);
         }
         public void Initialize()
