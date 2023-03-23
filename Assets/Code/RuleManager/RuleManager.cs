@@ -23,6 +23,7 @@ namespace RuleManager
     {
         int PlayerIndex = 0;
         string m_Text = "test";
+        public AnimationSpecification Animation = null;
         public virtual string GetText()
         {
             return m_Text;
@@ -33,6 +34,42 @@ namespace RuleManager
         }
     }
 
+
+    public interface AnimationPlayer
+    {
+        void PlayAnimation(Coordinate AnimationCoordinate,object Animation);
+        void PlayAnimation(int UnitID,object Animation);
+    }
+
+    public class AnimationSpecification
+    {
+
+    };
+    public class Animation_List : AnimationSpecification
+    {
+        public List<AnimationSpecification> AnimationsToPlay;
+
+        public Animation_List()
+        {
+
+        }
+        public Animation_List(params AnimationSpecification[] AnimationSpecifications)
+        {
+            AnimationsToPlay = new List<AnimationSpecification>(AnimationSpecifications);
+        }
+    }
+    public class Animation_AbilityTarget : AnimationSpecification
+    {
+        //-1 means the source, depends on the type of target
+        public int TargetIndex = -1;
+        public object AnimationToPlay = null;
+        public Animation_AbilityTarget() { }
+        public Animation_AbilityTarget(int NewTargetIndex, object NewAnimation)
+        {
+            TargetIndex = NewTargetIndex;
+            AnimationToPlay = NewAnimation;
+        }
+    }
     //public class Effect_DestroyTargets : Effect
     //{
     //    TargetRetriever Targets;
@@ -356,6 +393,7 @@ namespace RuleManager
         public ActivationCondition Conditions = new ActivationCondition_True();
         public TargetInfo ActivationTargets;
         public Effect ActivatedEffect;
+        public AnimationSpecification Animation = null;
 
         public Ability_Activated() : base(AbilityType.Activated)
         {
@@ -1149,6 +1187,7 @@ namespace RuleManager
 
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
+        AnimationPlayer m_AnimationPlayer;
 
         List<Target> m_ChoosenTargets = null;
 
@@ -1231,6 +1270,10 @@ namespace RuleManager
         public void SetEventHandler(RuleEventHandler NewHandler)
         {
             m_EventHandler = NewHandler;
+        }
+        public void SetAnimationPlayer(AnimationPlayer Player)
+        {
+            m_AnimationPlayer = Player;
         }
 
         public int getPlayerPriority()
@@ -1419,8 +1462,51 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+
+        //can assume that m_AnimationPlayer != null
+        void p_PlayAnimations(List<Target> Targets, EffectSource Source, AnimationSpecification AnimationToPlay)
+        {
+            if(AnimationToPlay is Animation_List)
+            {
+                foreach(AnimationSpecification Animation in ((Animation_List) AnimationToPlay).AnimationsToPlay)
+                {
+                    p_PlayAnimations(Targets,Source, Animation);
+                }
+            }
+            else if(AnimationToPlay is Animation_AbilityTarget)
+            {
+                Animation_AbilityTarget AbilityTarget = (Animation_AbilityTarget)AnimationToPlay;
+                if(AbilityTarget.TargetIndex == -1)
+                {
+                    if(Source is EffectSource_Unit)
+                    {
+                        EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
+                        m_AnimationPlayer.PlayAnimation(UnitSource.UnitID, AbilityTarget.AnimationToPlay);
+                    }
+                }
+                else
+                {
+                    Target TargetToAnimate = Targets[AbilityTarget.TargetIndex];
+                    Coordinate CoordinateToPlay = new Coordinate(0,0);
+                    if(TargetToAnimate is Target_Tile)
+                    {
+                        CoordinateToPlay = ((Target_Tile)TargetToAnimate).TargetCoordinate;
+                    }
+                    else if(TargetToAnimate is Target_Unit)
+                    {
+                        CoordinateToPlay = m_UnitInfos[((Target_Unit)TargetToAnimate).UnitID].TopLeftCorner;
+                    }
+                    m_AnimationPlayer.PlayAnimation(CoordinateToPlay, AbilityTarget.AnimationToPlay);
+                }
+            }
+        }
+
         IEnumerator p_ResolveEffect(List<Target> Targets,EffectSource Source,Effect EffectToResolve)
         {
+            if(m_AnimationPlayer != null && EffectToResolve.Animation != null)
+            {
+                p_PlayAnimations(Targets, Source, EffectToResolve.Animation);
+            }
             if (EffectToResolve is Effect_DealDamage)
             {
                 Effect_DealDamage DamageEffect = (Effect_DealDamage)EffectToResolve;
@@ -2352,6 +2438,7 @@ namespace RuleManager
                 Ability_Activated AbilityToActivate =(Ability_Activated) UnitWithEffect.Abilities[EffectToExecute.EffectIndex];
                 StackEntity NewEntity = new StackEntity();
                 NewEntity.EffectToResolve = AbilityToActivate.ActivatedEffect;
+                NewEntity.EffectToResolve.Animation = AbilityToActivate.Animation;
                 NewEntity.EffectToResolve.SetText(AbilityToActivate.GetDescription());
                 NewEntity.Targets = EffectToExecute.Targets;
                 NewEntity.Source = new EffectSource_Unit(ActionToExecute.PlayerIndex,EffectToExecute.UnitID,EffectToExecute.EffectIndex);

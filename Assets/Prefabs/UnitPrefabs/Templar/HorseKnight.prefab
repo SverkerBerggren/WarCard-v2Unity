@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2018351516066808521
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7980893054289460447}
+  - component: {fileID: 4100975343328728565}
+  m_Layer: 0
+  m_Name: HorseKnight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7980893054289460447
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2018351516066808521}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 18.669632, y: -59.645954, z: -2.7886431}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4100975343328728565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2018351516066808521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d053ceecb61adc44a704d2f9f3e0ec0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  unitCardSprite: {fileID: 21300000, guid: 14ede77d74cf18f4699aae8633556e22, type: 3}
+  AbilityIcons:
+  - {fileID: 21300000, guid: 48d89e8db6f36ad4d952a762d424e3f8, type: 3}
+  SelectSound: {fileID: 8300000, guid: 67ff08ad86e16654ea32dd1c2f10553b, type: 3}
+  AttackAnimation: {fileID: 32900000, guid: 7b93f5034c81cba4d906502d4c8ef353, type: 3}
+  forwardSprite: {fileID: 21300000, guid: e518d27a3d5dd8945890aaebe78c5b89, type: 3}
+  backWardSprite: {fileID: 21300000, guid: fdf2d9478c9b3ec45b1f5836e495f776, type: 3}

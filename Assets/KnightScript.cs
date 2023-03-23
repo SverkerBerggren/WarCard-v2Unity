@@ -18,7 +18,7 @@ public class KnightScript : Unit
     {
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Knight";
-        ReturnValue.GameInfo = Templars.GetKnight();
+        ReturnValue.GameInfo = Templars.GetHorseKnight();
         ReturnValue.UIInfo = new ResourceManager.UnitUIInfo();
 
         ReturnValue.UIInfo.UpAnimation = new ResourceManager.Animation();

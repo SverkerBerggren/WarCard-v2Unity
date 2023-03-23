@@ -39,6 +39,9 @@ namespace ResourceManager
         public Animation UpAnimation = new Animation();
         public Animation DownAnimation = new Animation();
         public Animation AttackAnimation = new Animation();
+
+        public Dictionary<string, Animation> OtherAnimations = new Dictionary<string, Animation>();
+        
     }
 
     public class UnitResource
@@ -115,6 +118,7 @@ namespace ResourceManager
                 NewTexture.LoadImage(ImageData);
                 UnityEngine.Sprite NewSprite = Sprite.Create(NewTexture,
                     new Rect(0, 0, NewTexture.width, NewTexture.height), new Vector2(ReturnValue.XCenter, ReturnValue.YCenter), 100, 0, SpriteMeshType.FullRect);
+                
                 ReturnValue.AnimationContent.Add(NewSprite);
             }
             return (ReturnValue);
@@ -157,11 +161,11 @@ namespace ResourceManager
             }
             if (UIInfo.HasAttribute("XCenter"))
             {
-                ReturnValue.XCenter = UIInfo["XCenter"].GetIntegerData();
+                ReturnValue.XCenter = UIInfo["XCenter"].GetIntegerData()/ (float)100;
             }
             if (UIInfo.HasAttribute("YCenter"))
             {
-                ReturnValue.YCenter = UIInfo["YCenter"].GetIntegerData();
+                ReturnValue.YCenter = UIInfo["YCenter"].GetIntegerData()/ (float)100;
             }
             if(UIInfo.HasAttribute("Width"))
             {
@@ -199,6 +203,11 @@ namespace ResourceManager
             else if(Visuals.HasAttribute("DownVisual"))
             {
                 ResourceToAdd.UIInfo.DownAnimation = p_ParseAnimation(Visuals["DownVisual"], UnitFilePath);
+            }
+
+            foreach(var Key in Visuals.GetAggregateData())
+            {
+                ResourceToAdd.UIInfo.OtherAnimations[Key.Key] = p_ParseAnimation(Key.Value,UnitFilePath);
             }
             return (ResourceToAdd);
         }

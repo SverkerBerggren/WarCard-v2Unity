@@ -20,13 +20,30 @@ public interface UIAnimation
 
 
 
-public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever
+public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever,AnimationPlayer
 {
     //class DestroyUnitAnimation : UIAnimation
     //{
     //
     //}
 
+
+    public void PlayAnimation(int Unit,object AnimationToAnime)
+    {
+        if(AnimationToAnime is ResourceManager.Visual_Animation)
+        {
+            ResourceManager.Visual_Animation VisualAnimation = (ResourceManager.Visual_Animation)AnimationToAnime;
+            m_ActiveAnimations.Enqueue(new UnitAnimation(Unit,this,VisualAnimation));
+        }
+    }
+    public void PlayAnimation(Coordinate TileCoordinate,object AnimationToAnime)
+    {
+        if (AnimationToAnime is ResourceManager.Visual_Animation)
+        {
+            ResourceManager.Visual_Animation VisualAnimation = (ResourceManager.Visual_Animation)AnimationToAnime;
+            m_ActiveAnimations.Enqueue(new LocationAnimation(VisualAnimation, gridManager.GetTilePosition(TileCoordinate)));
+        }
+    }
 
     void p_SetUnitVisual(int UnitID, ResourceManager.Visual VisualToSet)
     {
@@ -46,7 +63,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         NewPosition /= Info.UnitTileOffsets.Count;
         //take offset into account
         Vector2 OffsetDiff = new Vector2(0.5f - VisualToSet.XCenter, 0.5f - VisualToSet.YCenter);
-        OffsetDiff = OffsetDiff* (spriteRenderer.sprite.texture.width / spriteRenderer.sprite.pixelsPerUnit);
+        OffsetDiff = OffsetDiff * spriteRenderer.transform.localScale;
+        OffsetDiff.x *= (spriteRenderer.sprite.texture.width / spriteRenderer.sprite.pixelsPerUnit);
+        OffsetDiff.y *= (spriteRenderer.sprite.texture.height / spriteRenderer.sprite.pixelsPerUnit);
         OffsetDiff.x *= Info.Direction.X;
         spriteRenderer.transform.localPosition = NewPosition+(Vector3) OffsetDiff;
         listOfImages[UnitID].AnimationOffset = OffsetDiff;
@@ -93,6 +112,134 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             m_Speed = (TargetLocation - CurrentLocation).magnitude / TargetDuration;
         }
     }
+
+    class SpriteAnimation : UIAnimation
+    {
+        double m_ElapsedTime = 0;
+        int m_CurrentIndex = -1;
+        int FPS = 0;
+        SpriteRenderer m_AssociatedSpriteRenderer;
+        ResourceManager.Visual_Animation m_Animation = null;
+
+
+        public SpriteAnimation(SpriteRenderer Renderer,ResourceManager.Visual_Animation Animation)
+        {
+            m_AssociatedSpriteRenderer = Renderer;
+            m_Animation = Animation;
+        }
+        public void Initialize()
+        {
+            FPS = m_Animation.FPS;
+            m_AssociatedSpriteRenderer.sprite = m_Animation.AnimationContent[0];
+        }
+        public bool IsFinished()
+        {
+            return (m_AssociatedSpriteRenderer == null || (m_ElapsedTime >= (m_Animation.AnimationContent.Count / (float)FPS)));
+        }
+        public void Increment(float DeltaTime)
+        {
+            m_ElapsedTime += DeltaTime;
+            if (m_AssociatedSpriteRenderer != null)
+            {
+                if (!IsFinished())
+                {
+                    int NewIndex = (int)(m_ElapsedTime * FPS);
+                    if (NewIndex != m_CurrentIndex)
+                    {
+                        m_AssociatedSpriteRenderer.sprite = m_Animation.AnimationContent[(int)(m_ElapsedTime * FPS)];
+                    }
+                    m_CurrentIndex = NewIndex;
+                }
+            }
+        }
+        public void Finish()
+        {
+
+        }
+    }
+
+    class LocationAnimation : UIAnimation
+    {
+        SpriteAnimation m_SubAnimation;
+        GameObject m_AssociatedObject;
+        public LocationAnimation(ResourceManager.Visual_Animation Animation,Vector3 Location)
+        {
+            m_AssociatedObject = new GameObject();
+            m_AssociatedObject.transform.position = Location;
+            m_AssociatedObject.AddComponent<SpriteRenderer>();
+            m_SubAnimation = new SpriteAnimation(m_AssociatedObject.GetComponent<SpriteRenderer>(), Animation);
+        }
+        public void Initialize()
+        {
+            m_SubAnimation.Initialize();
+        }
+        public bool IsFinished()
+        {
+            return (m_SubAnimation.IsFinished());
+        }
+        public void Increment(float DeltaTime)
+        {
+            m_SubAnimation.Increment(DeltaTime);
+        }
+        public void Finish()
+        {
+            m_SubAnimation.Finish();
+        }
+    }
+
+    class UnitAnimation : UIAnimation
+    {
+        MainUI m_AssociatedUI = null;
+        SpriteAnimation m_SubAnimation = null;
+        SpriteRenderer m_AssociatedSpriteRenderer;
+        ResourceManager.Visual_Animation m_Animation = null;
+        int m_UnitID;
+
+        public UnitAnimation(int UnitID,MainUI UI,ResourceManager.Visual_Animation Animation)
+        {
+            m_UnitID = UnitID;
+            m_AssociatedUI = UI;
+            m_Animation = Animation;
+        }
+        public void Initialize()
+        {
+            GameObject SceneObject = m_AssociatedUI.listOfImages[m_UnitID].objectInScene;
+            m_AssociatedSpriteRenderer = SceneObject.GetComponent<SpriteRenderer>();
+            m_SubAnimation = new SpriteAnimation(m_AssociatedSpriteRenderer, m_Animation);
+            m_AssociatedSpriteRenderer.sprite = m_Animation.AnimationContent[0];
+            m_AssociatedUI.p_SetUnitVisual(m_UnitID, m_Animation);
+            m_SubAnimation.Initialize();
+        }
+        public bool IsFinished()
+        {
+            return (m_SubAnimation.IsFinished());
+        }
+        public void Increment(float DeltaTime)
+        {
+            m_SubAnimation.Increment(DeltaTime);
+        }
+        public void Finish()
+        {
+            m_SubAnimation.Finish();    
+            UnitSceneInfo UnitInfo = m_AssociatedUI.listOfImages[m_UnitID];
+            GameObject SceneObject = m_AssociatedUI.listOfImages[m_UnitID].objectInScene;
+            ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_UnitID].Resource;
+            if (Resource.UIInfo.AttackAnimation == null)
+            {
+                return;
+            }
+            RuleManager.Coordinate Direction = m_AssociatedUI.ruleManager.GetUnitInfo(m_UnitID).Direction;
+            if (Direction.X == 1 || Direction.Y == -1)
+            {
+                //SceneObject.GetComponent<SpriteRenderer>().sprite = UnitInfo.DownSprite;
+                m_AssociatedUI.p_SetUnitVisual(m_UnitID, UnitInfo.Resource.UIInfo.DownAnimation.VisualInfo);
+            }
+            if (Direction.X == 1 || Direction.Y == -1)
+            {
+                m_AssociatedUI.p_SetUnitVisual(m_UnitID, UnitInfo.Resource.UIInfo.UpAnimation.VisualInfo);
+            }
+        }
+    }
     class AttackAnimation : UIAnimation
     {
         MainUI m_AssociatedUI = null;
@@ -124,8 +271,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             FPS = Animation.FPS;
             m_Frames = Animation.AnimationContent;
             float OldPixelRatio = m_AssociatedSpriteRenderer.sprite.texture.width / m_AssociatedSpriteRenderer.size.x;
-            m_AssociatedUI.p_SetUnitVisual(m_AttackingUnit, Animation);
             m_AssociatedSpriteRenderer.sprite = m_Frames[0];
+            m_AssociatedUI.p_SetUnitVisual(m_AttackingUnit, Animation);
         }
         public void Finish()
         {
@@ -302,7 +449,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
  
 
         ruleManager.SetEventHandler(this);
-
+        ruleManager.SetAnimationPlayer(this);
         gridManager.SetInputReciever(this);
 
         foreach (GameObject obj in clickHandlerPrefabs)
