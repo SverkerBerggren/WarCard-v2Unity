@@ -1121,9 +1121,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         })
         {
             ruleManager.GetTileInfo(Coord.X, Coord.Y).Flags |= RuleManager.TileFlags.Impassable;
+            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(Coord), new Quaternion());
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+            activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
+
         }
 
-        foreach(RuleManager.Coordinate cord in listOfObjectives)
+
+
+        foreach (RuleManager.Coordinate cord in listOfObjectives)
         {
             ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective = true;
 
