@@ -1118,6 +1118,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             new Coordinate(21,10),
             new Coordinate(21,9),
             new Coordinate(21,8),
+
+            new Coordinate(20,22),
+            new Coordinate(20,21),
+            new Coordinate(20,20),
+            new Coordinate(21,22),
+            new Coordinate(21,21),
+            new Coordinate(21,20),
         })
         {
             ruleManager.GetTileInfo(Coord.X, Coord.Y).Flags |= RuleManager.TileFlags.Impassable;
