@@ -95,7 +95,7 @@ public class AbilityClickHandler : ClickHandler
 
             if(ruleManager.GetUnitInfo(selectedUnit.UnitID).PlayerIndex == abilityToExecute.PlayerIndex)
             {
-                if(GlobalNetworkState.IsLocal ||(selectedUnit.UnitID == GlobalNetworkState.LocalPlayerIndex))
+                if(GlobalNetworkState.IsLocal ||(selectedUnit.PlayerIndex == GlobalNetworkState.LocalPlayerIndex))
                 {
                     mainUi.EnqueueAction(abilityToExecute);
                 }
