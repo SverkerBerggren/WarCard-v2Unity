@@ -38,7 +38,7 @@ namespace ResourceManager
     {
         public Animation UpAnimation = new Animation();
         public Animation DownAnimation = new Animation();
-        public Animation AttackAnimation = new Animation();
+        public Animation AttackAnimation = null;
 
         public Dictionary<string, Animation> OtherAnimations = new Dictionary<string, Animation>();
         
