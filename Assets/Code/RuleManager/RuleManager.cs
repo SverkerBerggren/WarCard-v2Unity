@@ -1677,8 +1677,15 @@ namespace RuleManager
                 {
                     OriginTile =p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)Origins[0]).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)Origins[0]).UnitID].UnitTileOffsets);
                 }
+
+                HashSet<int> AffectedUnits = new HashSet<int>();
                 foreach(Coordinate CurrentTile in p_GetTiles(AreaDamageEffect.Range,OriginTile))
                 {
+                    if(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID == 0 || AffectedUnits.Contains(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID))
+                    {
+                        continue;
+                    }
+                    AffectedUnits.Add(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID);
                     UnitInfo UnitToDamage = p_GetProcessedUnitInfo(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID);
                     if(UnitToDamage.PlayerIndex == Source.PlayerIndex)
                     {
