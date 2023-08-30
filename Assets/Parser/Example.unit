@@ -1,0 +1,23 @@
+Knight
+{
+    stats
+    {
+        HP = 123;
+        Movement = 123;
+        Damage = 123;
+    }
+    visuals
+    {
+        Up = Dasdad();
+    }
+    Asdasd = asdad;
+    SmiteDamage = 123;
+    activated Smite ( Unit target : Enemy(target) && Enemy())
+    {
+        DealDamage(target,SmiteDamage);
+    }
+    activated Destruct( Unit target : Friendly(target) && Tag(target,"Knight") && Distance(this,target) < 8 )
+    {
+
+    }
+}

@@ -88,7 +88,10 @@ namespace RuleManager
             EffectsToExecute = new List<Effect>(Effects);
         }
     }
-
+    public class Effect_UnitScript : Effect
+    {
+        public UnitScript.Expression Expr;
+    }
     public class Effect_GainInitiative : Effect
     {
         public int InitiativeGain = 0;
@@ -393,6 +396,7 @@ namespace RuleManager
         public ActivationCondition Conditions = new ActivationCondition_True();
         public TargetInfo ActivationTargets;
         public Effect ActivatedEffect;
+
         public AnimationSpecification Animation = null;
 
         public Ability_Activated() : base(AbilityType.Activated)
@@ -553,6 +557,16 @@ namespace RuleManager
         {
             return (Targets.Count == 0);
         }
+    }
+    public class UnitScriptTarget 
+    {
+        public TargetType Type;
+        public string Name;
+        public UnitScript.Expression Condition;
+    }
+    public class TargetInfo_UnitScript : TargetInfo
+    {
+        public List<UnitScriptTarget> Targets;
     }
     public class TargetCondition
     {
@@ -955,6 +969,7 @@ namespace RuleManager
         public UnitStats Stats = new UnitStats();
         public HashSet<string> Tags = new HashSet<string>();
 
+        public EvaluationEnvironment Envir = new EvaluationEnvironment();
 
         //Dynamic stuff
         public List<bool> AbilityActivated = new List<bool>();
