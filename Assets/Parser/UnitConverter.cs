@@ -32,11 +32,12 @@ namespace UnitScript
     public class Expression_FuncCall : Expression
     {
         public string FuncName;
-        public List<Expression> Args;
+        public List<Expression> Args = new List<Expression>();
+        public Dictionary<string,Expression> KeyArgs = new Dictionary<string, Expression>();
     }
     public class Expression_List : Expression
     {
-        public List<Expression> Contents;
+        public List<Expression> Contents = new List<Expression>();
     }
     public class Expression_Literal : Expression
     {
@@ -49,14 +50,16 @@ namespace UnitScript
 
     public class BuiltinFuncArgs
     {
+        public UnitConverter Handler = null;
         public List<object> Arguments = new List<object>();
+        public Dictionary<string,object> KeyArguments = new Dictionary<string, object>();
     }
     public class Builtin_FuncInfo
     {
         public Type ResultType;
         public EvalContext ValidContexts = EvalContext.None;
-        public List<Type> ArgTypes;//required arguments
-        public Dictionary<string, Type> KeyArgTypes;//keyword required types
+        public List<Type> ArgTypes = new List<Type>();//required arguments
+        public Dictionary<string, Type> KeyArgTypes =  new Dictionary<string, Type>();//keyword required types
         public Func<BuiltinFuncArgs,object> Callable;
     }
 
@@ -89,8 +92,49 @@ namespace UnitScript
         Dictionary<string, Builtin_FuncInfo> m_BuiltinFuncs = new Dictionary<string, Builtin_FuncInfo>();
         HashSet<string> m_ConstexpBuiltins = new HashSet<string>();
 
-
+        string m_CurrentPath = "";
+        public string GetCurrentPath()
+        {
+            return m_CurrentPath;
+        }
+        public void SetCurrentPath(string NewPath)
+        {
+            m_CurrentPath = NewPath;
+        }
         
+        static object Not(BuiltinFuncArgs Args)
+        {
+            bool ReturnValue = false;
+            if(Args.Arguments[0] is bool)
+            {
+                ReturnValue = !(bool)Args.Arguments[0];
+            }
+            return ReturnValue;
+        }
+        static object And(BuiltinFuncArgs Args)
+        {
+            bool ReturnValue = true;
+            foreach(object Arg in Args.Arguments)
+            {
+                if( !(Arg is bool) || !(bool)Arg )
+                {
+                    return false;
+                }
+            }
+            return ReturnValue;
+        }
+        static object Or(BuiltinFuncArgs Args)
+        {
+            bool ReturnValue = false;
+            foreach(object Arg in Args.Arguments)
+            {
+                if( Arg is bool && (bool)Arg )
+                {
+                    return true;
+                }
+            }
+            return ReturnValue;
+        }
         public UnitConverter()
         {
                
@@ -165,24 +209,49 @@ namespace UnitScript
             {
                 Parser.Expression_FuncCall Func = (Parser.Expression_FuncCall)ParsedExpression;
                 Expression_FuncCall NewFunc = new Expression_FuncCall();
-                List<Expression> ConvertedArgs = new List<Expression>();
+                NewFunc.FuncName = Func.FuncName.Value;
                 List<Type> ArgTypes = new List<Type>();
+                Dictionary<Parser.Token,Type> KeyArgTypes = new Dictionary<Parser.Token,Type>();
                 foreach (Parser.Expression Argument in Func.Args)
                 {
                     Type ArgType;
                     Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext, Envir,Argument, out ArgType);
-                    ConvertedArgs.Add(ArgExpr);
+                    NewFunc.Args.Add(ArgExpr);
                     ArgTypes.Add(ArgType);
+                }
+                foreach (Parser.KeyArg Argument in Func.KeyArgs)
+                {
+                    Type ArgType;
+                    Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext, Envir,Argument.Value, out ArgType);
+                    NewFunc.KeyArgs[Argument.Name.Value] = ArgExpr;
+                    KeyArgTypes[Argument.Name] = ArgType;
                 }
                 if (m_BuiltinFuncs.ContainsKey(Func.FuncName.Value))
                 {
                     Builtin_FuncInfo FuncInfo = m_BuiltinFuncs[Func.FuncName.Value];
-                    for (int i = 0; i < Mathf.Min(ConvertedArgs.Count, FuncInfo.ArgTypes.Count); i++)
+                    for (int i = 0; i < Mathf.Min(NewFunc.Args.Count, FuncInfo.ArgTypes.Count); i++)
                     {
                         if (ArgTypes[i] != FuncInfo.ArgTypes[i])
                         {
                             OutDiagnostics.Add(new Diagnostic(Func.FuncName, "Argument has invalid type: "+FuncInfo.ArgTypes[i].Name + " expected"));
                             OutType = typeof(int);
+                        }
+                    }
+                    foreach(KeyValuePair<Parser.Token,Type> KeyArg in KeyArgTypes)
+                    {
+                        if(!FuncInfo.KeyArgTypes.ContainsKey(KeyArg.Key.Value))
+                        {
+                            OutDiagnostics.Add(new Diagnostic(KeyArg.Key,"Invalid key argument \""+KeyArg.Key.Value+"\""));
+                        }
+                        else
+                        {
+                            Type ExpectedType = FuncInfo.KeyArgTypes[KeyArg.Key.Value];
+                            if(ExpectedType != KeyArg.Value)
+                            {
+                                   
+                                OutDiagnostics.Add(new Diagnostic(KeyArg.Key,
+                                            "Invalid key argument type: "+ExpectedType.Name + " expected, "+KeyArg.Value.Name+ " recieved"));
+                            }
                         }
                     }
                     if( (FuncInfo.ValidContexts & CurrentContext) == 0)
@@ -196,7 +265,6 @@ namespace UnitScript
                     OutDiagnostics.Add(new Diagnostic(Func.FuncName, "No builtin function named \"" + Func.FuncName.Value + "\""));
                     OutType = typeof(void);
                 }
-                NewFunc.FuncName = Func.FuncName.Value;
                 ReturnValue = NewFunc;
             }
             else if (ParsedExpression is Parser.Expression_Variable)
@@ -315,7 +383,18 @@ namespace UnitScript
         RuleManager.TargetType StringToType(string Type)
         {
             RuleManager.TargetType ReturnValue = RuleManager.TargetType.Null;
-
+            if(Type == "Unit")
+            {
+                return RuleManager.TargetType.Unit;
+            }
+            else if(Type == "Tile")
+            {
+                return RuleManager.TargetType.Tile;
+            }
+            else if(Type == "Player")
+            {
+                return RuleManager.TargetType.Player;
+            }
             return ReturnValue;
         }
         RuleManager.UnitScriptTarget ConvertTarget(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.ActivatedAbilityTarget ParsedTarget)
@@ -326,6 +405,16 @@ namespace UnitScript
             if(ReturnValue.Type == RuleManager.TargetType.Null)
             {
                 OutDiagnostics.Add(new Diagnostic(ParsedTarget.TargetType.TypeIdentifier,"No target type with name \""+ParsedTarget.TargetType.TypeIdentifier.Value+"\""));   
+                return ReturnValue;
+            }
+            //add dummy type to environment
+            if(ReturnValue.Type == RuleManager.TargetType.Unit)
+            {
+                Envir.AddVar(ReturnValue.Name,new RuleManager.UnitScriptTarget());
+            }
+            else if(ReturnValue.Type == RuleManager.TargetType.Tile)
+            {
+                Envir.AddVar(ReturnValue.Name,new RuleManager.Coordinate());
             }
             Type OutType  = null;
             ReturnValue.Condition = ConvertExpression(OutDiagnostics,EvalContext.Predicate,Envir,ParsedTarget.Condition,out OutType);
@@ -388,6 +477,13 @@ namespace UnitScript
                 ReturnValue.GameInfo.Abilities.Add(ConvertAbility(OutDiagnostics,ReturnValue.GameInfo.Envir,Ability));
             }
             return ReturnValue;
+        }
+        void AddBuiltins(Dictionary<string,Builtin_FuncInfo> FuncsToAdd)
+        {
+             foreach(KeyValuePair<string,Builtin_FuncInfo> Func in FuncsToAdd)
+             {
+                 m_BuiltinFuncs[Func.Key] = Func.Value;
+             } 
         }
     }
 }

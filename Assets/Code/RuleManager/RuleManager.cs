@@ -34,6 +34,10 @@ namespace RuleManager
         }
     }
 
+    public class UnitIdentifier
+    {
+        public int ID = 0;
+    }
 
     public interface AnimationPlayer
     {
@@ -969,7 +973,7 @@ namespace RuleManager
         public UnitStats Stats = new UnitStats();
         public HashSet<string> Tags = new HashSet<string>();
 
-        public EvaluationEnvironment Envir = new EvaluationEnvironment();
+        public UnitScript.EvaluationEnvironment Envir = new UnitScript.EvaluationEnvironment();
 
         //Dynamic stuff
         public List<bool> AbilityActivated = new List<bool>();
@@ -2520,6 +2524,75 @@ namespace RuleManager
                 yield return (UnitTarget);
             }
             yield break;
+        }
+        object p_DealDamage(UnitScript.BuiltinFuncArgs Args)
+        {
+            int DamageToDeal = (int) Args.Arguments[1];
+            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
+            p_DealDamage(IdToModify.ID,DamageToDeal);
+            return null;
+        }
+        object p_Enemy(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
+            return m_CurrentPlayerTurn != m_UnitInfos[IdToModify.ID].PlayerIndex;
+        }
+        object p_Friendly(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
+            return m_CurrentPlayerTurn == m_UnitInfos[IdToModify.ID].PlayerIndex;
+        }
+        object p_Tag(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
+            string TagToCheck = (string)Args.Arguments[1];
+            return m_UnitInfos[IdToModify.ID].Tags.Contains(TagToCheck);
+        }
+        object p_DestroyUnit(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
+            p_DestroyUnit(IdToModify.ID);
+            return null;
+        }
+        Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
+        {
+            Dictionary<string,UnitScript.Builtin_FuncInfo> ReturnValue = new Dictionary<string, UnitScript.Builtin_FuncInfo>();
+
+            UnitScript.Builtin_FuncInfo DealDamage = new UnitScript.Builtin_FuncInfo();
+            DealDamage.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(int)};
+            DealDamage.ResultType = typeof(void);
+            DealDamage.ValidContexts = UnitScript.EvalContext.Resolve;
+            DealDamage.Callable = p_DealDamage;
+            ReturnValue["DealDamage"] = DealDamage;
+
+            UnitScript.Builtin_FuncInfo DestroyUnit = new UnitScript.Builtin_FuncInfo();
+            DestroyUnit.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            DestroyUnit.ResultType = typeof(void);
+            DestroyUnit.ValidContexts = UnitScript.EvalContext.Resolve;
+            DestroyUnit.Callable = p_DestroyUnit;
+            ReturnValue["DestroyUnit"] = DestroyUnit;
+
+            UnitScript.Builtin_FuncInfo Enemy = new UnitScript.Builtin_FuncInfo();
+            Enemy.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            Enemy.ResultType = typeof(bool);
+            Enemy.ValidContexts = UnitScript.EvalContext.Predicate;
+            Enemy.Callable = p_Enemy;
+            ReturnValue["Enemy"] = Enemy;
+
+            UnitScript.Builtin_FuncInfo Friendly = new UnitScript.Builtin_FuncInfo();
+            Friendly.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            Friendly.ResultType = typeof(bool);
+            Friendly.ValidContexts = UnitScript.EvalContext.Predicate;
+            Friendly.Callable = p_Friendly;
+            ReturnValue["Friendly"] = Friendly;
+            
+            UnitScript.Builtin_FuncInfo Tag = new UnitScript.Builtin_FuncInfo();
+            Tag.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(string)};
+            Tag.ResultType = typeof(bool);
+            Tag.ValidContexts = UnitScript.EvalContext.Predicate;
+            Tag.Callable = p_Tag;
+            ReturnValue["Tag"] = Tag;
+            return ReturnValue;
         }
         public List<Target> GetPossibleTargets(TargetCondition CurrentCondition , EffectSource Source, List<Target> CurrentTargets)
         {
