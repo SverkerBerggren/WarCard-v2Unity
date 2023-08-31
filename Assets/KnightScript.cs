@@ -30,7 +30,7 @@ public class KnightScript : Unit
         ((ResourceManager.Visual_Image)ReturnValue.UIInfo.DownAnimation.VisualInfo).Sprite = forwardSprite;
 
         ReturnValue.UIInfo.AttackAnimation = new ResourceManager.Animation();
-        ReturnValue.UIInfo.AttackAnimation.VisualInfo = MainUI.g_ResourceManager.GetUnitResource("Knight").UIInfo.AttackAnimation.VisualInfo;
+        //ReturnValue.UIInfo.AttackAnimation.VisualInfo = MainUI.g_ResourceManager.GetUnitResource("Knight").UIInfo.AttackAnimation.VisualInfo;
 
         ReturnValue.UIInfo.UpAnimation.VisualInfo.Width = 20;
         ReturnValue.UIInfo.DownAnimation.VisualInfo.Width = 20;

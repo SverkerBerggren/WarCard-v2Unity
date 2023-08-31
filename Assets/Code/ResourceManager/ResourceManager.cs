@@ -78,12 +78,21 @@ namespace ResourceManager
     {
         Dictionary<string, UnitResource> m_LoadedUnitInfos = new Dictionary<string, UnitResource>();
         Dictionary<string, Visual> m_LoadedVisuals = new Dictionary<string, Visual>();
+        UnitScript.UnitConverter m_ScriptHandler = new UnitScript.UnitConverter();
+        Parser.Parser m_Parser = new Parser.Parser();
+        MBCC.Tokenizer m_Tokenizer;
         bool m_VisualsLoaded = false;
         string m_ResourceFolder = "";
 
         public ResourceManager(string ResourceFolder)
         {
             m_ResourceFolder = ResourceFolder;
+            m_Tokenizer = m_Parser.GetTokenizer();
+            m_ScriptHandler.AddBuiltins(GetUnitScriptFuncs());
+        }
+        public UnitScript.UnitConverter GetScriptHandler()
+        {
+            return m_ScriptHandler;   
         }
         public UnitResource GetUnitResource(string NameOfUnit)
         {
@@ -215,22 +224,44 @@ namespace ResourceManager
         //used whether or not the json/*parser* format is used
         void LoadUnitFile(string PathToLoad)
         {
-            byte[] FileData = File.ReadAllBytes(PathToLoad);
-            int Out;
-            MBJson.JSONObject UnitInfo = MBJson.JSONObject.ParseJSONObject(FileData, 0, out Out);
-            UnitResource NewResource = p_ParseUnit(UnitInfo,PathToLoad);
-            m_LoadedUnitInfos[NewResource.Name] = NewResource;
+            //byte[] FileData = File.ReadAllBytes(PathToLoad);
+            //int Out;
+            //MBJson.JSONObject UnitInfo = MBJson.JSONObject.ParseJSONObject(FileData, 0, out Out);
+            //UnitResource NewResource = p_ParseUnit(UnitInfo,PathToLoad);
+            //m_LoadedUnitInfos[NewResource.Name] = NewResource;
+            m_ScriptHandler.SetCurrentPath(PathToLoad);
+            string Text = File.ReadAllText(PathToLoad);
+            m_Tokenizer.SetText(Text);
+            List<UnitScript.Diagnostic> Errors = new List<UnitScript.Diagnostic>();
+            try
+            {
+                Parser.Unit ParsedUnit = m_Parser.ParseUnit(m_Tokenizer);
+                UnitResource NewResource = m_ScriptHandler.ConvertUnit(Errors,ParsedUnit);
+                m_LoadedUnitInfos[NewResource.Name] = NewResource;
+            }
+            catch(Exception e)
+            {
+                throw new Exception("Error parsing unit file: "+e.Message);
+            }
+            if(Errors.Count > 0)
+            {
+                throw new Exception("Parsed unit files had diagnostics errors");
+            }
         }
         void LoadResourceFolder(string PathToLoad)
         {
-            m_VisualsLoaded = true;
+            if(m_VisualsLoaded)
+            {
+                return;   
+            }
             foreach(string UnitPath in UnitDirectoryIterator.GetDirectoryFiles_Recursive(PathToLoad))
             {
-                if(UnitPath.EndsWith(".json"))
+                if(UnitPath.EndsWith(".unit"))
                 {
                     LoadUnitFile(UnitPath);
                 }
             }
+            m_VisualsLoaded = true;
         }
 
         void p_UpdateVisualKeyParameter(Visual VisualToModify,UnitScript.BuiltinFuncArgs Args)

@@ -460,6 +460,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
  
 
         ruleManager.SetEventHandler(this);
+        ruleManager.SetScriptHandler(g_ResourceManager.GetScriptHandler());
         ruleManager.SetAnimationPlayer(this);
         gridManager.SetInputReciever(this);
 

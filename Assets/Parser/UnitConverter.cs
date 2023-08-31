@@ -73,7 +73,7 @@ namespace UnitScript
 
     public class EvaluationEnvironment
     {
-        Dictionary<string,object> m_Contents;
+        Dictionary<string,object> m_Contents = new Dictionary<string,object>();
         public bool HasVar(string VariableToCheck)
         {
             return m_Contents.ContainsKey(VariableToCheck);
@@ -102,7 +102,7 @@ namespace UnitScript
             m_CurrentPath = NewPath;
         }
         
-        static object Not(BuiltinFuncArgs Args)
+        static object p_Not(BuiltinFuncArgs Args)
         {
             bool ReturnValue = false;
             if(Args.Arguments[0] is bool)
@@ -111,7 +111,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        static object And(BuiltinFuncArgs Args)
+        static object p_And(BuiltinFuncArgs Args)
         {
             bool ReturnValue = true;
             foreach(object Arg in Args.Arguments)
@@ -123,7 +123,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        static object Or(BuiltinFuncArgs Args)
+        static object p_Or(BuiltinFuncArgs Args)
         {
             bool ReturnValue = false;
             foreach(object Arg in Args.Arguments)
@@ -137,7 +137,26 @@ namespace UnitScript
         }
         public UnitConverter()
         {
-               
+            Builtin_FuncInfo And = new Builtin_FuncInfo();
+            And.ArgTypes = new List<Type>{typeof(bool),typeof(bool)};
+            And.ResultType = typeof(bool);
+            And.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
+            And.Callable = p_And;
+            m_BuiltinFuncs["&&"] = And;
+
+            Builtin_FuncInfo Or = new Builtin_FuncInfo();
+            Or.ArgTypes = new List<Type>{typeof(bool),typeof(bool)};
+            Or.ResultType = typeof(bool);
+            Or.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
+            Or.Callable = p_Or;
+            m_BuiltinFuncs["||"] = Or;
+
+            Builtin_FuncInfo Not = new Builtin_FuncInfo();
+            Not.ArgTypes = new List<Type>{typeof(bool)};
+            Not.ResultType = typeof(bool);
+            Not.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
+            Not.Callable = p_Not;
+            m_BuiltinFuncs["!"] = Not;
         }
         public object Eval(EvaluationEnvironment Envir,Expression Expr)
         {
@@ -158,6 +177,10 @@ namespace UnitScript
                 foreach(Expression SubExpr in FuncExpr.Args)
                 {
                     FuncArgs.Arguments.Add(Eval(Envir,SubExpr));
+                }
+                foreach(KeyValuePair<string,Expression> SubExpr in FuncExpr.KeyArgs)
+                {
+                    FuncArgs.KeyArguments[SubExpr.Key] = Eval(Envir,SubExpr.Value);
                 }
                 ReturnValue = FuncToCall.Callable(FuncArgs);
             }
@@ -208,6 +231,10 @@ namespace UnitScript
             else if (ParsedExpression is Parser.Expression_FuncCall)
             {
                 Parser.Expression_FuncCall Func = (Parser.Expression_FuncCall)ParsedExpression;
+                if(Func.FuncName.Value == "")
+                {
+                    return ConvertExpression(OutDiagnostics,CurrentContext,Envir,Func.Args[0],out ResultType);
+                }
                 Expression_FuncCall NewFunc = new Expression_FuncCall();
                 NewFunc.FuncName = Func.FuncName.Value;
                 List<Type> ArgTypes = new List<Type>();
@@ -410,7 +437,7 @@ namespace UnitScript
             //add dummy type to environment
             if(ReturnValue.Type == RuleManager.TargetType.Unit)
             {
-                Envir.AddVar(ReturnValue.Name,new RuleManager.UnitScriptTarget());
+                Envir.AddVar(ReturnValue.Name,new RuleManager.UnitIdentifier());
             }
             else if(ReturnValue.Type == RuleManager.TargetType.Tile)
             {
@@ -422,10 +449,17 @@ namespace UnitScript
         }
         RuleManager.TargetInfo ConvertTargets(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,List<Parser.ActivatedAbilityTarget> Targets)
         {
-            RuleManager.TargetInfo_UnitScript ReturnValue = null;
+            RuleManager.TargetInfo_List ReturnValue = new RuleManager.TargetInfo_List();
+            List<RuleManager.UnitScriptTarget> ConvertedTargets = new List<RuleManager.UnitScriptTarget>();
             foreach(Parser.ActivatedAbilityTarget  Target in Targets)
             {
-                ReturnValue.Targets.Add(ConvertTarget(OutDiagnostics,Envir,Target));
+                ConvertedTargets.Add(ConvertTarget(OutDiagnostics,Envir,Target));
+            }
+            RuleManager.TargetCondition_UnitScript Condition = new RuleManager.TargetCondition_UnitScript();
+            Condition.Targets = ConvertedTargets;
+            foreach(Parser.ActivatedAbilityTarget  Target in Targets)
+            {
+                ReturnValue.Targets.Add(Condition);
             }
             return ReturnValue;
         }
@@ -433,8 +467,8 @@ namespace UnitScript
         {
             RuleManager.Ability_Activated ReturnValue = new RuleManager.Ability_Activated();
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
-            ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,Envir,ParsedAbility.Statements);
             ReturnValue.ActivationTargets = ConvertTargets(OutDiagnostics,Envir,ParsedAbility.Targets);
+            ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,Envir,ParsedAbility.Statements);
             return ReturnValue;
         }
         public RuleManager.Ability ConvertAbility(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
@@ -452,6 +486,7 @@ namespace UnitScript
             ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
             ReturnValue.GameInfo.Stats = ConvertStats(OutDiagnostics,ParsedUnit.Stats);
             ReturnValue.UIInfo = ConvertVisuals(OutDiagnostics,ReturnValue.GameInfo.Envir,ParsedUnit.visuals);
+            ReturnValue.Name = ParsedUnit.Name.Value;
             foreach(Parser.VariableDeclaration Vars in ParsedUnit.Variables)
             {
                 int ErrCount = OutDiagnostics.Count;
@@ -478,7 +513,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        void AddBuiltins(Dictionary<string,Builtin_FuncInfo> FuncsToAdd)
+        public void AddBuiltins(Dictionary<string,Builtin_FuncInfo> FuncsToAdd)
         {
              foreach(KeyValuePair<string,Builtin_FuncInfo> Func in FuncsToAdd)
              {

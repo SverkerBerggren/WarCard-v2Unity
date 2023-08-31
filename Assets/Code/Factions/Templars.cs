@@ -47,8 +47,8 @@ public class Templars
         ActivatedAbility.SetName("Smite");
 
         ResourceManager.UnitUIInfo UIINfo = MainUI.g_ResourceManager.GetUnitResource("Knight").UIInfo;
-        ActivatedAbility.Animation = new RuleManager.Animation_List(new RuleManager.Animation_AbilityTarget(-1, UIINfo.OtherAnimations["LightningPose"].VisualInfo),
-    new RuleManager.Animation_AbilityTarget(0, UIINfo.OtherAnimations["LightningStrike"].VisualInfo));
+        //ActivatedAbility.Animation = new RuleManager.Animation_List(new RuleManager.Animation_AbilityTarget(-1, UIINfo.OtherAnimations["LightningPose"].VisualInfo),
+    //new RuleManager.Animation_AbilityTarget(0, UIINfo.OtherAnimations["LightningStrike"].VisualInfo));
         ReturnValue.Abilities.Add(ActivatedAbility);
 
         ReturnValue.TopLeftCorner = new RuleManager.Coordinate(0, 0);

@@ -12,7 +12,7 @@ Knight
     {
     }
     SmiteDamage = 100;
-    activated Smite ( Unit target : Enemy(target) && Enemy())
+    activated Smite ( Unit target : Enemy(target) && Enemy(target))
     {
         DealDamage(target,SmiteDamage);
     }

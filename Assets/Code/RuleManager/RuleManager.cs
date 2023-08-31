@@ -37,6 +37,11 @@ namespace RuleManager
     public class UnitIdentifier
     {
         public int ID = 0;
+        public UnitIdentifier(){}
+        public UnitIdentifier(int ID)
+        {
+            this.ID = ID;   
+        }
     }
 
     public interface AnimationPlayer
@@ -575,6 +580,11 @@ namespace RuleManager
     public class TargetCondition
     {
     }
+    //duplicated for each target
+    public class TargetCondition_UnitScript : TargetCondition
+    {
+        public List<UnitScriptTarget> Targets;
+    }
     public class TargetCondition_Type : TargetCondition
     {
         public TargetType ValidType = TargetType.Null;
@@ -1070,6 +1080,7 @@ namespace RuleManager
             UnitTileOffsets = new List<Coordinate>();
             Direction = new Coordinate(InfoToCopy.Direction);
             TopLeftCorner = new Coordinate(InfoToCopy.TopLeftCorner);
+            Envir = InfoToCopy.Envir;
             foreach(Coordinate CoordToCopy in InfoToCopy.UnitTileOffsets)
             {
                 UnitTileOffsets.Add(new Coordinate(CoordToCopy));
@@ -1207,6 +1218,7 @@ namespace RuleManager
         private int m_CurrentID = 0;
         RuleEventHandler m_EventHandler;
         AnimationPlayer m_AnimationPlayer;
+        UnitScript.UnitConverter m_ScriptHandler;
 
         List<Target> m_ChoosenTargets = null;
 
@@ -1526,7 +1538,18 @@ namespace RuleManager
             {
                 p_PlayAnimations(Targets, Source, EffectToResolve.Animation);
             }
-            if (EffectToResolve is Effect_DealDamage)
+            if(EffectToResolve is Effect_UnitScript)
+            {
+                Effect_UnitScript UnitEffect = (Effect_UnitScript)EffectToResolve; 
+                if( !(Source is EffectSource_Unit))
+                {
+                    throw new Exception("Effect_UnitScript assumes that the source is a Unit");
+                }
+                EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
+                UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
+                m_ScriptHandler.Eval(AssociatedUnit.Envir,UnitEffect.Expr);
+            }
+            else if (EffectToResolve is Effect_DealDamage)
             {
                 Effect_DealDamage DamageEffect = (Effect_DealDamage)EffectToResolve;
                 IEnumerator RetrievedTargets = p_RetrieveTargets(Targets,Source, DamageEffect.Targets);
@@ -1845,7 +1868,54 @@ namespace RuleManager
             {
                 return (false);
             }
-            if(Condition is TargetCondition_Type)
+            if(Condition is TargetCondition_UnitScript)
+            {
+                //ASSUMPTION: always the top of the "call stack".
+                TargetCondition_UnitScript UnitScriptTarget = (TargetCondition_UnitScript)Condition;
+                if(!(Source is EffectSource_Unit))
+                {
+                    throw new Exception("Effect for TargetCondition_UnitScript must be a unit");
+                }
+                EffectSource_Unit Unit = (EffectSource_Unit)Source;
+                UnitInfo SourceUnit = m_UnitInfos[Unit.UnitID];
+                int CurrentIndex = 0;
+                foreach(Target PrevTarget in CurrentTargets)
+                {
+                    if(PrevTarget is Target_Unit)
+                    {
+                        SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)PrevTarget).UnitID));
+                    }
+                    else if(PrevTarget is Target_Tile)
+                    {
+                        SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)PrevTarget).TargetCoordinate);
+                    }
+                    CurrentIndex++;
+                }
+                if(UnitScriptTarget.Targets[CurrentIndex].Type != TargetToVerify.Type)
+                {
+                    Error = "Invalid type for target: type needs to be " + UnitScriptTarget.Targets[CurrentIndex].Type.ToString();
+                    return false;
+                }
+                if(TargetToVerify is Target_Unit)
+                {
+                    SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)TargetToVerify).UnitID));
+                }
+                else if(TargetToVerify is Target_Tile)
+                {
+                    SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)TargetToVerify).TargetCoordinate);
+                }
+                UnitScript.Expression ExprToEvaluate = UnitScriptTarget.Targets[CurrentIndex].Condition;
+                object Result = m_ScriptHandler.Eval(SourceUnit.Envir,ExprToEvaluate);
+                if( !(Result is bool) || !((bool)Result))
+                {
+                    ReturnValue = false;
+                    if(SourceUnit.Envir.HasVar("Error"))
+                    {
+                        Error = (string)SourceUnit.Envir.GetVar("Error");
+                    }
+                }
+            }
+            else if(Condition is TargetCondition_Type)
             {
                 TargetCondition_Type TypeCondition = (TargetCondition_Type)Condition;
                 ReturnValue = TypeCondition.ValidType == TargetToVerify.Type;
@@ -2593,6 +2663,11 @@ namespace RuleManager
             Tag.Callable = p_Tag;
             ReturnValue["Tag"] = Tag;
             return ReturnValue;
+        }
+        public void SetScriptHandler(UnitScript.UnitConverter ScriptHandler)
+        {
+            m_ScriptHandler = ScriptHandler;
+            m_ScriptHandler.AddBuiltins(GetUnitScriptFuncs());
         }
         public List<Target> GetPossibleTargets(TargetCondition CurrentCondition , EffectSource Source, List<Target> CurrentTargets)
         {
