@@ -565,9 +565,33 @@ namespace MBJson
                 return ("false");
             }
         }
+        string p_JsonEscapeString(string StringToEscape)
+        {
+            string ReturnValue = "";
+            foreach(Char Character in StringToEscape)
+            {
+                if(Character == '\n')
+                {
+                    ReturnValue += "\\n";
+                }
+                else if(Character == '\t')
+                {
+                    ReturnValue += "\\t";   
+                }
+                else if(Character == '"')
+                {
+                    ReturnValue += "\\\"";   
+                }
+                else
+                {
+                    ReturnValue += Character;   
+                }
+            }
+            return ReturnValue;
+        }
         string ToString_String()
         {
-            return ("\""+(string)m_InternalData+"\"");
+            return ("\""+p_JsonEscapeString((string)m_InternalData)+"\"");
         }
         string ToString_Array()
         {

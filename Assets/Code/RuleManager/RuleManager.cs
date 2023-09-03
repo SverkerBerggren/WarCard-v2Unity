@@ -2612,17 +2612,46 @@ namespace RuleManager
             UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
             return m_CurrentPlayerTurn == m_UnitInfos[IdToModify.ID].PlayerIndex;
         }
-        object p_Tag(UnitScript.BuiltinFuncArgs Args)
-        {
-            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
-            string TagToCheck = (string)Args.Arguments[1];
-            return m_UnitInfos[IdToModify.ID].Tags.Contains(TagToCheck);
-        }
         object p_DestroyUnit(UnitScript.BuiltinFuncArgs Args)
         {
             UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
             p_DestroyUnit(IdToModify.ID);
             return null;
+        }
+        //
+        object p_Distance(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier FirstUnit = (UnitIdentifier)Args.Arguments[0];
+            UnitIdentifier SecondUnit = (UnitIdentifier)Args.Arguments[1];
+            var FirstUnitInfo = m_UnitInfos[FirstUnit.ID];
+            var SecondUnitInfo = m_UnitInfos[SecondUnit.ID];
+            return p_CalculateUnitDistance(FirstUnitInfo,SecondUnitInfo);
+        }
+        object p_RegisterContinous(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitScript.ContinousAbility AbilityToRegister = (UnitScript.ContinousAbility)Args.Arguments[0];
+            RegisteredContinousEffect EffectToRegister = new RegisteredContinousEffect();
+            EffectToRegister.AffectedEntities = AbilityToRegister.Ability.AffectedEntities;
+            EffectToRegister.EffectToApply = AbilityToRegister.Ability.EffectToApply;
+            if(Args.KeyArguments.ContainsKey("TurnDuration"))
+            {
+                EffectToRegister.TurnDuration = (int)Args.KeyArguments["TurnDuration"];
+            }
+            if(Args.KeyArguments.ContainsKey("PassDuration"))
+            {
+                EffectToRegister.PassDuration = (int)Args.KeyArguments["PassDuration"];
+            }
+            //OBS Effect source most likely depreactd, should bbe baked in the unit environemnt
+            //returned by the "lambda"
+            EffectToRegister.AbilitySource = new EffectSource_Empty();
+            p_RegisterContinousEffect(EffectToRegister);
+            return null;
+        }
+        object p_Tag(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier FirstUnit = (UnitIdentifier)Args.Arguments[0];
+            string TagToCheck = (string)Args.Arguments[1];
+            return m_UnitInfos[FirstUnit.ID].Tags.Contains(TagToCheck);
         }
         Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
         {
@@ -2645,23 +2674,39 @@ namespace RuleManager
             UnitScript.Builtin_FuncInfo Enemy = new UnitScript.Builtin_FuncInfo();
             Enemy.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
             Enemy.ResultType = typeof(bool);
-            Enemy.ValidContexts = UnitScript.EvalContext.Predicate;
+            Enemy.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Enemy.Callable = p_Enemy;
             ReturnValue["Enemy"] = Enemy;
 
             UnitScript.Builtin_FuncInfo Friendly = new UnitScript.Builtin_FuncInfo();
             Friendly.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
             Friendly.ResultType = typeof(bool);
-            Friendly.ValidContexts = UnitScript.EvalContext.Predicate;
+            Friendly.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Friendly.Callable = p_Friendly;
             ReturnValue["Friendly"] = Friendly;
             
             UnitScript.Builtin_FuncInfo Tag = new UnitScript.Builtin_FuncInfo();
             Tag.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(string)};
             Tag.ResultType = typeof(bool);
-            Tag.ValidContexts = UnitScript.EvalContext.Predicate;
+            Tag.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Tag.Callable = p_Tag;
             ReturnValue["Tag"] = Tag;
+
+            UnitScript.Builtin_FuncInfo Distance = new UnitScript.Builtin_FuncInfo();
+            Distance.ArgTypes = new List<Type>{typeof(int),typeof(int)};
+            Distance.ResultType = typeof(int);
+            Distance.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
+            Distance.Callable = p_Distance;
+            ReturnValue["Distance"] = Distance;
+
+            UnitScript.Builtin_FuncInfo RegisterContinous = new UnitScript.Builtin_FuncInfo();
+            RegisterContinous.ArgTypes = new List<Type>{typeof(UnitScript.ContinousAbility)};
+            RegisterContinous.KeyArgTypes = new Dictionary<string, Type>{{"TurnDuration",typeof(int)},{"PassDuration",typeof(int)}};
+            RegisterContinous.ResultType = typeof(void);
+            RegisterContinous.ValidContexts = UnitScript.EvalContext.Resolve;
+            RegisterContinous.Callable = p_RegisterContinous;
+            ReturnValue["RegisterContinous"] = RegisterContinous;
+
             return ReturnValue;
         }
         public void SetScriptHandler(UnitScript.UnitConverter ScriptHandler)
