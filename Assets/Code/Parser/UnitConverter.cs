@@ -55,6 +55,21 @@ namespace UnitScript
     {
         public RuleManager.Ability_Continous Ability;
     }
+    public enum ModificationType
+    {
+        Set,
+        Add
+    }
+    public class Expression_StatModification : Expression
+    {
+        public ModificationType Type;
+        public Expression_StatReference Stat;
+        public Expression Value;
+    }
+    public class Expression_StatReference : Expression
+    {
+        public List<string> Stat;
+    }
 
     public class BuiltinFuncArgs
     {
@@ -78,6 +93,7 @@ namespace UnitScript
         Compile  = 1<<1,
         Predicate  = 1<<2,
         Resolve  = 1<<3,
+        Continous = 1<<4,
     }
 
     public class EvaluationEnvironment
@@ -118,7 +134,76 @@ namespace UnitScript
     {
         Dictionary<string, Builtin_FuncInfo> m_BuiltinFuncs = new Dictionary<string, Builtin_FuncInfo>();
         HashSet<string> m_ConstexpBuiltins = new HashSet<string>();
+        delegate Expression SpecialFunc(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType);
+        Dictionary<string,SpecialFunc> m_SpecialFuncs = new Dictionary<string, SpecialFunc>();
+           
+        Expression Eq_Call(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        {
+            Type OutType = typeof(void);
+            Expression ReturnValue = new Expression();
 
+
+            ResultType = OutType;
+            return ReturnValue;
+        }
+
+        Type p_GetStatType(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Expression_StatReference Stat)
+        {
+            Type ReturnValue  = typeof(void);
+
+            Type CurrentType = null;
+            if(Stat.Stat[0] == "this")
+            {
+                CurrentType = typeof(RuleManager.UnitIdentifier);
+            }
+            else
+            {
+                //OutDiagnostics.Add(new Diagnostic
+            }
+            if(CurrentType != null)
+            {
+                for(int i = 1; i < Stat.Stat.Count;i++)
+                {
+                    if(CurrentType == typeof(RuleManager.UnitIdentifier))
+                    {
+                    
+                    }
+                    else if(CurrentType == typeof(ResourceManager.Visual))
+                    {
+                        //TODO fix
+                    }
+                    else if(CurrentType == typeof(RuleManager.UnitStats))
+                    {
+                        HashSet<string> UnitStats = new HashSet<string>{"Movement","HP","Range","Damage"};
+                        if(UnitStats.Contains(Stat.Stat[i]))
+                        {
+                            CurrentType = typeof(int);
+                            ReturnValue = typeof(int);
+                        }
+                        else
+                        {
+                            //Error   
+                        }
+                    }
+                    else
+                    {
+                        //sus type
+                    }
+                }
+            }
+            return ReturnValue;
+        }
+
+        Expression Add_Stat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        {
+            Type OutType = typeof(void);
+            Expression_StatModification ReturnValue = new Expression_StatModification();
+
+
+            ResultType = OutType;
+            return ReturnValue;
+        }
+        
         string m_CurrentPath = "";
         public string GetCurrentPath()
         {
@@ -407,6 +492,13 @@ namespace UnitScript
                     OutDiagnostics.Add(new Diagnostic(VarToken,"No variable found with name \""+VarToken.Value+"\""));
                 }
             }
+            else if(ParsedExpression is Parser.Expression_StatReference)
+            {
+                var Result = new Expression_StatReference();
+
+                ReturnValue = Result;
+                ResultType = typeof(Expression_StatReference);
+            }
             else if(ParsedExpression is Parser.Expression_Ability)
             {
                 return ConvertExpression_Ability(OutDiagnostics,CurrentContext ,Envir,(Parser.Expression_Ability)ParsedExpression,out ResultType);
@@ -494,7 +586,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        RuleManager.Effect  ConvertEffect(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,List<Parser.AbilityStatement> ParsedAbility)
+        RuleManager.Effect  ConvertEffect(List<Diagnostic> OutDiagnostics,EvalContext Context ,EvaluationEnvironment Envir,List<Parser.AbilityStatement> ParsedAbility)
         {
             RuleManager.Effect_UnitScript ReturnValue = new RuleManager.Effect_UnitScript();
             Expression_List NewEffect = new Expression_List();
@@ -503,7 +595,7 @@ namespace UnitScript
                 if(Statement is Parser.AbilityStatement_Expression)
                 {
                     Type OutType = null;
-                    NewEffect.Contents.Add(ConvertExpression(OutDiagnostics,EvalContext.Resolve,Envir, ((Parser.AbilityStatement_Expression)Statement).Expr,out OutType));
+                    NewEffect.Contents.Add(ConvertExpression(OutDiagnostics,Context,Envir, ((Parser.AbilityStatement_Expression)Statement).Expr,out OutType));
                 }
             }
             ReturnValue.Expr = NewEffect;
@@ -570,7 +662,7 @@ namespace UnitScript
             RuleManager.Ability_Activated ReturnValue = new RuleManager.Ability_Activated();
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
             ReturnValue.ActivationTargets = ConvertTargets(OutDiagnostics,Envir,ParsedAbility.Targets);
-            ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,Envir,ParsedAbility.Statements);
+            ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,EvalContext.Resolve,Envir,ParsedAbility.Statements);
             return ReturnValue;
         }
         public RuleManager.Ability_Continous ConvertContinous(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability_Continous ParsedAbility)
@@ -578,7 +670,7 @@ namespace UnitScript
             RuleManager.Ability_Continous ReturnValue = new RuleManager.Ability_Continous();
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
             ReturnValue.AffectedEntities =((RuleManager.TargetInfo_List)  ConvertTargets(OutDiagnostics,Envir,new List<Parser.ActivatedAbilityTarget>{ ParsedAbility.AffectedEntities})).Targets[0];
-            ReturnValue.EffectToApply = ConvertEffect(OutDiagnostics,Envir,ParsedAbility.Statements);
+            ReturnValue.EffectToApply = ConvertEffect(OutDiagnostics,EvalContext.Continous,Envir,ParsedAbility.Statements);
             return ReturnValue;
         }
         public RuleManager.Ability ConvertAbility(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)

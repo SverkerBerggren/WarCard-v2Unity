@@ -33,7 +33,14 @@ namespace ResourceManager
     public class Animation
     {
         public Visual VisualInfo = null;
-        public float SecLengh = 0;
+        public Animation()
+        {
+               
+        }
+        public Animation(Visual VisualInfo)
+        {
+            this.VisualInfo = VisualInfo;
+        }
     }
     public class UnitUIInfo
     {
@@ -42,7 +49,6 @@ namespace ResourceManager
         public Animation AttackAnimation = null;
 
         public Dictionary<string, Animation> OtherAnimations = new Dictionary<string, Animation>();
-        
     }
 
     public class UnitResource
@@ -293,7 +299,7 @@ namespace ResourceManager
                 new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect);
             ReturnValue = NewImage;
             p_UpdateVisualKeyParameter(ReturnValue,Args);
-            return ReturnValue;
+            return new Animation(ReturnValue);
         }
         object p_Video(UnitScript.BuiltinFuncArgs Args)
         {
@@ -302,7 +308,7 @@ namespace ResourceManager
             string SpritePath = p_GetRelativePath(Args.Handler.GetCurrentPath(), VideoToLoad);
             NewVideo.VideoURL = SpritePath;
             p_UpdateVisualKeyParameter(NewVideo,Args);
-            return NewVideo;
+            return new Animation(NewVideo);
         }
         object p_Animation(UnitScript.BuiltinFuncArgs Args)
         {
@@ -330,7 +336,7 @@ namespace ResourceManager
                 ReturnValue.AnimationContent.Add(NewSprite);
             }
             p_UpdateVisualKeyParameter(ReturnValue,Args);
-            return ReturnValue;
+            return new Animation(ReturnValue);
         }
         Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
         {
@@ -344,7 +350,7 @@ namespace ResourceManager
             
             UnitScript.Builtin_FuncInfo Image = new UnitScript.Builtin_FuncInfo();
             Image.ArgTypes = new List<Type>{typeof(string)};
-            Image.ResultType = typeof(Visual);
+            Image.ResultType = typeof(Animation);
             Image.ValidContexts = UnitScript.EvalContext.Compile;
             Image.Callable = p_Image;
             Image.KeyArgTypes = CommonKeyArgTypes;
@@ -352,7 +358,7 @@ namespace ResourceManager
 
             UnitScript.Builtin_FuncInfo Video = new UnitScript.Builtin_FuncInfo();
             Video.ArgTypes = new List<Type>{typeof(string)};
-            Video.ResultType = typeof(Visual);
+            Video.ResultType = typeof(Animation);
             Video.ValidContexts = UnitScript.EvalContext.Compile;
             Video.Callable = p_Video;
             Video.KeyArgTypes = CommonKeyArgTypes;
@@ -360,7 +366,7 @@ namespace ResourceManager
 
             UnitScript.Builtin_FuncInfo Animation = new UnitScript.Builtin_FuncInfo();
             Animation.ArgTypes = new List<Type>{typeof(string)};
-            Animation.ResultType = typeof(Visual);
+            Animation.ResultType = typeof(Animation);
             Animation.ValidContexts = UnitScript.EvalContext.Compile;
             Animation.Callable = p_Video;
             Animation.KeyArgTypes = CommonKeyArgTypes;

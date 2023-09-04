@@ -2693,7 +2693,7 @@ namespace RuleManager
             ReturnValue["Tag"] = Tag;
 
             UnitScript.Builtin_FuncInfo Distance = new UnitScript.Builtin_FuncInfo();
-            Distance.ArgTypes = new List<Type>{typeof(int),typeof(int)};
+            Distance.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(UnitIdentifier)};
             Distance.ResultType = typeof(int);
             Distance.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Distance.Callable = p_Distance;
