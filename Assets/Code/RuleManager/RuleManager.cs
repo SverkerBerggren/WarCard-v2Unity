@@ -101,6 +101,11 @@ namespace RuleManager
     {
         public UnitScript.Expression Expr;
     }
+    public class Effect_ContinousUnitScript : Effect
+    {
+        public string UnitName;
+        public UnitScript.Expression Expr;
+    }
     public class Effect_GainInitiative : Effect
     {
         public int InitiativeGain = 0;
@@ -1547,6 +1552,7 @@ namespace RuleManager
                 }
                 EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
                 UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
+                AssociatedUnit.Envir.AddVar("SOURCE",UnitSource);
                 m_ScriptHandler.Eval(AssociatedUnit.Envir,UnitEffect.Expr);
             }
             else if (EffectToResolve is Effect_DealDamage)
@@ -2643,7 +2649,8 @@ namespace RuleManager
             }
             //OBS Effect source most likely depreactd, should bbe baked in the unit environemnt
             //returned by the "lambda"
-            EffectToRegister.AbilitySource = new EffectSource_Empty();
+            //EffectToRegister.AbilitySource = new EffectSource_Empty();
+            EffectToRegister.AbilitySource = (EffectSource)Args.Envir.GetVar("SOURCE");
             p_RegisterContinousEffect(EffectToRegister);
             return null;
         }
@@ -3448,9 +3455,16 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier)
+        void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier,EffectSource Source)
         {
-            if(Modifier is Effect_IncreaseDamage)
+            if(Modifier is Effect_ContinousUnitScript)
+            {
+                Effect_ContinousUnitScript UnitScriptEffect = (Effect_ContinousUnitScript)Modifier;
+                UnitInfo SourceUnit = m_UnitInfos[ ((EffectSource_Unit) Source).UnitID];
+                SourceUnit.Envir.AddVar(UnitScriptEffect.UnitName,InfoToModify);
+                m_ScriptHandler.Eval(SourceUnit.Envir,UnitScriptEffect.Expr);
+            }
+            else if(Modifier is Effect_IncreaseDamage)
             {
                 InfoToModify.Stats.Damage += ((Effect_IncreaseDamage)Modifier).DamageIncrease;
             }
@@ -3488,7 +3502,7 @@ namespace RuleManager
             {
                 if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource,EmptyTargets, new Target_Unit(ID),out ErrorString))
                 {
-                    p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply);
+                    p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply,ContinousEffect.Value.AbilitySource);
                 }
             }
 

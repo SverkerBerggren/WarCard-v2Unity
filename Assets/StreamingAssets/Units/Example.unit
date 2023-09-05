@@ -16,4 +16,11 @@ Knight
     {
         DealDamage(target,SmiteDamage);
     }
+    activated Speed(Unit target : Friendly(target))
+        : Name="Speed";
+          Flavour="Speed";
+          Description="Knight be speeding";
+    {
+        RegisterContinous( continous _(Unit stuff : Eq(stuff,target)){AddStat(&stuff.Stats.Movement,5);  },TurnDuration=1  );
+    }
 }

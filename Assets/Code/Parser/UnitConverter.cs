@@ -482,7 +482,7 @@ namespace UnitScript
                 ContinousAbility Result = new ContinousAbility();
                 Result.Envir = Envir;
                 Result.Ability = ContinousLiteral.Ability;
-                ReturnValue = null;
+                ReturnValue = Result;
             }
             else if(Expr is Expression_Eq)
             {
@@ -504,6 +504,10 @@ namespace UnitScript
                 else if(Lhs is RuleManager.UnitIdentifier)
                 {
                     return ((RuleManager.UnitIdentifier)Lhs).ID == ((RuleManager.UnitIdentifier)Rhs).ID;
+                }
+                else if(Lhs is RuleManager.UnitInfo)
+                {
+                    return ((RuleManager.UnitInfo)Lhs).UnitID == ((RuleManager.UnitInfo)Rhs).UnitID;
                 }
                 ReturnValue = null;
             }
@@ -572,6 +576,7 @@ namespace UnitScript
 
                 Expression_ContinousAbility Result = new Expression_ContinousAbility();
                 Result.Ability = ConvertContinous(OutDiagnostics,Envir,(Parser.Ability_Continous)ParsedExpression.AbilityLiteral);
+                ReturnValue = Result;
                 OutType = typeof(ContinousAbility);
             }
             ResultType = OutType;
@@ -852,7 +857,10 @@ namespace UnitScript
             RuleManager.Ability_Continous ReturnValue = new RuleManager.Ability_Continous();
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
             ReturnValue.AffectedEntities =((RuleManager.TargetInfo_List)  ConvertTargets(OutDiagnostics,Envir,new List<Parser.ActivatedAbilityTarget>{ ParsedAbility.AffectedEntities})).Targets[0];
-            ReturnValue.EffectToApply = ConvertEffect(OutDiagnostics,EvalContext.Continous,Envir,ParsedAbility.Statements);
+            RuleManager.Effect_ContinousUnitScript Effect = new RuleManager.Effect_ContinousUnitScript();
+            Effect.UnitName = ParsedAbility.AffectedEntities.Name.Value;
+            Effect.Expr = ((RuleManager.Effect_UnitScript)  ConvertEffect(OutDiagnostics,EvalContext.Continous,Envir,ParsedAbility.Statements)).Expr;
+            ReturnValue.EffectToApply = Effect;
             return ReturnValue;
         }
         public RuleManager.Ability ConvertAbility(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
