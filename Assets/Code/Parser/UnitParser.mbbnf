@@ -1,0 +1,165 @@
+term lcurl = "{";
+term rcurl = "}";
+term lpar = "(";
+term rpar = ")";
+term colon = ":";
+term comma = ",";
+term semi = ";";
+term eq = "=";
+
+term stats = "stats";
+term activated = "activated";
+term triggered = "triggered";
+term continous = "triggered";
+term comparison = "<|<=|>|>=";
+term Int = "\d+";
+term str = "\d+";
+
+term or = "\|\|";
+term and = "&&";
+
+
+term idf = "\w\w*";
+skip "\s*";
+
+struct Token
+{
+    tokenPos Position;
+    string Value;
+}
+
+struct Expression
+{
+}
+struct Type
+{
+    Token TypeIdentifier;
+}
+
+struct ArgList
+{
+    List<Expression> Args;
+}
+
+struct Unit
+{
+    Token Name;
+    List<Ability> Abilities;
+    List<VariableDeclaration> Variables;
+    UnitStats Stats;
+}
+
+
+struct AbilityStatement
+{
+    
+}
+
+
+struct Ability
+{
+
+}
+
+struct TargetCondition
+{
+    
+}
+struct ActivatedAbilityTarget
+{
+    Type TargetType;
+    Token Name;
+    Predicate Condition;
+}
+struct Predicate
+{
+    Expression Base;
+    string Comp;
+    Expression Rhs;
+
+    string Combinator;
+    List<Predicate> SubPredicates;
+}
+
+struct Ability_Activated : Ability
+{
+    tokenPos Begin;
+    Token Name;
+    List<ActivatedAbilityTarget> Targets;
+    List<AbilityStatement> Statements;
+}
+
+
+struct VariableDeclaration
+{
+    Type VariableType;
+    Token VariableName;
+    Expression VariableValue;
+}
+struct StatDeclaration
+{
+    Token Stat;
+    int AssignedValue = 0;
+}
+struct UnitStats
+{
+    tokenPos Position;
+    List<StatDeclaration> Declarations;
+}
+
+struct Literal
+{
+    tokenPos Position;
+}
+
+struct Literal_String : Literal
+{
+    string Value;
+}
+struct Literal_Int : Literal
+{
+    int Value;
+}
+
+struct Expression_Literal : Expression
+{
+    Literal literal;
+}
+struct Expression_Variable : Expression
+{
+    Token Variable;
+}
+
+Unit = Name=Token lcurl (Variables=VariableDeclaration | Stats=UnitStats | Abilities=Ability)* rcurl;
+UnitStats = Position=TOKEN.Position stats lcurl Declarations  = StatDeclaration* rcurl;
+StatDeclaration = Stat=Token eq AssignedValue = Int semi;
+
+VariableDeclaration=VariableType=Type VariableName=Token  eq VariableValue=Expression semi; 
+Type= TypeIdentifier=Token;
+
+Ability= this=Ability_Activated;
+
+Ability_Activated = activated Name=Token  lpar (Targets=ActivatedAbilityTarget Targets=ActivatedAbilityTarget(comma this=ActivatedAbilityTarget)* )?   rpar lcurl Statements=AbilityStatement* rcurl;
+
+ActivatedAbilityTarget = TargetType=Type (colon Condition=Predicate)? Name=Token ;
+
+AbilityStatement = idf;
+
+Token = Position = TOKEN.Position Value=idf;
+
+
+Expression = this=Expression_Literal | this=Expression_Variable;
+
+Expression_Literal = literal=Literal;
+Expression_Variable = Variable=Token;
+Literal = this=Literal_String | this=Literal_Int;
+Literal_String = Position=TOKEN.Position Value=str;
+Literal_Int = Position=TOKEN.Position Value=Int;
+
+Expression_FuncCall = FuncName = Token lpar Args=ArgList(Args=Expression Args=Expression(comma this=Expression)* ).Args? rpar;
+
+def Predicate_Base=Predicate;
+Predicate_Base = Base = Expression (Comp = comparison Rhs=Expression)?;
+Predicate = this=Predicate_Base 
+        (or Combinator="or" SubPredicates=Predicate(or this=Predicate_Base) | and Combinator="and" SubPredicates=Predicate(and this=Predicate_Base))? 
+                                    

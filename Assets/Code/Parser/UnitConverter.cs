@@ -60,15 +60,31 @@ namespace UnitScript
         Set,
         Add
     }
+    public enum StatType
+    {
+        Unit,
+        UnitField,
+        Visual,
+        Stat,
+        Null
+    }
     public class Expression_StatModification : Expression
     {
-        public ModificationType Type;
-        public Expression_StatReference Stat;
+        public StatReference Stat;
+        public ModificationType ModType;
         public Expression Value;
     }
-    public class Expression_StatReference : Expression
+    public class StatReference
     {
-        public List<string> Stat;
+        public Expression_Variable UnitVar;
+        public StatType statType;
+        public string FieldName;
+        public Type ReferenceType;
+    }
+    public class Expression_Eq : Expression
+    {
+        public Expression Lhs;
+        public Expression Rhs;
     }
 
     public class BuiltinFuncArgs
@@ -134,73 +150,179 @@ namespace UnitScript
     {
         Dictionary<string, Builtin_FuncInfo> m_BuiltinFuncs = new Dictionary<string, Builtin_FuncInfo>();
         HashSet<string> m_ConstexpBuiltins = new HashSet<string>();
-        delegate Expression SpecialFunc(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType);
-        Dictionary<string,SpecialFunc> m_SpecialFuncs = new Dictionary<string, SpecialFunc>();
-           
-        Expression Eq_Call(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        Dictionary<int,ResourceManager.UnitResource> m_LoadedUnits = new Dictionary<int, ResourceManager.UnitResource>();
+        Dictionary<string,int> m_StringToUnit = new Dictionary<string, int>();
+
+
+        RuleManager.RuleManager m_AssociatedRuleManager = null;
+        void SetRuleManager(RuleManager.RuleManager RuleManager)
         {
-            Type OutType = typeof(void);
-            Expression ReturnValue = new Expression();
-
-
-            ResultType = OutType;
-            return ReturnValue;
+            m_AssociatedRuleManager = RuleManager;   
         }
+        int m_CurrentUnitID = 0;
 
-        Type p_GetStatType(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Expression_StatReference Stat)
+        delegate Expression SpecialFunc(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType);
+        Dictionary<string,SpecialFunc> m_SpecialFuncs;
+        StatReference p_GetStatType(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_StatReference Stat)
         {
+            StatReference Result = new StatReference();
             Type ReturnValue  = typeof(void);
-
-            Type CurrentType = null;
-            if(Stat.Stat[0] == "this")
+            StatType CurrentType = StatType.Null;
+            ResourceManager.UnitResource AssociatedUnit = null;
+            if(Envir.HasVar(Stat.Tokens[0].Value))
             {
-                CurrentType = typeof(RuleManager.UnitIdentifier);
+                object Value = Envir.GetVar(Stat.Tokens[0].Value);
+                if(Value is RuleManager.UnitIdentifier)
+                {
+                    CurrentType = StatType.Unit;
+                    if(m_LoadedUnits.ContainsKey( ((RuleManager.UnitIdentifier)Value).ID))
+                    {
+                        AssociatedUnit = m_LoadedUnits[ ((RuleManager.UnitIdentifier)Value).ID];
+                    }
+                }
+                else 
+                {
+                    OutDiagnostics.Add(new Diagnostic(Stat.Tokens[0],"Cannot create reference to field with type "+Value.GetType().Name));
+                }
             }
             else
             {
-                //OutDiagnostics.Add(new Diagnostic
+                OutDiagnostics.Add(new Diagnostic(Stat.Tokens[0],"Invalid object, \""+Stat.Tokens[0].Value+"\" not found"));
             }
-            if(CurrentType != null)
+            if(CurrentType != StatType.Null)
             {
-                for(int i = 1; i < Stat.Stat.Count;i++)
+                for(int i = 1; i < Stat.Tokens.Count;i++)
                 {
-                    if(CurrentType == typeof(RuleManager.UnitIdentifier))
+                    if(CurrentType == StatType.Unit)
                     {
-                    
+                        if(Stat.Tokens[i].Value == "Visuals")
+                        {
+                            CurrentType = StatType.Visual;
+                        }
+                        else if(Stat.Tokens[i].Value == "Stats")
+                        {
+                            CurrentType = StatType.Stat;
+                        }
+                        else if(AssociatedUnit != null && AssociatedUnit.GameInfo.Envir.HasVar(Stat.Tokens[i].Value))
+                        {
+                            ReturnValue = AssociatedUnit.GameInfo.Envir.GetVar(Stat.Tokens[i].Value).GetType();
+                            CurrentType = StatType.UnitField;
+                        }
+                        else
+                        {
+                            OutDiagnostics.Add(new Diagnostic(Stat.Tokens[i],"Unit has no field named \""+Stat.Tokens[i].Value+"\""));
+                        }
                     }
-                    else if(CurrentType == typeof(ResourceManager.Visual))
+                    else if(CurrentType == StatType.Visual)
                     {
-                        //TODO fix
+                        HashSet<string> UnitStats = new HashSet<string>{"Up","Down","Attack"};
+                        if(UnitStats.Contains(Stat.Tokens[i].Value))
+                        {
+                            CurrentType = StatType.Visual;
+                        }
+                        else
+                        {
+                            OutDiagnostics.Add(new Diagnostic(Stat.Tokens[i],"UnitVisuals has no field named \""+Stat.Tokens[i].Value+"\""));
+                        }
                     }
-                    else if(CurrentType == typeof(RuleManager.UnitStats))
+                    else if(CurrentType == StatType.Stat)
                     {
                         HashSet<string> UnitStats = new HashSet<string>{"Movement","HP","Range","Damage"};
-                        if(UnitStats.Contains(Stat.Stat[i]))
+                        if(UnitStats.Contains(Stat.Tokens[i].Value))
                         {
-                            CurrentType = typeof(int);
                             ReturnValue = typeof(int);
                         }
                         else
                         {
-                            //Error   
+                            OutDiagnostics.Add(new Diagnostic(Stat.Tokens[i],"UnitStas has no field named \""+Stat.Tokens[i].Value+"\""));
                         }
                     }
                     else
                     {
-                        //sus type
+                        OutDiagnostics.Add(new Diagnostic(Stat.Tokens[i],"object of type "+CurrentType.ToString()+" has no field with name \""+Stat.Tokens[i].Value));
                     }
                 }
+                if(CurrentType == StatType.Unit)
+                {
+                    OutDiagnostics.Add(new Diagnostic(Stat.Tokens[Stat.Tokens.Count-1],"Cannot create reference to object of type "+CurrentType.ToString()));
+                }
             }
-            return ReturnValue;
+            Result.FieldName = Stat.Tokens[Stat.Tokens.Count-1].Value;
+            Result.statType = CurrentType;
+            Result.ReferenceType = ReturnValue;
+            Result.UnitVar = new Expression_Variable();
+            Result.UnitVar.VarName = Stat.Tokens[0].Value;
+            return Result;
         }
 
-        Expression Add_Stat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+    
+        
+        Expression_StatModification p_ParseStatModification(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
         {
             Type OutType = typeof(void);
             Expression_StatModification ReturnValue = new Expression_StatModification();
-
-
+            if(ParsedExpression.Args.Count != 2)
+            {
+                OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"AddStat requires exactly 2 arguments"));
+                ResultType = OutType;
+                return ReturnValue;
+            }
+            Type FirstArgType;
+            Type SecondArgType;
+            Expression FirstArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[0],out FirstArgType);
+            Expression SecondArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[1],out SecondArgType);
+            if( !(FirstArg is Expression_Literal) && !(((Expression_Literal)FirstArg).Value is StatReference) )
+            {
+                OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"AddStat requires that the first argument is a field reference"));
+            }
+            else
+            {
+                ReturnValue.Stat  =(StatReference)((Expression_Literal)FirstArg).Value;
+                ReturnValue.Value = SecondArg;
+                if(ReturnValue.Stat.ReferenceType != SecondArgType)
+                {
+                    OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"Invalid value for reference, "+ReturnValue.Stat.ReferenceType.Name+" expected"));
+                }
+            }
             ResultType = OutType;
+            return ReturnValue;
+        }
+        public Expression ParseAddStat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        {
+            Expression_StatModification Modification = p_ParseStatModification(OutDiagnostics,CurrentContext,Envir,ParsedExpression,out ResultType);
+            Modification.ModType = ModificationType.Add;
+            return Modification;
+        }
+        public Expression ParseSetStat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        {
+            Expression_StatModification Modification = p_ParseStatModification(OutDiagnostics,CurrentContext,Envir,ParsedExpression,out ResultType);
+            Modification.ModType = ModificationType.Set;
+            return Modification;
+        }
+        public Expression ParseEq(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        {
+            ResultType = typeof(bool);
+            Expression_Eq ReturnValue = new Expression_Eq();
+            if(ParsedExpression.Args.Count != 2)
+            {
+                OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"Eq requires exactly 2 arguments"));
+                return ReturnValue;
+            }
+            Type FirstArgType;
+            Type SecondArgType;
+            Expression FirstArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[0],out FirstArgType);
+            Expression SecondArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[1],out SecondArgType);
+            ReturnValue.Lhs  = FirstArg;
+            ReturnValue.Rhs = SecondArg;
+            if(FirstArgType != SecondArgType)
+            {
+                OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"Both arguments in Eq must be of the same type"));
+                return ReturnValue;
+            }
+            if(!(FirstArgType == typeof(string) || FirstArgType == typeof(int) || FirstArgType != typeof(bool) || FirstArgType != typeof(RuleManager.UnitIdentifier)))
+            {
+                OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"Cannot check "+FirstArgType.Name+" for equality"));
+            }
             return ReturnValue;
         }
         
@@ -265,6 +387,10 @@ namespace UnitScript
         }
         public UnitConverter()
         {
+            m_SpecialFuncs = new Dictionary<string, SpecialFunc>();
+            m_SpecialFuncs.Add("Eq",ParseEq);
+            m_SpecialFuncs.Add("AddStat",ParseAddStat);
+            m_SpecialFuncs.Add("SetStat",ParseSetStat);
             Builtin_FuncInfo And = new Builtin_FuncInfo();
             And.ArgTypes = new List<Type>{typeof(bool),typeof(bool)};
             And.ResultType = typeof(bool);
@@ -358,10 +484,58 @@ namespace UnitScript
                 Result.Ability = ContinousLiteral.Ability;
                 ReturnValue = null;
             }
+            else if(Expr is Expression_Eq)
+            {
+                Expression_Eq EqExpr = (Expression_Eq)Expr;
+                object Lhs = Eval(Envir,EqExpr.Lhs);
+                object Rhs = Eval(Envir,EqExpr.Rhs);
+                if(Lhs is int)
+                {
+                    return (int)Lhs == (int)Rhs;
+                }
+                else if(Lhs is string)
+                {
+                    return (string)Lhs == (string)Rhs;
+                }
+                else if(Lhs is bool)
+                {
+                    return (bool)Lhs == (bool)Rhs;
+                }
+                else if(Lhs is RuleManager.UnitIdentifier)
+                {
+                    return ((RuleManager.UnitIdentifier)Lhs).ID == ((RuleManager.UnitIdentifier)Rhs).ID;
+                }
+                ReturnValue = null;
+            }
+            else if(Expr is Expression_StatModification)
+            {
+                Expression_StatModification ModExpr = (Expression_StatModification)Expr;
+                RuleManager.UnitInfo UnitToModify = (RuleManager.UnitInfo)Eval(Envir,ModExpr.Stat.UnitVar);
+                object ModificationValue = Eval(Envir,ModExpr.Value);
+                if(ModExpr.Stat.statType == StatType.Stat)
+                {
+                    //lowkey only stat we want to modify at the moment
+                    if(ModExpr.Stat.FieldName == "Movement")
+                    {
+                        if(ModExpr.ModType == ModificationType.Add)
+                        {
+                            UnitToModify.Stats.Movement += (int)ModificationValue;
+                        }
+                        else if(ModExpr.ModType == ModificationType.Set)
+                        {
+                            UnitToModify.Stats.Movement += (int)ModificationValue;
+                        }
+                    }
+                }
+                else if(ModExpr.Stat.statType == StatType.UnitField)
+                {
+                    UnitToModify.Envir.AddVar(ModExpr.Stat.FieldName,ModificationValue);
+                }
+            }
             return ReturnValue;
         }
 
-        public Expression ConvertExpression(List<Diagnostic> OutDiagnostics, Parser.Expression_Literal ParsedExpression, out Type ResultType)
+        public Expression ConvertLiteral(List<Diagnostic> OutDiagnostics, Parser.Expression_Literal ParsedExpression, out Type ResultType)
         {
             Type OutType = typeof(void);
             Expression ReturnValue = new Expression();
@@ -382,8 +556,8 @@ namespace UnitScript
            else
            {
            }
-            ResultType = OutType;
-            return ReturnValue;
+           ResultType = OutType;
+           return ReturnValue;
         }
         public Expression ConvertExpression_Ability(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_Ability ParsedExpression,out Type ResultType)
         {
@@ -409,7 +583,7 @@ namespace UnitScript
             Type OutType = typeof(void);
             if(ParsedExpression is Parser.Expression_Literal)
             {
-                return ConvertExpression(OutDiagnostics, (Parser.Expression_Literal)ParsedExpression, out ResultType);
+                return ConvertLiteral(OutDiagnostics, (Parser.Expression_Literal)ParsedExpression, out ResultType);
             }
             else if (ParsedExpression is Parser.Expression_FuncCall)
             {
@@ -429,8 +603,7 @@ namespace UnitScript
                     NewFunc.Args.Add(ArgExpr);
                     ArgTypes.Add(ArgType);
                 }
-                foreach (Parser.KeyArg Argument in Func.KeyArgs)
-                {
+                foreach (Parser.KeyArg Argument in Func.KeyArgs) {
                     Type ArgType;
                     Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext, Envir,Argument.Value, out ArgType);
                     NewFunc.KeyArgs[Argument.Name.Value] = ArgExpr;
@@ -470,6 +643,10 @@ namespace UnitScript
                     }
                     OutType = FuncInfo.ResultType;
                 }
+                else if(m_SpecialFuncs.ContainsKey(Func.FuncName.Value))
+                {
+                    return m_SpecialFuncs[Func.FuncName.Value](OutDiagnostics,CurrentContext,Envir, Func,out ResultType);
+                }
                 else
                 {
                     OutDiagnostics.Add(new Diagnostic(Func.FuncName, "No builtin function named \"" + Func.FuncName.Value + "\""));
@@ -494,10 +671,8 @@ namespace UnitScript
             }
             else if(ParsedExpression is Parser.Expression_StatReference)
             {
-                var Result = new Expression_StatReference();
-
-                ReturnValue = Result;
-                ResultType = typeof(Expression_StatReference);
+                OutType = typeof(StatReference);
+                ReturnValue = ConvertStatReference(OutDiagnostics,CurrentContext,Envir,(Parser.Expression_StatReference)ParsedExpression);
             }
             else if(ParsedExpression is Parser.Expression_Ability)
             {
@@ -505,6 +680,13 @@ namespace UnitScript
             }
             ResultType = OutType;
             //ResultType = ResultType;
+            return ReturnValue;
+        }
+        public Expression ConvertStatReference(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir, Parser.Expression_StatReference StatRef)
+        {
+            var NewStat = p_GetStatType(OutDiagnostics,CurrentContext,Envir,StatRef);
+            var  ReturnValue = new Expression_Literal();
+            ReturnValue.Value = NewStat;
             return ReturnValue;
         }
         public RuleManager.UnitStats ConvertStats(List<Diagnostic> OutDiagnostics, Parser.UnitStats ParsedUnit)
@@ -677,12 +859,43 @@ namespace UnitScript
         {
             RuleManager.Ability ReturnValue = null; 
             //ensure that the "this" pointer is present
-            EvaluationEnvironment NewEnvir = new EvaluationEnvironment();
-            NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(0));
-            NewEnvir.SetParent(Envir);
             if(ParsedAbility is Parser.Ability_Activated)
             {
                 ReturnValue = ConvertActivated(OutDiagnostics,Envir,(Parser.Ability_Activated)ParsedAbility);
+                foreach(var Attribute in ((Parser.Ability_Activated)ParsedAbility).Attributes)
+                {
+                    string Error;
+                    object AttributeValue = EvalConstexpr(OutDiagnostics,Envir,Attribute.VariableValue,out Error);
+                    string AttributeString = "";
+                    if(AttributeValue == null)
+                    {
+                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Error evaluating rhs: "+Error));
+                    }
+                    else if(AttributeValue.GetType() != typeof(string))
+                    {
+                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Rhs needs to be of type string, is of type "+AttributeValue.GetType().Name));
+                    }
+                    else
+                    {
+                        AttributeString = (string)AttributeValue;
+                    }
+                    if(Attribute.VariableName.Value == "Name")
+                    {
+                        ReturnValue.SetName(AttributeString);
+                    }
+                    else if(Attribute.VariableName.Value == "Description")
+                    {
+                        ReturnValue.SetDescription(AttributeString);
+                    }
+                    else if(Attribute.VariableName.Value == "Flavour")
+                    {
+                        ReturnValue.SetFlavour(AttributeString);
+                    }
+                    else
+                    {
+                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Invalid Ability attribute \""+Attribute.VariableName.Value+"\""));   
+                    }
+                }
             }
             else if(ParsedAbility is Parser.Ability_Continous)
             {
@@ -690,10 +903,36 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-
+        //returns null on error
+        object EvalConstexpr(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Expression Expr,out string OutError)
+        {
+            int ErrCount = OutDiagnostics.Count;
+            object ResultObject = 1f;
+            Type ResultType;
+            Expression ExprToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile,Envir,Expr,out ResultType);
+            if(OutDiagnostics.Count == ErrCount)
+            {
+                try
+                {
+                    ResultObject = Eval(Envir,ExprToEvaluate);
+                }
+                catch(System.Exception e)
+                {
+                    ResultObject = null;
+                    OutError = e.Message;
+                    return ResultObject;
+                }
+            }
+            OutError = "";
+            return ResultObject;
+        }
         public  ResourceManager.UnitResource ConvertUnit(List<Diagnostic> OutDiagnostics,Parser.Unit ParsedUnit)
         {
             ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
+            int CurrentUnitID = m_CurrentUnitID;
+            m_StringToUnit[ParsedUnit.Name.Value] = m_CurrentUnitID;
+            m_LoadedUnits[m_CurrentUnitID] = ReturnValue;
+            m_CurrentUnitID++;
             ReturnValue.GameInfo.Stats = ConvertStats(OutDiagnostics,ParsedUnit.Stats);
             ReturnValue.UIInfo = ConvertVisuals(OutDiagnostics,ReturnValue.GameInfo.Envir,ParsedUnit.visuals);
             ReturnValue.Name = ParsedUnit.Name.Value;
@@ -719,7 +958,13 @@ namespace UnitScript
             }
             foreach(Parser.Ability Ability in ParsedUnit.Abilities)
             {
-                ReturnValue.GameInfo.Abilities.Add(ConvertAbility(OutDiagnostics,ReturnValue.GameInfo.Envir,Ability));
+                EvaluationEnvironment NewEnvir = new EvaluationEnvironment();
+                NewEnvir.SetParent(ReturnValue.GameInfo.Envir);
+                if(Ability is Parser.Ability_Activated)
+                {
+                    NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(CurrentUnitID));
+                }
+                ReturnValue.GameInfo.Abilities.Add(ConvertAbility(OutDiagnostics,NewEnvir,Ability));
             }
             return ReturnValue;
         }

@@ -1,0 +1,19 @@
+Knight
+{
+    stats
+    {
+        HP = 10;
+        Movement = 10;
+        Range = 10;
+        Damage = 10;
+        ObjectiveControll = 10;
+    }
+    visuals
+    {
+    }
+    SmiteDamage = 100;
+    activated Smite ( Unit target : Enemy(target) && Enemy())
+    {
+        DealDamage(target,SmiteDamage);
+    }
+}
