@@ -48,7 +48,9 @@ namespace ResourceManager
         public Animation DownAnimation = new Animation();
         public Animation AttackAnimation = null;
 
-        public Dictionary<string, Animation> OtherAnimations = new Dictionary<string, Animation>();
+        public AudioClip SelectSound = null;
+
+        public Dictionary<int,Animation> AbilityIcons = new Dictionary<int, Animation>();
     }
 
     public class UnitResource
@@ -223,7 +225,7 @@ namespace ResourceManager
 
             foreach(var Key in Visuals.GetAggregateData())
             {
-                ResourceToAdd.UIInfo.OtherAnimations[Key.Key] = p_ParseAnimation(Key.Value,UnitFilePath);
+                //ResourceToAdd.UIInfo.OtherAnimations[Key.Key] = p_ParseAnimation(Key.Value,UnitFilePath);
             }
             return (ResourceToAdd);
         }
@@ -368,7 +370,7 @@ namespace ResourceManager
             Animation.ArgTypes = new List<Type>{typeof(string)};
             Animation.ResultType = typeof(Animation);
             Animation.ValidContexts = UnitScript.EvalContext.Compile;
-            Animation.Callable = p_Video;
+            Animation.Callable = p_Animation;
             Animation.KeyArgTypes = CommonKeyArgTypes;
             ReturnValue["Animation"] = Animation;
 

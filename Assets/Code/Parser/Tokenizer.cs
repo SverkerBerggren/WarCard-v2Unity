@@ -46,9 +46,9 @@ namespace MBCC
         int m_ParseOffset = 0;
         int m_LineOffset = 0;
         int m_LineByteOffset = 0;
+        int m_TokenOffset = 0;
         string m_TextData;
 
-        int m_TokenOffset = 0;
         Regex m_Skip;
         List<TerminalRegex> m_TerminalRegexes = new List<TerminalRegex>();
 
@@ -123,6 +123,11 @@ namespace MBCC
         public void SetText(string NewText)
         {
             m_TextData = NewText;   
+            m_ReadTokens = new List<Token>();
+            m_ParseOffset = 0;
+            m_LineOffset = 0;
+            m_LineByteOffset = 0;
+            m_TokenOffset = 0;
         }
         public void ConsumeToken()
         {

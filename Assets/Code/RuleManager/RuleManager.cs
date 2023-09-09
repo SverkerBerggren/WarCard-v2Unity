@@ -577,6 +577,7 @@ namespace RuleManager
         public TargetType Type;
         public string Name;
         public UnitScript.Expression Condition;
+        public UnitScript.Expression Range = null;
     }
     public class TargetInfo_UnitScript : TargetInfo
     {
@@ -1553,6 +1554,8 @@ namespace RuleManager
                 EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
                 UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
                 AssociatedUnit.Envir.AddVar("SOURCE",UnitSource);
+                AssociatedUnit.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID) );
+                //Add "this"
                 m_ScriptHandler.Eval(AssociatedUnit.Envir,UnitEffect.Expr);
             }
             else if (EffectToResolve is Effect_DealDamage)
@@ -1910,14 +1913,15 @@ namespace RuleManager
                 {
                     SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)TargetToVerify).TargetCoordinate);
                 }
+                SourceUnit.Envir.AddVar("this", new UnitIdentifier(SourceUnit.UnitID) );
                 UnitScript.Expression ExprToEvaluate = UnitScriptTarget.Targets[CurrentIndex].Condition;
                 object Result = m_ScriptHandler.Eval(SourceUnit.Envir,ExprToEvaluate);
                 if( !(Result is bool) || !((bool)Result))
                 {
                     ReturnValue = false;
-                    if(SourceUnit.Envir.HasVar("Error"))
+                    if(SourceUnit.Envir.HasVar("ERROR"))
                     {
-                        Error = (string)SourceUnit.Envir.GetVar("Error");
+                        Error = (string)SourceUnit.Envir.GetVar("ERROR");
                     }
                 }
             }
@@ -2611,12 +2615,22 @@ namespace RuleManager
         object p_Enemy(UnitScript.BuiltinFuncArgs Args)
         {
             UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
-            return m_CurrentPlayerTurn != m_UnitInfos[IdToModify.ID].PlayerIndex;
+            bool ReturnValue = m_CurrentPlayerTurn != m_UnitInfos[IdToModify.ID].PlayerIndex;
+            if(!ReturnValue)
+            {
+                Args.Envir.AddVar("ERROR","Unit must be enemy");
+            }
+            return ReturnValue;
         }
         object p_Friendly(UnitScript.BuiltinFuncArgs Args)
         {
             UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
-            return m_CurrentPlayerTurn == m_UnitInfos[IdToModify.ID].PlayerIndex;
+            bool ReturnValue = m_CurrentPlayerTurn == m_UnitInfos[IdToModify.ID].PlayerIndex;
+            if(!ReturnValue)
+            {
+                Args.Envir.AddVar("ERROR","Unit must be friendly");   
+            }
+            return ReturnValue;
         }
         object p_DestroyUnit(UnitScript.BuiltinFuncArgs Args)
         {
@@ -2632,6 +2646,15 @@ namespace RuleManager
             var FirstUnitInfo = m_UnitInfos[FirstUnit.ID];
             var SecondUnitInfo = m_UnitInfos[SecondUnit.ID];
             return p_CalculateUnitDistance(FirstUnitInfo,SecondUnitInfo);
+        }
+        object p_Range(UnitScript.BuiltinFuncArgs Args)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            UnitIdentifier UnitOrigin = (UnitIdentifier)Args.Arguments[0];
+            UnitInfo Info = p_GetProcessedUnitInfo(UnitOrigin.ID);
+            int Range = (int)Args.Arguments[1];
+            ReturnValue = p_GetTiles(Range,p_GetAbsolutePositions(Info.TopLeftCorner,Info.UnitTileOffsets));
+            return ReturnValue;
         }
         object p_RegisterContinous(UnitScript.BuiltinFuncArgs Args)
         {
@@ -2658,7 +2681,27 @@ namespace RuleManager
         {
             UnitIdentifier FirstUnit = (UnitIdentifier)Args.Arguments[0];
             string TagToCheck = (string)Args.Arguments[1];
-            return m_UnitInfos[FirstUnit.ID].Tags.Contains(TagToCheck);
+            bool ReturnValue = m_UnitInfos[FirstUnit.ID].Tags.Contains(TagToCheck);
+            if(!ReturnValue)
+            {
+                Args.Envir.AddVar("ERROR","Unit must have tag \""+TagToCheck+"\"");
+            }
+            return ReturnValue;
+        }
+        object p_PlayAnimation(UnitScript.BuiltinFuncArgs Args)
+        {
+            object AnimationObject = Args.Arguments[0];
+            bool IsOverlayed = Args.KeyArguments.ContainsKey("Overlayed") && (bool)Args.KeyArguments["Overlayed"];
+            UnitIdentifier UnitPosition = (UnitIdentifier)Args.Arguments[1];
+            if(IsOverlayed)
+            {
+                m_AnimationPlayer.PlayAnimation(m_UnitInfos[UnitPosition.ID].TopLeftCorner,AnimationObject);
+            }
+            else
+            {
+                m_AnimationPlayer.PlayAnimation(UnitPosition.ID,AnimationObject);
+            }
+            return null;
         }
         Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
         {
@@ -2706,6 +2749,13 @@ namespace RuleManager
             Distance.Callable = p_Distance;
             ReturnValue["Distance"] = Distance;
 
+            UnitScript.Builtin_FuncInfo Range = new UnitScript.Builtin_FuncInfo();
+            Range.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(int)};
+            Range.ResultType = typeof(List<Coordinate>);
+            Range.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
+            Range.Callable = p_Range;
+            ReturnValue["Range"] = Range;
+
             UnitScript.Builtin_FuncInfo RegisterContinous = new UnitScript.Builtin_FuncInfo();
             RegisterContinous.ArgTypes = new List<Type>{typeof(UnitScript.ContinousAbility)};
             RegisterContinous.KeyArgTypes = new Dictionary<string, Type>{{"TurnDuration",typeof(int)},{"PassDuration",typeof(int)}};
@@ -2713,6 +2763,14 @@ namespace RuleManager
             RegisterContinous.ValidContexts = UnitScript.EvalContext.Resolve;
             RegisterContinous.Callable = p_RegisterContinous;
             ReturnValue["RegisterContinous"] = RegisterContinous;
+
+            UnitScript.Builtin_FuncInfo PlayAnimation = new UnitScript.Builtin_FuncInfo();
+            PlayAnimation.ArgTypes = new List<Type>{typeof(ResourceManager.Animation),typeof(UnitIdentifier)};
+            PlayAnimation.KeyArgTypes = new Dictionary<string, Type>{{"Overlayed",typeof(bool)}};
+            PlayAnimation.ResultType = typeof(void);
+            PlayAnimation.ValidContexts = UnitScript.EvalContext.Resolve;
+            PlayAnimation.Callable = p_PlayAnimation;
+            ReturnValue["PlayAnimation"] = PlayAnimation;
 
             return ReturnValue;
         }
@@ -3413,6 +3471,82 @@ namespace RuleManager
             ReturnValue = p_VerifyTarget(Condition, Source, currentTargets, NewTarget,out ErrorString);
             return (ReturnValue);
         }
+
+        List<Coordinate> p_GetRange(int UnitID, int EffectIndex,List<Target> CurrentTargets,UnitInfo AssociatedUnit,TargetCondition ConditionToSatisfy)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+
+            TargetCondition_Range Range = p_GetRange(ConditionToSatisfy);
+            if(Range == null)
+            {
+                return (ReturnValue);
+            }
+            List<Coordinate> OriginTiles = p_GetAbsolutePositions(AssociatedUnit.TopLeftCorner,AssociatedUnit.UnitTileOffsets);
+            if(Range.TargetIndex != -1)
+            {
+                Target OriginTarget = CurrentTargets[Range.TargetIndex];
+                if(OriginTarget is Target_Unit)
+                {
+                    UnitInfo ProccessedInfo = p_GetProcessedUnitInfo(((Target_Unit)OriginTarget).UnitID);
+                    OriginTiles = p_GetAbsolutePositions(ProccessedInfo.TopLeftCorner,ProccessedInfo.UnitTileOffsets);
+                }
+                else if(OriginTarget is Target_Tile)
+                {
+                    OriginTiles = new List<Coordinate>();
+                    OriginTiles.Add(((Target_Tile)OriginTarget).TargetCoordinate);
+                }
+            }
+            ReturnValue = p_GetTiles(Range.Range, OriginTiles);
+            return ReturnValue;
+        }
+        UnitScript.Expression_FuncCall p_GetRangeCondition(UnitScript.Expression Expr)
+        {
+            UnitScript.Expression_FuncCall ReturnValue = null;
+            if(Expr is UnitScript.Expression_FuncCall)
+            {
+                UnitScript.Expression_FuncCall Func = (UnitScript.Expression_FuncCall)Expr;
+                if(Func.FuncName == "Distance")
+                {
+                    return Func;   
+                }
+                else
+                {
+                    foreach(var SubExpr in Func.Args)
+                    {
+                        ReturnValue = p_GetRangeCondition(SubExpr);
+                        if(ReturnValue != null)
+                        {
+                            return ReturnValue;   
+                        }
+                    }
+                }
+            }
+            return ReturnValue;
+        }
+        List<Coordinate> p_GetRange_UnitScript(int UnitID, int EffectIndex,List<Target> CurrentTargets,UnitInfo AssociatedUnit,TargetCondition_UnitScript ConditionToSatisfy)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            if(ConditionToSatisfy.Targets[CurrentTargets.Count].Range != null)
+            {
+                AssociatedUnit.Envir.AddVar("SOURCE",new EffectSource_Unit(AssociatedUnit.PlayerIndex,UnitID,EffectIndex));
+                AssociatedUnit.Envir.AddVar("this",new UnitIdentifier(AssociatedUnit.UnitID));
+                int CurrentIndex = 0;
+                foreach(Target PrevTarget in CurrentTargets)
+                {
+                    if(PrevTarget is Target_Unit)
+                    {
+                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)PrevTarget).UnitID));
+                    }
+                    else if(PrevTarget is Target_Tile)
+                    {
+                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name,((Target_Tile)PrevTarget).TargetCoordinate);
+                    }
+                    CurrentIndex++;
+                }
+                ReturnValue = (List<Coordinate>)m_ScriptHandler.Eval(AssociatedUnit.Envir,ConditionToSatisfy.Targets[CurrentTargets.Count].Range);
+            }
+            return ReturnValue;
+        }
         public List<Coordinate> GetAbilityRange(int UnitID, int effectIndex, List<Target> currentTargets)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
@@ -3429,29 +3563,14 @@ namespace RuleManager
                 return ReturnValue;
             }
             TargetCondition ConditionToSatsify = TargetList.Targets[currentTargets.Count];
-            EffectSource_Unit Source = new EffectSource_Unit(AssociatedUnit.PlayerIndex,UnitID,effectIndex);
-
-            TargetCondition_Range Range = p_GetRange(ConditionToSatsify);
-            if(Range == null)
+            if(ConditionToSatsify is TargetCondition_UnitScript)
             {
-                return (ReturnValue);
+                ReturnValue = p_GetRange_UnitScript(UnitID,effectIndex,currentTargets,AssociatedUnit,(TargetCondition_UnitScript)ConditionToSatsify);
             }
-            List<Coordinate> OriginTiles = p_GetAbsolutePositions(AssociatedUnit.TopLeftCorner,AssociatedUnit.UnitTileOffsets);
-            if(Range.TargetIndex != -1)
+            else
             {
-                Target OriginTarget = currentTargets[Range.TargetIndex];
-                if(OriginTarget is Target_Unit)
-                {
-                    UnitInfo ProccessedInfo = p_GetProcessedUnitInfo(((Target_Unit)OriginTarget).UnitID);
-                    OriginTiles = p_GetAbsolutePositions(ProccessedInfo.TopLeftCorner,ProccessedInfo.UnitTileOffsets);
-                }
-                else if(OriginTarget is Target_Tile)
-                {
-                    OriginTiles = new List<Coordinate>();
-                    OriginTiles.Add(((Target_Tile)OriginTarget).TargetCoordinate);
-                }
+                ReturnValue = p_GetRange(UnitID,effectIndex,currentTargets,AssociatedUnit,ConditionToSatsify);
             }
-            ReturnValue = p_GetTiles(Range.Range, OriginTiles);
             return (ReturnValue);
         }
 

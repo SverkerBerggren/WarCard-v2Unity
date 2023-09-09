@@ -45,7 +45,19 @@ public class CanvasUiScript : MonoBehaviour
     {
         
     }
-    public void createUnitCard(UnitInfo unitInfo, Dictionary<int, Unit> m_OpaqueToUIInfo)
+
+
+
+    Sprite p_SpriteFromVisual(ResourceManager.Visual VisualToConvert)
+    {
+        Sprite ReturnValue = null;
+        if(VisualToConvert is ResourceManager.Visual_Image)
+        {
+            ReturnValue = ((ResourceManager.Visual_Image)VisualToConvert).Sprite;
+        }
+        return ReturnValue;
+    }
+    public void createUnitCard(UnitInfo unitInfo, Dictionary<int, ResourceManager.UnitResource> m_OpaqueToUIInfo)
     {
         RuleManager.RuleManager ruleManager = mainUI.ruleManager; 
         
@@ -64,7 +76,7 @@ public class CanvasUiScript : MonoBehaviour
         unitCardInformation.RangeText.text = unitInfo.Stats.Range.ToString();
         unitCardInformation.ObjectiveControlText.text = unitInfo.Stats.ObjectiveControll.ToString();
 
-        unitCardInformation.gameObject.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].unitCardSprite;
+        unitCardInformation.gameObject.GetComponent<Image>().sprite = p_SpriteFromVisual(m_OpaqueToUIInfo[unitInfo.OpaqueInteger].UIInfo.DownAnimation.VisualInfo);
         if ((ruleManager.GetUnitInfo(unitInfo.UnitID).Flags & RuleManager.UnitFlags.HasMoved) != 0)
         {
             GameObject.Find("MoveButton").GetComponent<Button>().interactable = false;
@@ -124,7 +136,11 @@ public class CanvasUiScript : MonoBehaviour
 
             abilityButton.unitInfo = unitInfo;
 
-            newButton.GetComponent<Image>().sprite = m_OpaqueToUIInfo[unitInfo.OpaqueInteger].AbilityIcons[i];
+            var AssociatedUnit = m_OpaqueToUIInfo[unitInfo.OpaqueInteger];
+            if (AssociatedUnit.UIInfo.AbilityIcons.ContainsKey(i))
+            {
+                newButton.GetComponent<Image>().sprite = p_SpriteFromVisual(AssociatedUnit.UIInfo.AbilityIcons[i].VisualInfo);
+            }
 
             if (ability is RuleManager.Ability_Activated)
             {

@@ -139,7 +139,7 @@ namespace UnitScript
             {
                 return m_Parent.GetVar(VariableToGet);
             }
-            throw new Exception("Couldn't find variable in environment");
+            throw new Exception("Couldn't find variable \""+ VariableToGet+ "\" in environment");
         }
         public void AddVar(string Variable,object Value)
         {
@@ -457,6 +457,7 @@ namespace UnitScript
                 Builtin_FuncInfo FuncToCall = m_BuiltinFuncs[((Expression_FuncCall)Expr).FuncName];
                 BuiltinFuncArgs FuncArgs = new BuiltinFuncArgs();
                 FuncArgs.Envir = Envir;
+                FuncArgs.Handler = this;
                 foreach(Expression SubExpr in FuncExpr.Args)
                 {
                     FuncArgs.Arguments.Add(Eval(Envir,SubExpr));
@@ -553,12 +554,21 @@ namespace UnitScript
            else if(ParsedExpression.literal is Parser.Literal_String)
            {
                Expression_Literal NewLiteral = new Expression_Literal();
-               NewLiteral.Value = ((Parser.Literal_String)ParsedExpression.literal).Value;
+               string StringValue = ((Parser.Literal_String)ParsedExpression.literal).Value;
+               NewLiteral.Value = StringValue.Substring(1,StringValue.Length-2);
                OutType = typeof(string);
+               ReturnValue = NewLiteral;
+           }
+           else if(ParsedExpression.literal is Parser.Literal_Bool)
+           {
+               Expression_Literal NewLiteral = new Expression_Literal();
+               NewLiteral.Value = ((Parser.Literal_Bool)ParsedExpression.literal).Value;
+               OutType = typeof(bool);
                ReturnValue = NewLiteral;
            }
            else
            {
+               throw new Exception("Unhandled literal case");
            }
            ResultType = OutType;
            return ReturnValue;
@@ -815,6 +825,15 @@ namespace UnitScript
                 OutDiagnostics.Add(new Diagnostic(ParsedTarget.TargetType.TypeIdentifier,"No target type with name \""+ParsedTarget.TargetType.TypeIdentifier.Value+"\""));   
                 return ReturnValue;
             }
+            if(!(ParsedTarget.RangeBegin.Line == 0 && ParsedTarget.RangeBegin.ByteOffset == 0))
+            {
+                Type ResultType;
+                ReturnValue.Range = ConvertExpression(OutDiagnostics,EvalContext.Predicate,Envir,ParsedTarget.RangeExpression,out ResultType);
+                if(ResultType != typeof(List<RuleManager.Coordinate>))
+                {
+                    OutDiagnostics.Add(new Diagnostic(ParsedTarget.RangeBegin,5,"Result of range expression must be of type List<Coordinate>"));
+                }
+            }
             //add dummy type to environment
             if(ReturnValue.Type == RuleManager.TargetType.Unit)
             {
@@ -863,51 +882,72 @@ namespace UnitScript
             ReturnValue.EffectToApply = Effect;
             return ReturnValue;
         }
-        public RuleManager.Ability ConvertAbility(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
+        public class AbilityInformation
         {
-            RuleManager.Ability ReturnValue = null; 
+            public RuleManager.Ability Ability;
+            public ResourceManager.Animation Icon = null; 
+        }
+        public AbilityInformation ConvertAbility(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
+        {
+            AbilityInformation ReturnValue = new AbilityInformation();
             //ensure that the "this" pointer is present
             if(ParsedAbility is Parser.Ability_Activated)
             {
-                ReturnValue = ConvertActivated(OutDiagnostics,Envir,(Parser.Ability_Activated)ParsedAbility);
-                foreach(var Attribute in ((Parser.Ability_Activated)ParsedAbility).Attributes)
+                ReturnValue.Ability = ConvertActivated(OutDiagnostics,Envir,(Parser.Ability_Activated)ParsedAbility);
+            }
+            else if(ParsedAbility is Parser.Ability_Continous)
+            {
+                ReturnValue.Ability = ConvertContinous(OutDiagnostics,Envir,(Parser.Ability_Continous)ParsedAbility);
+            }
+            foreach(var Attribute in ParsedAbility.Attributes)
+            {
+                string Error;
+                object AttributeValue = EvalConstexpr(OutDiagnostics,Envir,Attribute.VariableValue,out Error);
+                string AttributeString = "";
+                if(AttributeValue == null)
                 {
-                    string Error;
-                    object AttributeValue = EvalConstexpr(OutDiagnostics,Envir,Attribute.VariableValue,out Error);
-                    string AttributeString = "";
-                    if(AttributeValue == null)
+                    OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Error evaluating rhs: "+Error));
+                }
+                if(Attribute.VariableName.Value == "Icon")
+                {
+                    if(AttributeValue != null && AttributeValue.GetType() != typeof(ResourceManager.Animation))
                     {
-                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Error evaluating rhs: "+Error));
-                    }
-                    else if(AttributeValue.GetType() != typeof(string))
-                    {
-                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Rhs needs to be of type string, is of type "+AttributeValue.GetType().Name));
+                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Rhs needs to be of type visual, is of type "+
+                                    AttributeValue.GetType().Name));
                     }
                     else
                     {
-                        AttributeString = (string)AttributeValue;
+                        ReturnValue.Icon = (ResourceManager.Animation)AttributeValue;
+                    }
+                }
+                else
+                {
+                    if(AttributeValue != null && AttributeValue.GetType() != typeof(string))
+                    {
+                        OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Rhs needs to be of type string, is of type "+
+                                    AttributeValue.GetType().Name));
+                    }
+                    else
+                    {
+                        AttributeString = (string)AttributeValue;   
                     }
                     if(Attribute.VariableName.Value == "Name")
                     {
-                        ReturnValue.SetName(AttributeString);
+                        ReturnValue.Ability.SetName(AttributeString);
                     }
                     else if(Attribute.VariableName.Value == "Description")
                     {
-                        ReturnValue.SetDescription(AttributeString);
+                        ReturnValue.Ability.SetDescription(AttributeString);
                     }
                     else if(Attribute.VariableName.Value == "Flavour")
                     {
-                        ReturnValue.SetFlavour(AttributeString);
+                        ReturnValue.Ability.SetFlavour(AttributeString);
                     }
                     else
                     {
                         OutDiagnostics.Add(new Diagnostic(Attribute.VariableName,"Invalid Ability attribute \""+Attribute.VariableName.Value+"\""));   
                     }
                 }
-            }
-            else if(ParsedAbility is Parser.Ability_Continous)
-            {
-                ReturnValue = ConvertContinous(OutDiagnostics,Envir,(Parser.Ability_Continous)ParsedAbility);
             }
             return ReturnValue;
         }
@@ -964,6 +1004,7 @@ namespace UnitScript
                 }
                 ReturnValue.GameInfo.Envir.AddVar(Vars.VariableName.Value,ResultObject);
             }
+            int Index = 0;
             foreach(Parser.Ability Ability in ParsedUnit.Abilities)
             {
                 EvaluationEnvironment NewEnvir = new EvaluationEnvironment();
@@ -972,7 +1013,10 @@ namespace UnitScript
                 {
                     NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(CurrentUnitID));
                 }
-                ReturnValue.GameInfo.Abilities.Add(ConvertAbility(OutDiagnostics,NewEnvir,Ability));
+                AbilityInformation NewAbility = ConvertAbility(OutDiagnostics,NewEnvir,Ability);
+                ReturnValue.GameInfo.Abilities.Add(NewAbility.Ability);
+                ReturnValue.UIInfo.AbilityIcons[Index] = NewAbility.Icon;
+                Index++;
             }
             return ReturnValue;
         }

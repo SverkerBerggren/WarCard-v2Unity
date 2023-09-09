@@ -137,10 +137,10 @@ public class ClickHandlerUnitSelect : ClickHandler
             selectedUnit = ruleManager.GetUnitInfo(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
             print("Selected ID: "+selectedUnit.UnitID);
             //clicking on unit, play sound
-            Unit UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
-            if(UIInfo.SelectSound != null)
+            var UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
+            if(UIInfo.UIInfo.SelectSound!= null)
             {
-                GetComponent<AudioSource>().PlayOneShot(UIInfo.SelectSound);
+                GetComponent<AudioSource>().PlayOneShot(UIInfo.UIInfo.SelectSound);
             }
             resetSelection();
             canvasUIScript.createUnitCard(selectedUnit, mainUi.m_OpaqueToUIInfo);

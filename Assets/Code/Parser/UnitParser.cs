@@ -42,6 +42,7 @@ namespace Parser
     }
     public class Ability
     {
+        public List<VariableDeclaration> Attributes = new List<VariableDeclaration>();
         
     }
     public class TargetCondition
@@ -53,6 +54,8 @@ namespace Parser
         public Type TargetType = new Type();
         public Token Name = new Token();
         public Expression Condition = new Expression();
+        public MBCC.TokenPosition RangeBegin = new MBCC.TokenPosition();
+        public Expression RangeExpression = new Expression();
         
     }
     public class Ability_Activated : Ability
@@ -60,7 +63,6 @@ namespace Parser
         public MBCC.TokenPosition Begin = new MBCC.TokenPosition();
         public Token Name = new Token();
         public List<ActivatedAbilityTarget> Targets = new List<ActivatedAbilityTarget>();
-        public List<VariableDeclaration> Attributes = new List<VariableDeclaration>();
         public List<AbilityStatement> Statements = new List<AbilityStatement>();
         
     }
@@ -69,7 +71,6 @@ namespace Parser
         public MBCC.TokenPosition Begin = new MBCC.TokenPosition();
         public Token Name = new Token();
         public ActivatedAbilityTarget AffectedEntities = new ActivatedAbilityTarget();
-        public List<VariableDeclaration> Attributes = new List<VariableDeclaration>();
         public List<AbilityStatement> Statements = new List<AbilityStatement>();
         
     }
@@ -105,6 +106,11 @@ namespace Parser
     public class Literal_Int : Literal
     {
         public int Value = new int();
+        
+    }
+    public class Literal_Bool : Literal
+    {
+        public bool Value = new bool();
         
     }
     public class Expression_Literal : Expression
@@ -148,7 +154,7 @@ namespace Parser
     }
     public class Parser
     {
-        bool[,,] LOOKTable = {{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,true,true,true,false,true,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,},},};
+        bool[,,] LOOKTable = {{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,true,true,true,false,true,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{true,false,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,},},{{false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,},{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,},{false,false,false,true,false,true,true,false,false,false,false,false,false,true,false,false,true,true,false,false,false,true,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,false,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,},{false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,},{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},{{false,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,false,false,true,false,true,false,true,false,},{false,false,true,true,false,true,true,true,false,false,true,false,true,true,true,true,true,true,true,false,true,true,true,true,},},};
         public Unit ParseUnit(MBCC.Tokenizer Tokenizer)
         {
             Unit ReturnValue = new Unit();
@@ -158,7 +164,7 @@ namespace Parser
         public Unit ParseUnit_0(MBCC.Tokenizer Tokenizer)
         {
             Unit ReturnValue = new Unit();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Unit" + ": Expected " + "Token");
                 
@@ -204,7 +210,7 @@ namespace Parser
                 }
                 else if (LOOKTable[6,0,Tokenizer.Peek().Type]&& LOOKTable[6,1,Tokenizer.Peek(1).Type])
                 {
-                    if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
+                    if(!(LOOKTable[42,0,Tokenizer.Peek().Type]&& LOOKTable[42,1,Tokenizer.Peek(1).Type]))
                     {
                         throw new System.Exception("Error parsing " + "_L1" + ": Expected " + "Visuals");
                         
@@ -271,7 +277,7 @@ namespace Parser
         public StatDeclaration ParseStatDeclaration_0(MBCC.Tokenizer Tokenizer)
         {
             StatDeclaration ReturnValue = new StatDeclaration();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "StatDeclaration" + ": Expected " + "Token");
                 
@@ -308,7 +314,7 @@ namespace Parser
         public VariableDeclaration ParseVariableDeclaration_0(MBCC.Tokenizer Tokenizer)
         {
             VariableDeclaration ReturnValue = new VariableDeclaration();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "VariableDeclaration" + ": Expected " + "Token");
                 
@@ -320,7 +326,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "VariableDeclaration" + ": Expected " + "Expression");
                 
@@ -343,7 +349,7 @@ namespace Parser
         public Type ParseType_0(MBCC.Tokenizer Tokenizer)
         {
             Type ReturnValue = new Type();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Type" + ": Expected " + "Token");
                 
@@ -407,7 +413,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Ability_Activated" + ": Expected " + "Token");
                 
@@ -485,7 +491,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            while(LOOKTable[34,0,Tokenizer.Peek().Type]&& LOOKTable[34,1,Tokenizer.Peek(1).Type])
+            while(LOOKTable[36,0,Tokenizer.Peek().Type]&& LOOKTable[36,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue.Statements.Add(ParseAbilityStatement(Tokenizer));
                 
@@ -537,7 +543,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Ability_Continous" + ": Expected " + "Token");
                 
@@ -597,7 +603,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            while(LOOKTable[34,0,Tokenizer.Peek().Type]&& LOOKTable[34,1,Tokenizer.Peek(1).Type])
+            while(LOOKTable[36,0,Tokenizer.Peek().Type]&& LOOKTable[36,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue.Statements.Add(ParseAbilityStatement(Tokenizer));
                 
@@ -625,7 +631,7 @@ namespace Parser
                 
             }
             ReturnValue.TargetType = ParseType(Tokenizer);
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "ActivatedAbilityTarget" + ": Expected " + "Token");
                 
@@ -641,12 +647,38 @@ namespace Parser
                         
                     }
                     Tokenizer.ConsumeToken();
-                    if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+                    if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
                     {
                         throw new System.Exception("Error parsing " + "_L6" + ": Expected " + "Expression");
                         
                     }
                     ReturnValue.Condition = ParseExpression(Tokenizer);
+                    
+                }
+                else
+                {
+                    throw new System.Exception("Error parsing " + "ActivatedAbilityTarget" + ": Expected " + "ActivatedAbilityTarget");
+                    
+                }
+                
+            }
+            if(LOOKTable[34,0,Tokenizer.Peek().Type]&& LOOKTable[34,1,Tokenizer.Peek(1).Type])
+            {
+                if (LOOKTable[35,0,Tokenizer.Peek().Type]&& LOOKTable[35,1,Tokenizer.Peek(1).Type])
+                {
+                    ReturnValue.RangeBegin = Tokenizer.Peek().Position;
+                    if(Tokenizer.Peek().Type != 21)
+                    {
+                        throw new System.Exception("Error parsing " + "_L7" + ": Expected " + "range");
+                        
+                    }
+                    Tokenizer.ConsumeToken();
+                    if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
+                    {
+                        throw new System.Exception("Error parsing " + "_L7" + ": Expected " + "Expression");
+                        
+                    }
+                    ReturnValue.RangeExpression = ParseExpression(Tokenizer);
                     
                 }
                 else
@@ -667,7 +699,7 @@ namespace Parser
         public AbilityStatement ParseAbilityStatement_0(MBCC.Tokenizer Tokenizer)
         {
             AbilityStatement ReturnValue = new AbilityStatement();
-            if(!(LOOKTable[36,0,Tokenizer.Peek().Type]&& LOOKTable[36,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "AbilityStatement" + ": Expected " + "AbilityStatement_Expression");
                 
@@ -690,7 +722,7 @@ namespace Parser
         public AbilityStatement_Expression ParseAbilityStatement_Expression_0(MBCC.Tokenizer Tokenizer)
         {
             AbilityStatement_Expression ReturnValue = new AbilityStatement_Expression();
-            if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "AbilityStatement_Expression" + ": Expected " + "Expression");
                 
@@ -708,7 +740,7 @@ namespace Parser
         {
             Token ReturnValue = new Token();
             ReturnValue.Position = Tokenizer.Peek().Position;
-            if(Tokenizer.Peek().Type != 20)
+            if(Tokenizer.Peek().Type != 22)
             {
                 throw new System.Exception("Error parsing " + "Token" + ": Expected " + "idf");
                 
@@ -761,32 +793,32 @@ namespace Parser
         public Expression_FuncCall ParseExpressionOpOr_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_FuncCall ReturnValue = new Expression_FuncCall();
-            if(!(LOOKTable[63,0,Tokenizer.Peek().Type]&& LOOKTable[63,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[65,0,Tokenizer.Peek().Type]&& LOOKTable[65,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "ExpressionOpOr" + ": Expected " + "Expression_Base");
                 
             }
             ReturnValue.Args.Add(ParseExpression_Base(Tokenizer));
-            if(LOOKTable[46,0,Tokenizer.Peek().Type]&& LOOKTable[46,1,Tokenizer.Peek(1).Type])
+            if(LOOKTable[48,0,Tokenizer.Peek().Type]&& LOOKTable[48,1,Tokenizer.Peek(1).Type])
             {
-                if (LOOKTable[47,0,Tokenizer.Peek().Type]&& LOOKTable[47,1,Tokenizer.Peek(1).Type])
+                if (LOOKTable[49,0,Tokenizer.Peek().Type]&& LOOKTable[49,1,Tokenizer.Peek(1).Type])
                 {
                     if(Tokenizer.Peek().Type != 16)
                     {
-                        throw new System.Exception("Error parsing " + "_L8" + ": Expected " + "or");
+                        throw new System.Exception("Error parsing " + "_L9" + ": Expected " + "or");
                         
                     }
                     Tokenizer.ConsumeToken();
                     ReturnValue.FuncName.Value = "||";
-                    if(!(LOOKTable[63,0,Tokenizer.Peek().Type]&& LOOKTable[63,1,Tokenizer.Peek(1).Type]))
+                    if(!(LOOKTable[65,0,Tokenizer.Peek().Type]&& LOOKTable[65,1,Tokenizer.Peek(1).Type]))
                     {
-                        throw new System.Exception("Error parsing " + "_L8" + ": Expected " + "Expression_Base");
+                        throw new System.Exception("Error parsing " + "_L9" + ": Expected " + "Expression_Base");
                         
                     }
                     ReturnValue.Args.Add(ParseExpression_Base(Tokenizer));
-                    while(LOOKTable[44,0,Tokenizer.Peek().Type]&& LOOKTable[44,1,Tokenizer.Peek(1).Type])
+                    while(LOOKTable[46,0,Tokenizer.Peek().Type]&& LOOKTable[46,1,Tokenizer.Peek(1).Type])
                     {
-                        ReturnValue.Args.Add(Parse_L7(Tokenizer));
+                        ReturnValue.Args.Add(Parse_L8(Tokenizer));
                         
                     }
                     
@@ -800,24 +832,24 @@ namespace Parser
             }
             return(ReturnValue);
         }
-        public Expression Parse_L7(MBCC.Tokenizer Tokenizer)
+        public Expression Parse_L8(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            ReturnValue = Parse_L7_0(Tokenizer);
+            ReturnValue = Parse_L8_0(Tokenizer);
             return(ReturnValue);
         }
-        public Expression Parse_L7_0(MBCC.Tokenizer Tokenizer)
+        public Expression Parse_L8_0(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
             if(Tokenizer.Peek().Type != 16)
             {
-                throw new System.Exception("Error parsing " + "_L7" + ": Expected " + "or");
+                throw new System.Exception("Error parsing " + "_L8" + ": Expected " + "or");
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[48,0,Tokenizer.Peek().Type]&& LOOKTable[48,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[50,0,Tokenizer.Peek().Type]&& LOOKTable[50,1,Tokenizer.Peek(1).Type]))
             {
-                throw new System.Exception("Error parsing " + "_L7" + ": Expected " + "ExpressionOpAnd");
+                throw new System.Exception("Error parsing " + "_L8" + ": Expected " + "ExpressionOpAnd");
                 
             }
             ReturnValue = ParseExpressionOpAnd(Tokenizer);
@@ -832,32 +864,32 @@ namespace Parser
         public Expression_FuncCall ParseExpressionOpAnd_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_FuncCall ReturnValue = new Expression_FuncCall();
-            if(!(LOOKTable[63,0,Tokenizer.Peek().Type]&& LOOKTable[63,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[65,0,Tokenizer.Peek().Type]&& LOOKTable[65,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "ExpressionOpAnd" + ": Expected " + "Expression_Base");
                 
             }
             ReturnValue.Args.Add(ParseExpression_Base(Tokenizer));
-            if(LOOKTable[52,0,Tokenizer.Peek().Type]&& LOOKTable[52,1,Tokenizer.Peek(1).Type])
+            if(LOOKTable[54,0,Tokenizer.Peek().Type]&& LOOKTable[54,1,Tokenizer.Peek(1).Type])
             {
-                if (LOOKTable[53,0,Tokenizer.Peek().Type]&& LOOKTable[53,1,Tokenizer.Peek(1).Type])
+                if (LOOKTable[55,0,Tokenizer.Peek().Type]&& LOOKTable[55,1,Tokenizer.Peek(1).Type])
                 {
                     if(Tokenizer.Peek().Type != 17)
                     {
-                        throw new System.Exception("Error parsing " + "_L10" + ": Expected " + "and");
+                        throw new System.Exception("Error parsing " + "_L11" + ": Expected " + "and");
                         
                     }
                     Tokenizer.ConsumeToken();
                     ReturnValue.FuncName.Value = "&&";
-                    if(!(LOOKTable[63,0,Tokenizer.Peek().Type]&& LOOKTable[63,1,Tokenizer.Peek(1).Type]))
+                    if(!(LOOKTable[65,0,Tokenizer.Peek().Type]&& LOOKTable[65,1,Tokenizer.Peek(1).Type]))
                     {
-                        throw new System.Exception("Error parsing " + "_L10" + ": Expected " + "Expression_Base");
+                        throw new System.Exception("Error parsing " + "_L11" + ": Expected " + "Expression_Base");
                         
                     }
                     ReturnValue.Args.Add(ParseExpression_Base(Tokenizer));
-                    while(LOOKTable[50,0,Tokenizer.Peek().Type]&& LOOKTable[50,1,Tokenizer.Peek(1).Type])
+                    while(LOOKTable[52,0,Tokenizer.Peek().Type]&& LOOKTable[52,1,Tokenizer.Peek(1).Type])
                     {
-                        ReturnValue.Args.Add(Parse_L9(Tokenizer));
+                        ReturnValue.Args.Add(Parse_L10(Tokenizer));
                         
                     }
                     
@@ -871,24 +903,24 @@ namespace Parser
             }
             return(ReturnValue);
         }
-        public Expression Parse_L9(MBCC.Tokenizer Tokenizer)
+        public Expression Parse_L10(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            ReturnValue = Parse_L9_0(Tokenizer);
+            ReturnValue = Parse_L10_0(Tokenizer);
             return(ReturnValue);
         }
-        public Expression Parse_L9_0(MBCC.Tokenizer Tokenizer)
+        public Expression Parse_L10_0(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
             if(Tokenizer.Peek().Type != 17)
             {
-                throw new System.Exception("Error parsing " + "_L9" + ": Expected " + "and");
+                throw new System.Exception("Error parsing " + "_L10" + ": Expected " + "and");
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[42,0,Tokenizer.Peek().Type]&& LOOKTable[42,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[44,0,Tokenizer.Peek().Type]&& LOOKTable[44,1,Tokenizer.Peek(1).Type]))
             {
-                throw new System.Exception("Error parsing " + "_L9" + ": Expected " + "ExpressionOpOr");
+                throw new System.Exception("Error parsing " + "_L10" + ": Expected " + "ExpressionOpOr");
                 
             }
             ReturnValue = ParseExpressionOpOr(Tokenizer);
@@ -903,30 +935,30 @@ namespace Parser
         public Expression_FuncCall ParseExpression_Ordinary_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_FuncCall ReturnValue = new Expression_FuncCall();
-            if(!(LOOKTable[63,0,Tokenizer.Peek().Type]&& LOOKTable[63,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[65,0,Tokenizer.Peek().Type]&& LOOKTable[65,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Ordinary" + ": Expected " + "Expression_Base");
                 
             }
             ReturnValue.Args.Add(ParseExpression_Base(Tokenizer));
-            if(LOOKTable[60,0,Tokenizer.Peek().Type]&& LOOKTable[60,1,Tokenizer.Peek(1).Type])
+            if(LOOKTable[62,0,Tokenizer.Peek().Type]&& LOOKTable[62,1,Tokenizer.Peek(1).Type])
             {
-                if (LOOKTable[61,0,Tokenizer.Peek().Type]&& LOOKTable[61,1,Tokenizer.Peek(1).Type])
+                if (LOOKTable[63,0,Tokenizer.Peek().Type]&& LOOKTable[63,1,Tokenizer.Peek(1).Type])
                 {
                     do
                     {
-                        if (LOOKTable[57,0,Tokenizer.Peek().Type]&& LOOKTable[57,1,Tokenizer.Peek(1).Type])
+                        if (LOOKTable[59,0,Tokenizer.Peek().Type]&& LOOKTable[59,1,Tokenizer.Peek(1).Type])
                         {
                             if(Tokenizer.Peek().Type != 16)
                             {
-                                throw new System.Exception("Error parsing " + "_L11" + ": Expected " + "or");
+                                throw new System.Exception("Error parsing " + "_L12" + ": Expected " + "or");
                                 
                             }
                             ReturnValue.FuncName.Value = Tokenizer.Peek().Value;
                             Tokenizer.ConsumeToken();
-                            if(!(LOOKTable[48,0,Tokenizer.Peek().Type]&& LOOKTable[48,1,Tokenizer.Peek(1).Type]))
+                            if(!(LOOKTable[50,0,Tokenizer.Peek().Type]&& LOOKTable[50,1,Tokenizer.Peek(1).Type]))
                             {
-                                throw new System.Exception("Error parsing " + "_L11" + ": Expected " + "ExpressionOpAnd");
+                                throw new System.Exception("Error parsing " + "_L12" + ": Expected " + "ExpressionOpAnd");
                                 
                             }
                             ReturnValue.Args.Add(ParseExpressionOpAnd(Tokenizer));
@@ -934,30 +966,30 @@ namespace Parser
                         }
                         else
                         {
-                            throw new System.Exception("Error parsing " + "_L13" + ": Expected " + "_L13");
+                            throw new System.Exception("Error parsing " + "_L14" + ": Expected " + "_L14");
                             
                         }
                         
                     }
-                    while(LOOKTable[56,0,Tokenizer.Peek().Type]&& LOOKTable[56,1,Tokenizer.Peek(1).Type]);
+                    while(LOOKTable[58,0,Tokenizer.Peek().Type]&& LOOKTable[58,1,Tokenizer.Peek(1).Type]);
                     
                 }
-                else if (LOOKTable[62,0,Tokenizer.Peek().Type]&& LOOKTable[62,1,Tokenizer.Peek(1).Type])
+                else if (LOOKTable[64,0,Tokenizer.Peek().Type]&& LOOKTable[64,1,Tokenizer.Peek(1).Type])
                 {
                     do
                     {
-                        if (LOOKTable[59,0,Tokenizer.Peek().Type]&& LOOKTable[59,1,Tokenizer.Peek(1).Type])
+                        if (LOOKTable[61,0,Tokenizer.Peek().Type]&& LOOKTable[61,1,Tokenizer.Peek(1).Type])
                         {
                             if(Tokenizer.Peek().Type != 17)
                             {
-                                throw new System.Exception("Error parsing " + "_L12" + ": Expected " + "and");
+                                throw new System.Exception("Error parsing " + "_L13" + ": Expected " + "and");
                                 
                             }
                             ReturnValue.FuncName.Value = Tokenizer.Peek().Value;
                             Tokenizer.ConsumeToken();
-                            if(!(LOOKTable[42,0,Tokenizer.Peek().Type]&& LOOKTable[42,1,Tokenizer.Peek(1).Type]))
+                            if(!(LOOKTable[44,0,Tokenizer.Peek().Type]&& LOOKTable[44,1,Tokenizer.Peek(1).Type]))
                             {
-                                throw new System.Exception("Error parsing " + "_L12" + ": Expected " + "ExpressionOpOr");
+                                throw new System.Exception("Error parsing " + "_L13" + ": Expected " + "ExpressionOpOr");
                                 
                             }
                             ReturnValue.Args.Add(ParseExpressionOpOr(Tokenizer));
@@ -965,12 +997,12 @@ namespace Parser
                         }
                         else
                         {
-                            throw new System.Exception("Error parsing " + "_L13" + ": Expected " + "_L13");
+                            throw new System.Exception("Error parsing " + "_L14" + ": Expected " + "_L14");
                             
                         }
                         
                     }
-                    while(LOOKTable[58,0,Tokenizer.Peek().Type]&& LOOKTable[58,1,Tokenizer.Peek(1).Type]);
+                    while(LOOKTable[60,0,Tokenizer.Peek().Type]&& LOOKTable[60,1,Tokenizer.Peek(1).Type]);
                     
                 }
                 else
@@ -991,26 +1023,26 @@ namespace Parser
         public Expression_FuncCall ParseExpression_Base_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_FuncCall ReturnValue = new Expression_FuncCall();
-            if(!(LOOKTable[77,0,Tokenizer.Peek().Type]&& LOOKTable[77,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[79,0,Tokenizer.Peek().Type]&& LOOKTable[79,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Base" + ": Expected " + "Expression_Term");
                 
             }
             ReturnValue.Args.Add(ParseExpression_Term(Tokenizer));
-            if(LOOKTable[65,0,Tokenizer.Peek().Type]&& LOOKTable[65,1,Tokenizer.Peek(1).Type])
+            if(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type])
             {
-                if (LOOKTable[66,0,Tokenizer.Peek().Type]&& LOOKTable[66,1,Tokenizer.Peek(1).Type])
+                if (LOOKTable[68,0,Tokenizer.Peek().Type]&& LOOKTable[68,1,Tokenizer.Peek(1).Type])
                 {
                     if(Tokenizer.Peek().Type != 13)
                     {
-                        throw new System.Exception("Error parsing " + "_L14" + ": Expected " + "comparison");
+                        throw new System.Exception("Error parsing " + "_L15" + ": Expected " + "comparison");
                         
                     }
                     ReturnValue.FuncName.Value = Tokenizer.Peek().Value;
                     Tokenizer.ConsumeToken();
-                    if(!(LOOKTable[77,0,Tokenizer.Peek().Type]&& LOOKTable[77,1,Tokenizer.Peek(1).Type]))
+                    if(!(LOOKTable[79,0,Tokenizer.Peek().Type]&& LOOKTable[79,1,Tokenizer.Peek(1).Type]))
                     {
-                        throw new System.Exception("Error parsing " + "_L14" + ": Expected " + "Expression_Term");
+                        throw new System.Exception("Error parsing " + "_L15" + ": Expected " + "Expression_Term");
                         
                     }
                     ReturnValue.Args.Add(ParseExpression_Term(Tokenizer));
@@ -1028,15 +1060,15 @@ namespace Parser
         public Expression ParseExpression(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if (LOOKTable[68,0,Tokenizer.Peek().Type]&& LOOKTable[68,1,Tokenizer.Peek(1).Type])
+            if (LOOKTable[70,0,Tokenizer.Peek().Type]&& LOOKTable[70,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_0(Tokenizer);
             }
-            else if (LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type])
+            else if (LOOKTable[71,0,Tokenizer.Peek().Type]&& LOOKTable[71,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_1(Tokenizer);
             }
-            else if (LOOKTable[70,0,Tokenizer.Peek().Type]&& LOOKTable[70,1,Tokenizer.Peek(1).Type])
+            else if (LOOKTable[72,0,Tokenizer.Peek().Type]&& LOOKTable[72,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_2(Tokenizer);
             }
@@ -1050,7 +1082,7 @@ namespace Parser
         public Expression ParseExpression_0(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if(!(LOOKTable[54,0,Tokenizer.Peek().Type]&& LOOKTable[54,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[56,0,Tokenizer.Peek().Type]&& LOOKTable[56,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression" + ": Expected " + "Expression_Ordinary");
                 
@@ -1061,7 +1093,7 @@ namespace Parser
         public Expression ParseExpression_1(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if(!(LOOKTable[71,0,Tokenizer.Peek().Type]&& LOOKTable[71,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[73,0,Tokenizer.Peek().Type]&& LOOKTable[73,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression" + ": Expected " + "Expression_Ability");
                 
@@ -1072,7 +1104,7 @@ namespace Parser
         public Expression ParseExpression_2(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if(!(LOOKTable[73,0,Tokenizer.Peek().Type]&& LOOKTable[73,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[75,0,Tokenizer.Peek().Type]&& LOOKTable[75,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression" + ": Expected " + "Expression_StatReference");
                 
@@ -1112,37 +1144,37 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_StatReference" + ": Expected " + "Token");
                 
             }
             ReturnValue.Tokens.Add(ParseToken(Tokenizer));
-            while(LOOKTable[75,0,Tokenizer.Peek().Type]&& LOOKTable[75,1,Tokenizer.Peek(1).Type])
+            while(LOOKTable[77,0,Tokenizer.Peek().Type]&& LOOKTable[77,1,Tokenizer.Peek(1).Type])
             {
-                ReturnValue.Tokens.Add(Parse_L15(Tokenizer));
+                ReturnValue.Tokens.Add(Parse_L16(Tokenizer));
                 
             }
             return(ReturnValue);
         }
-        public Token Parse_L15(MBCC.Tokenizer Tokenizer)
+        public Token Parse_L16(MBCC.Tokenizer Tokenizer)
         {
             Token ReturnValue = new Token();
-            ReturnValue = Parse_L15_0(Tokenizer);
+            ReturnValue = Parse_L16_0(Tokenizer);
             return(ReturnValue);
         }
-        public Token Parse_L15_0(MBCC.Tokenizer Tokenizer)
+        public Token Parse_L16_0(MBCC.Tokenizer Tokenizer)
         {
             Token ReturnValue = new Token();
             if(Tokenizer.Peek().Type != 19)
             {
-                throw new System.Exception("Error parsing " + "_L15" + ": Expected " + "dot");
+                throw new System.Exception("Error parsing " + "_L16" + ": Expected " + "dot");
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[38,0,Tokenizer.Peek().Type]&& LOOKTable[38,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[40,0,Tokenizer.Peek().Type]&& LOOKTable[40,1,Tokenizer.Peek(1).Type]))
             {
-                throw new System.Exception("Error parsing " + "_L15" + ": Expected " + "Token");
+                throw new System.Exception("Error parsing " + "_L16" + ": Expected " + "Token");
                 
             }
             ReturnValue = ParseToken(Tokenizer);
@@ -1151,19 +1183,19 @@ namespace Parser
         public Expression ParseExpression_Term(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if (LOOKTable[78,0,Tokenizer.Peek().Type]&& LOOKTable[78,1,Tokenizer.Peek(1).Type])
+            if (LOOKTable[80,0,Tokenizer.Peek().Type]&& LOOKTable[80,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_Term_0(Tokenizer);
             }
-            else if (LOOKTable[79,0,Tokenizer.Peek().Type]&& LOOKTable[79,1,Tokenizer.Peek(1).Type])
+            else if (LOOKTable[81,0,Tokenizer.Peek().Type]&& LOOKTable[81,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_Term_1(Tokenizer);
             }
-            else if (LOOKTable[80,0,Tokenizer.Peek().Type]&& LOOKTable[80,1,Tokenizer.Peek(1).Type])
+            else if (LOOKTable[82,0,Tokenizer.Peek().Type]&& LOOKTable[82,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_Term_2(Tokenizer);
             }
-            else if (LOOKTable[81,0,Tokenizer.Peek().Type]&& LOOKTable[81,1,Tokenizer.Peek(1).Type])
+            else if (LOOKTable[83,0,Tokenizer.Peek().Type]&& LOOKTable[83,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseExpression_Term_3(Tokenizer);
             }
@@ -1183,7 +1215,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Term" + ": Expected " + "Expression");
                 
@@ -1200,7 +1232,7 @@ namespace Parser
         public Expression ParseExpression_Term_1(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if(!(LOOKTable[82,0,Tokenizer.Peek().Type]&& LOOKTable[82,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[84,0,Tokenizer.Peek().Type]&& LOOKTable[84,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Term" + ": Expected " + "Expression_Literal");
                 
@@ -1211,7 +1243,7 @@ namespace Parser
         public Expression ParseExpression_Term_2(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if(!(LOOKTable[90,0,Tokenizer.Peek().Type]&& LOOKTable[90,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[92,0,Tokenizer.Peek().Type]&& LOOKTable[92,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Term" + ": Expected " + "Expression_Variable");
                 
@@ -1222,7 +1254,7 @@ namespace Parser
         public Expression ParseExpression_Term_3(MBCC.Tokenizer Tokenizer)
         {
             Expression ReturnValue = new Expression();
-            if(!(LOOKTable[101,0,Tokenizer.Peek().Type]&& LOOKTable[101,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[106,0,Tokenizer.Peek().Type]&& LOOKTable[106,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Term" + ": Expected " + "Expression_FuncCall");
                 
@@ -1239,7 +1271,7 @@ namespace Parser
         public Expression_Literal ParseExpression_Literal_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_Literal ReturnValue = new Expression_Literal();
-            if(!(LOOKTable[92,0,Tokenizer.Peek().Type]&& LOOKTable[92,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[94,0,Tokenizer.Peek().Type]&& LOOKTable[94,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Literal" + ": Expected " + "Literal");
                 
@@ -1257,7 +1289,7 @@ namespace Parser
         {
             Token ReturnValue = new Token();
             ReturnValue.Position = Tokenizer.Peek().Position;
-            if(Tokenizer.Peek().Type != 20)
+            if(Tokenizer.Peek().Type != 22)
             {
                 throw new System.Exception("Error parsing " + "Token_1" + ": Expected " + "idf");
                 
@@ -1276,7 +1308,7 @@ namespace Parser
         {
             Token ReturnValue = new Token();
             ReturnValue.Position = Tokenizer.Peek().Position;
-            if(Tokenizer.Peek().Type != 20)
+            if(Tokenizer.Peek().Type != 22)
             {
                 throw new System.Exception("Error parsing " + "Token_2" + ": Expected " + "idf");
                 
@@ -1295,7 +1327,7 @@ namespace Parser
         {
             Token ReturnValue = new Token();
             ReturnValue.Position = Tokenizer.Peek().Position;
-            if(Tokenizer.Peek().Type != 20)
+            if(Tokenizer.Peek().Type != 22)
             {
                 throw new System.Exception("Error parsing " + "Token_3" + ": Expected " + "idf");
                 
@@ -1313,7 +1345,7 @@ namespace Parser
         public Expression_Variable ParseExpression_Variable_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_Variable ReturnValue = new Expression_Variable();
-            if(!(LOOKTable[86,0,Tokenizer.Peek().Type]&& LOOKTable[86,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[88,0,Tokenizer.Peek().Type]&& LOOKTable[88,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_Variable" + ": Expected " + "Token_2");
                 
@@ -1324,13 +1356,17 @@ namespace Parser
         public Literal ParseLiteral(MBCC.Tokenizer Tokenizer)
         {
             Literal ReturnValue = new Literal();
-            if (LOOKTable[93,0,Tokenizer.Peek().Type]&& LOOKTable[93,1,Tokenizer.Peek(1).Type])
+            if (LOOKTable[95,0,Tokenizer.Peek().Type]&& LOOKTable[95,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseLiteral_0(Tokenizer);
             }
-            else if (LOOKTable[94,0,Tokenizer.Peek().Type]&& LOOKTable[94,1,Tokenizer.Peek(1).Type])
+            else if (LOOKTable[96,0,Tokenizer.Peek().Type]&& LOOKTable[96,1,Tokenizer.Peek(1).Type])
             {
                 ReturnValue = ParseLiteral_1(Tokenizer);
+            }
+            else if (LOOKTable[97,0,Tokenizer.Peek().Type]&& LOOKTable[97,1,Tokenizer.Peek(1).Type])
+            {
+                ReturnValue = ParseLiteral_2(Tokenizer);
             }
             else
             {
@@ -1342,7 +1378,7 @@ namespace Parser
         public Literal ParseLiteral_0(MBCC.Tokenizer Tokenizer)
         {
             Literal ReturnValue = new Literal();
-            if(!(LOOKTable[95,0,Tokenizer.Peek().Type]&& LOOKTable[95,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[100,0,Tokenizer.Peek().Type]&& LOOKTable[100,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Literal" + ": Expected " + "Literal_String");
                 
@@ -1353,12 +1389,42 @@ namespace Parser
         public Literal ParseLiteral_1(MBCC.Tokenizer Tokenizer)
         {
             Literal ReturnValue = new Literal();
-            if(!(LOOKTable[97,0,Tokenizer.Peek().Type]&& LOOKTable[97,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[102,0,Tokenizer.Peek().Type]&& LOOKTable[102,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Literal" + ": Expected " + "Literal_Int");
                 
             }
             ReturnValue = ParseLiteral_Int(Tokenizer);
+            return(ReturnValue);
+        }
+        public Literal ParseLiteral_2(MBCC.Tokenizer Tokenizer)
+        {
+            Literal ReturnValue = new Literal();
+            if(!(LOOKTable[98,0,Tokenizer.Peek().Type]&& LOOKTable[98,1,Tokenizer.Peek(1).Type]))
+            {
+                throw new System.Exception("Error parsing " + "Literal" + ": Expected " + "Literal_Bool");
+                
+            }
+            ReturnValue = ParseLiteral_Bool(Tokenizer);
+            return(ReturnValue);
+        }
+        public Literal_Bool ParseLiteral_Bool(MBCC.Tokenizer Tokenizer)
+        {
+            Literal_Bool ReturnValue = new Literal_Bool();
+            ReturnValue = ParseLiteral_Bool_0(Tokenizer);
+            return(ReturnValue);
+        }
+        public Literal_Bool ParseLiteral_Bool_0(MBCC.Tokenizer Tokenizer)
+        {
+            Literal_Bool ReturnValue = new Literal_Bool();
+            ReturnValue.Position = Tokenizer.Peek().Position;
+            if(Tokenizer.Peek().Type != 20)
+            {
+                throw new System.Exception("Error parsing " + "Literal_Bool" + ": Expected " + "bool");
+                
+            }
+            ReturnValue.Value = Tokenizer.Peek().Value == "true";
+            Tokenizer.ConsumeToken();
             return(ReturnValue);
         }
         public Literal_String ParseLiteral_String(MBCC.Tokenizer Tokenizer)
@@ -1408,7 +1474,7 @@ namespace Parser
         public KeyArg ParseKeyArg_0(MBCC.Tokenizer Tokenizer)
         {
             KeyArg ReturnValue = new KeyArg();
-            if(!(LOOKTable[88,0,Tokenizer.Peek().Type]&& LOOKTable[88,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[90,0,Tokenizer.Peek().Type]&& LOOKTable[90,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "KeyArg" + ": Expected " + "Token_3");
                 
@@ -1420,7 +1486,7 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "KeyArg" + ": Expected " + "Expression");
                 
@@ -1437,7 +1503,7 @@ namespace Parser
         public Expression_FuncCall ParseExpression_FuncCall_0(MBCC.Tokenizer Tokenizer)
         {
             Expression_FuncCall ReturnValue = new Expression_FuncCall();
-            if(!(LOOKTable[84,0,Tokenizer.Peek().Type]&& LOOKTable[84,1,Tokenizer.Peek(1).Type]))
+            if(!(LOOKTable[86,0,Tokenizer.Peek().Type]&& LOOKTable[86,1,Tokenizer.Peek(1).Type]))
             {
                 throw new System.Exception("Error parsing " + "Expression_FuncCall" + ": Expected " + "Token_1");
                 
@@ -1449,25 +1515,25 @@ namespace Parser
                 
             }
             Tokenizer.ConsumeToken();
-            if(LOOKTable[111,0,Tokenizer.Peek().Type]&& LOOKTable[111,1,Tokenizer.Peek(1).Type])
+            if(LOOKTable[116,0,Tokenizer.Peek().Type]&& LOOKTable[116,1,Tokenizer.Peek(1).Type])
             {
-                if (LOOKTable[112,0,Tokenizer.Peek().Type]&& LOOKTable[112,1,Tokenizer.Peek(1).Type])
+                if (LOOKTable[117,0,Tokenizer.Peek().Type]&& LOOKTable[117,1,Tokenizer.Peek(1).Type])
                 {
-                    if (LOOKTable[104,0,Tokenizer.Peek().Type]&& LOOKTable[104,1,Tokenizer.Peek(1).Type])
+                    if (LOOKTable[109,0,Tokenizer.Peek().Type]&& LOOKTable[109,1,Tokenizer.Peek(1).Type])
                     {
-                        if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+                        if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
                         {
-                            throw new System.Exception("Error parsing " + "_L16" + ": Expected " + "Expression");
+                            throw new System.Exception("Error parsing " + "_L17" + ": Expected " + "Expression");
                             
                         }
                         ReturnValue.Args.Add(ParseExpression(Tokenizer));
                         
                     }
-                    else if (LOOKTable[105,0,Tokenizer.Peek().Type]&& LOOKTable[105,1,Tokenizer.Peek(1).Type])
+                    else if (LOOKTable[110,0,Tokenizer.Peek().Type]&& LOOKTable[110,1,Tokenizer.Peek(1).Type])
                     {
-                        if(!(LOOKTable[99,0,Tokenizer.Peek().Type]&& LOOKTable[99,1,Tokenizer.Peek(1).Type]))
+                        if(!(LOOKTable[104,0,Tokenizer.Peek().Type]&& LOOKTable[104,1,Tokenizer.Peek(1).Type]))
                         {
-                            throw new System.Exception("Error parsing " + "_L16" + ": Expected " + "KeyArg");
+                            throw new System.Exception("Error parsing " + "_L17" + ": Expected " + "KeyArg");
                             
                         }
                         ReturnValue.KeyArgs.Add(ParseKeyArg(Tokenizer));
@@ -1475,34 +1541,34 @@ namespace Parser
                     }
                     else
                     {
-                        throw new System.Exception("Error parsing " + "_L19" + ": Expected " + "_L19");
+                        throw new System.Exception("Error parsing " + "_L20" + ": Expected " + "_L20");
                         
                     }
-                    while(LOOKTable[109,0,Tokenizer.Peek().Type]&& LOOKTable[109,1,Tokenizer.Peek(1).Type])
+                    while(LOOKTable[114,0,Tokenizer.Peek().Type]&& LOOKTable[114,1,Tokenizer.Peek(1).Type])
                     {
-                        if (LOOKTable[110,0,Tokenizer.Peek().Type]&& LOOKTable[110,1,Tokenizer.Peek(1).Type])
+                        if (LOOKTable[115,0,Tokenizer.Peek().Type]&& LOOKTable[115,1,Tokenizer.Peek(1).Type])
                         {
                             if(Tokenizer.Peek().Type != 5)
                             {
-                                throw new System.Exception("Error parsing " + "_L18" + ": Expected " + "comma");
+                                throw new System.Exception("Error parsing " + "_L19" + ": Expected " + "comma");
                                 
                             }
                             Tokenizer.ConsumeToken();
-                            if (LOOKTable[107,0,Tokenizer.Peek().Type]&& LOOKTable[107,1,Tokenizer.Peek(1).Type])
+                            if (LOOKTable[112,0,Tokenizer.Peek().Type]&& LOOKTable[112,1,Tokenizer.Peek(1).Type])
                             {
-                                if(!(LOOKTable[67,0,Tokenizer.Peek().Type]&& LOOKTable[67,1,Tokenizer.Peek(1).Type]))
+                                if(!(LOOKTable[69,0,Tokenizer.Peek().Type]&& LOOKTable[69,1,Tokenizer.Peek(1).Type]))
                                 {
-                                    throw new System.Exception("Error parsing " + "_L17" + ": Expected " + "Expression");
+                                    throw new System.Exception("Error parsing " + "_L18" + ": Expected " + "Expression");
                                     
                                 }
                                 ReturnValue.Args.Add(ParseExpression(Tokenizer));
                                 
                             }
-                            else if (LOOKTable[108,0,Tokenizer.Peek().Type]&& LOOKTable[108,1,Tokenizer.Peek(1).Type])
+                            else if (LOOKTable[113,0,Tokenizer.Peek().Type]&& LOOKTable[113,1,Tokenizer.Peek(1).Type])
                             {
-                                if(!(LOOKTable[99,0,Tokenizer.Peek().Type]&& LOOKTable[99,1,Tokenizer.Peek(1).Type]))
+                                if(!(LOOKTable[104,0,Tokenizer.Peek().Type]&& LOOKTable[104,1,Tokenizer.Peek(1).Type]))
                                 {
-                                    throw new System.Exception("Error parsing " + "_L17" + ": Expected " + "KeyArg");
+                                    throw new System.Exception("Error parsing " + "_L18" + ": Expected " + "KeyArg");
                                     
                                 }
                                 ReturnValue.KeyArgs.Add(ParseKeyArg(Tokenizer));
@@ -1510,14 +1576,14 @@ namespace Parser
                             }
                             else
                             {
-                                throw new System.Exception("Error parsing " + "_L18" + ": Expected " + "_L18");
+                                throw new System.Exception("Error parsing " + "_L19" + ": Expected " + "_L19");
                                 
                             }
                             
                         }
                         else
                         {
-                            throw new System.Exception("Error parsing " + "_L19" + ": Expected " + "_L19");
+                            throw new System.Exception("Error parsing " + "_L20" + ": Expected " + "_L20");
                             
                         }
                         
@@ -1541,7 +1607,7 @@ namespace Parser
         }
         public MBCC.Tokenizer GetTokenizer()
         {
-            return new MBCC.Tokenizer("\\s*","\\{","\\}","\\(","\\)",":",",",";","=","stats","visuals","activated","triggered","continous","<|<=|>|>=","\\d+","\"([^\"\\\\\\\\]|\\\\\\\\.)*\"","\\|\\|","&&","&","\\.","\\w\\w*");
+            return new MBCC.Tokenizer("\\s*","\\{","\\}","\\(","\\)",":",",",";","=","stats","visuals","activated","triggered","continous","<|<=|>|>=","\\d+","\"([^\"\\\\\\\\]|\\\\\\\\.)*\"","\\|\\|","&&","&","\\.","true|false","range","\\w\\w*");
         }
         
     }

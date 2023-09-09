@@ -30,17 +30,17 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void PlayAnimation(int Unit,object AnimationToAnime)
     {
-        if(AnimationToAnime is ResourceManager.Visual_Animation)
+        if(AnimationToAnime is ResourceManager.Animation && ((ResourceManager.Animation)AnimationToAnime).VisualInfo is ResourceManager.Visual_Animation)
         {
-            ResourceManager.Visual_Animation VisualAnimation = (ResourceManager.Visual_Animation)AnimationToAnime;
+            ResourceManager.Visual_Animation VisualAnimation = (ResourceManager.Visual_Animation) ((ResourceManager.Animation)AnimationToAnime).VisualInfo;
             m_ActiveAnimations.Enqueue(new UnitAnimation(Unit,this,VisualAnimation));
         }
     }
     public void PlayAnimation(Coordinate TileCoordinate,object AnimationToAnime)
     {
-        if (AnimationToAnime is ResourceManager.Visual_Animation)
+        if (AnimationToAnime is ResourceManager.Animation && ((ResourceManager.Animation)AnimationToAnime).VisualInfo is ResourceManager.Visual_Animation)
         {
-            ResourceManager.Visual_Animation VisualAnimation = (ResourceManager.Visual_Animation)AnimationToAnime;
+            ResourceManager.Visual_Animation VisualAnimation = (ResourceManager.Visual_Animation)((ResourceManager.Animation)AnimationToAnime).VisualInfo;
             m_ActiveAnimations.Enqueue(new LocationAnimation(VisualAnimation, gridManager.GetTilePosition(TileCoordinate)));
         }
     }
@@ -356,7 +356,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
 
-    public Dictionary<int, Unit> m_OpaqueToUIInfo = new Dictionary<int, Unit>();
+    public Dictionary<int, ResourceManager.UnitResource> m_OpaqueToUIInfo = new Dictionary<int, ResourceManager.UnitResource>();
 
 
 
@@ -772,7 +772,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 RuleManager.EffectSource_Unit Source = (RuleManager.EffectSource_Unit)entity.Source;
                 if(Source.EffectIndex != -1)
                 {
-                    createdImage.GetComponentInChildren<UnityEngine.UI.RawImage>().texture = m_OpaqueToUIInfo[ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger].AbilityIcons[Source.EffectIndex].texture;
+                    var UnitResource = m_OpaqueToUIInfo[ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger];
+                    if (UnitResource.UIInfo.AbilityIcons.ContainsKey(Source.EffectIndex)) 
+                    {
+                        var Visual = UnitResource.UIInfo.AbilityIcons[Source.EffectIndex];
+                        if(Visual.VisualInfo is ResourceManager.Visual_Image)
+                        {
+                            createdImage.GetComponentInChildren<UnityEngine.UI.RawImage>().texture = ((ResourceManager.Visual_Image)Visual.VisualInfo).Sprite.texture;
+                        }
+                    } 
                     
                 }
                 print("Stack entity effect: " + entity.EffectToResolve.GetText());
@@ -1039,7 +1047,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
             {
                 UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
-                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitFromList.unit;
+                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitToCreate;
                 CurrentUnitOpaqueID += 1;
             }
             unitToCreate.GameInfo.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
@@ -1200,7 +1208,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         return false; 
     }
-    public Unit GetUnitUIInfo(RuleManager.UnitInfo UnitToInspect)
+    public ResourceManager.UnitResource GetUnitUIInfo(RuleManager.UnitInfo UnitToInspect)
     {
         return (m_OpaqueToUIInfo[UnitToInspect.OpaqueInteger]);
     }
