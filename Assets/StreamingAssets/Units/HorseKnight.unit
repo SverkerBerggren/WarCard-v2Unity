@@ -1,0 +1,21 @@
+HorseKnight
+{
+    stats
+    {
+        HP = 300;
+        Movement = 12;
+        Range = 2;
+        Damage = 100;
+        ObjectiveControll = 50;
+        ActivationCost = 40;
+
+        Width = 3;
+        Height = 2;
+        Tags = Knight;
+    }
+    visuals
+    {
+        Up = Image("./Horse_2.png");
+        Down = Image("./Horse_2_3.png");
+    }
+}

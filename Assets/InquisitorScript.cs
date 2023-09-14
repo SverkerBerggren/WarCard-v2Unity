@@ -15,6 +15,7 @@ public class InquisitorScript : Unit
 
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("Inquisitor");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Inquisitor";
         ReturnValue.GameInfo = Templars.GetInquisitor();

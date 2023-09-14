@@ -16,6 +16,7 @@ public class KnightScript : Unit
 
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("HorseKnight");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Knight";
         ReturnValue.GameInfo = Templars.GetHorseKnight();

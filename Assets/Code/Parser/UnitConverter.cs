@@ -704,11 +704,17 @@ namespace UnitScript
             ReturnValue.Value = NewStat;
             return ReturnValue;
         }
-        public RuleManager.UnitStats ConvertStats(List<Diagnostic> OutDiagnostics, Parser.UnitStats ParsedUnit)
+        public RuleManager.UnitStats ConvertStats(RuleManager.UnitInfo CurrentInfo,List<Diagnostic> OutDiagnostics, Parser.UnitStats ParsedUnit)
         {
             RuleManager.UnitStats ReturnValue = new RuleManager.UnitStats();
+            int Width = 1;
+            int Height = 1;
             foreach(Parser.StatDeclaration Declaration in ParsedUnit.Declarations)
             {
+                if(Declaration.AssignedValue < 0)
+                {
+                    OutDiagnostics.Add(new Diagnostic(Declaration.Stat,"Stat cannot be negative"));
+                }
                 if(Declaration.Stat.Value == "HP")
                 {
                     ReturnValue.HP = Declaration.AssignedValue;
@@ -733,9 +739,32 @@ namespace UnitScript
                 {
                     ReturnValue.ObjectiveControll = Declaration.AssignedValue;
                 }
+                else if(Declaration.Stat.Value == "Width")
+                {
+                    Width = Declaration.AssignedValue;
+                }
+                else if(Declaration.Stat.Value == "Height")
+                {
+                    Height = Declaration.AssignedValue;
+                }
                 else
                 {
                     OutDiagnostics.Add(new Diagnostic(Declaration.Stat,"No stat field named \""+Declaration.Stat.Value+"\""));
+                }
+            }
+            foreach(var Tag in ParsedUnit.Tags)
+            {
+                CurrentInfo.Tags.Add(Tag.Value);
+            }
+            if(!(Width == 1 && Height == 1))
+            {
+                CurrentInfo.UnitTileOffsets = new List<RuleManager.Coordinate>();
+                for(int i = 0; i < Width; i++)
+                {
+                    for(int j = 0; j < Height; j++)
+                    {
+                        CurrentInfo.UnitTileOffsets.Add( new RuleManager.Coordinate(i,j));
+                    }   
                 }
             }
             return ReturnValue;
@@ -981,7 +1010,7 @@ namespace UnitScript
             m_StringToUnit[ParsedUnit.Name.Value] = m_CurrentUnitID;
             m_LoadedUnits[m_CurrentUnitID] = ReturnValue;
             m_CurrentUnitID++;
-            ReturnValue.GameInfo.Stats = ConvertStats(OutDiagnostics,ParsedUnit.Stats);
+            ReturnValue.GameInfo.Stats = ConvertStats(ReturnValue.GameInfo,OutDiagnostics,ParsedUnit.Stats);
             ReturnValue.UIInfo = ConvertVisuals(OutDiagnostics,ReturnValue.GameInfo.Envir,ParsedUnit.visuals);
             ReturnValue.Name = ParsedUnit.Name.Value;
             foreach(Parser.VariableDeclaration Vars in ParsedUnit.Variables)

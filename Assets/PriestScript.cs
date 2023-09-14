@@ -15,6 +15,11 @@ public class PriestScript : Unit
 
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("Priest");
+
+
+
+
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Priest";
         ReturnValue.GameInfo = Templars.GetPriest();

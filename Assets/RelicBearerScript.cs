@@ -14,6 +14,7 @@ public class RelicBearerScript : Unit
     }
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("RelicBearer");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "RelicBearer";
         ReturnValue.GameInfo = Templars.GetRelic();

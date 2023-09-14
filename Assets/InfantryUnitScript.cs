@@ -17,6 +17,7 @@ public class InfantryUnitScript :  Unit
 
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("Infantry");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Infantry_Ranged";
         ReturnValue.GameInfo = Militarium.GetFootSoldier();

@@ -1,0 +1,50 @@
+Inquisitor
+{
+    stats
+    {
+        HP = 200;
+        Movement = 7;
+        Range = 2;
+        Damage = 10;
+        ObjectiveControll = 10;
+        ActivationCost = 40;
+    }
+    visuals
+    {
+        Up = Image("./Inquisitor_2.png");
+        Down = Image("./Inquisitor_2_2.png");
+    }
+    SacrifieRange = 10;
+    activated FinalSacrifice( Unit target : Friendly(target) && Distance(this,target) < SacrifieRange && Tag(target,"Knight") range Range(this,SacrifieRange))
+          :
+            Icon = Image("./PH_Ability_E_1.png");
+            Name="Final sacrifice";
+            Flavour="Some decisions are to important even for knights to decide";
+            Description="Target a friendly knight within 10 tiles: Deal 80 damage within 4 tiles of it, and destroy it";
+    {
+        DamageArea(target,4,80);
+        DestroyUnit(target);
+    }
+    SilenceRange = 24;
+    ConduitRange = 8;
+    activated ChainLightning(
+                    Unit FirstTarget : Friendly(FirstTarget) && Distance(this,FirstTarget) < ConduitRange range Range(this,ConduitRange),
+                    Unit SecondTarget : Enemy(SecondTarget) && Distance(FirstTarget,SecondTarget) < ConduitRange range Range(FirstTarget,ConduitRange)
+                    )
+          :
+            Icon = Image("./PH_Ability_E_2.png");
+            Name="Chain Lightning";
+            Flavour="Priest conduit nibba";
+            Description="Target a friendly priest within 8 tiles, and a  enemy unit within 8 tiles of that unit: deal 80 damage to the enemy unit";
+    {
+        DealDamage(SecondTarget,80);
+    }
+    activated ChainLightning()
+          :
+            Icon = Image("./PH_Ability_E_3.png");
+            Name="Gleam ligma";
+            Flavour="Inquisitor big brain";
+            Description="Gain 30 inititave at the beginning of the next battle round";
+    {
+    }
+}

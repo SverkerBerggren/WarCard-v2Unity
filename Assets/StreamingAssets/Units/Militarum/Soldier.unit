@@ -1,0 +1,18 @@
+Infantry
+{
+    stats
+    {
+        HP = 100;
+        Movement = 6;
+        Range = 6;
+        Damage = 35;
+        ObjectiveControll = 10;
+        ActivationCost = 15;
+        Tags = Infantry;
+    }
+    visuals
+    {
+        Up = Image("./PH_Soldier_2_2.png");
+        Down = Image("./PH_Soldier_2_3.png");
+    }
+}

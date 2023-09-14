@@ -1,0 +1,34 @@
+Knight
+{
+    stats
+    {
+        HP = 300;
+        Movement = 8;
+        Range = 2;
+        Damage = 100;
+        ObjectiveControll = 50;
+        ActivationCost = 40;
+    
+        Tags = Knight;
+    }
+    visuals
+    {
+        Attack = Animation("KnightAttackAnimation",FPS=25,XCenter=37,YCenter=11,Width=15);
+        Up = Image("Knight_2.png");
+        Down = Image("Knight_2_2.png");
+    }
+    SmiteDamage = 100;
+    LightningPose = Animation("LightningPose",FPS=25,XCenter=50,Width=15,YCenter=5);
+    LightningStrike = Animation("LightningStrike",FPS=25,XCenter=50,Width=15,YCenter=2);
+    activated Smite ( Unit target : Enemy(target) && Distance(this,target) < 13 range Range(this,12))
+          :
+            Icon = Image("PH_Ability_E_Knight.png");
+            Name="Smite";
+            Flavour="Knight be smiting";
+            Description="Target an enemy unit within 12 units: deal 50 damage to it";
+    {
+        PlayAnimation(LightningPose,this);
+        PlayAnimation(LightningStrike,target,Overlayed=true);
+        DealDamage(target,SmiteDamage);
+    }
+}

@@ -1379,6 +1379,7 @@ namespace RuleManager
         void p_RefreshUnit(UnitInfo UnitToRefresh)
         {
             UnitToRefresh.Flags = 0;
+            UnitToRefresh.Flags |= UnitFlags.IsActivated;
             //UnitToRefresh.Flags &= ~(UnitFlags.HasAttacked);
             //UnitToRefresh.Flags &= ~(UnitFlags.HasMoved);
             //UnitToRefresh.HasAttacked = false;
@@ -2638,6 +2639,43 @@ namespace RuleManager
             p_DestroyUnit(IdToModify.ID);
             return null;
         }
+        object p_MoveUnit(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier UnitToMove = (UnitIdentifier)Args.Arguments[0];
+            Coordinate Target = (Coordinate)Args.Arguments[1];
+            p_MoveUnit(UnitToMove.ID,Target);
+            return null;
+        }
+        object p_RefreshUnit(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
+            p_RefreshUnit(m_UnitInfos[IdToModify.ID]);
+            return null;
+        }
+        object p_DamageArea(UnitScript.BuiltinFuncArgs Args)
+        {
+            EffectSource Source = (EffectSource)Args.Envir.GetVar("SOURCE");
+            UnitIdentifier SourceUnit = (UnitIdentifier)Args.Arguments[0];
+            int Range = (int)Args.Arguments[1];
+            int Damage = (int)Args.Arguments[2];
+            List<Coordinate> OriginTile =p_GetAbsolutePositions(m_UnitInfos[SourceUnit.ID].TopLeftCorner, m_UnitInfos[SourceUnit.ID].UnitTileOffsets);
+            HashSet<int> AffectedUnits = new HashSet<int>();
+            foreach(Coordinate CurrentTile in p_GetTiles(Range,OriginTile))
+            {
+                if(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID == 0 || AffectedUnits.Contains(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID))
+                {
+                    continue;
+                }
+                AffectedUnits.Add(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID);
+                UnitInfo UnitToDamage = p_GetProcessedUnitInfo(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID);
+                if(UnitToDamage.PlayerIndex == Source.PlayerIndex)
+                {
+                    continue;
+                }
+                p_DealDamage(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID, Damage);
+            }
+            return null;
+        }
         //
         object p_Distance(UnitScript.BuiltinFuncArgs Args)
         {
@@ -2688,6 +2726,12 @@ namespace RuleManager
             }
             return ReturnValue;
         }
+        object p_Silence(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitInfo UnitToSilence = (UnitInfo)Args.Arguments[0];
+            UnitToSilence.Flags |= UnitFlags.Silenced;
+            return null;
+        }
         object p_PlayAnimation(UnitScript.BuiltinFuncArgs Args)
         {
             object AnimationObject = Args.Arguments[0];
@@ -2720,6 +2764,27 @@ namespace RuleManager
             DestroyUnit.ValidContexts = UnitScript.EvalContext.Resolve;
             DestroyUnit.Callable = p_DestroyUnit;
             ReturnValue["DestroyUnit"] = DestroyUnit;
+
+            UnitScript.Builtin_FuncInfo MoveUnit = new UnitScript.Builtin_FuncInfo();
+            MoveUnit.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            MoveUnit.ResultType = typeof(void);
+            MoveUnit.ValidContexts = UnitScript.EvalContext.Resolve;
+            MoveUnit.Callable = p_DestroyUnit;
+            ReturnValue["DestroyUnit"] = DestroyUnit;
+
+            UnitScript.Builtin_FuncInfo RefreshUnit = new UnitScript.Builtin_FuncInfo();
+            RefreshUnit.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            RefreshUnit.ResultType = typeof(void);
+            RefreshUnit.ValidContexts = UnitScript.EvalContext.Resolve;
+            RefreshUnit.Callable = p_RefreshUnit;
+            ReturnValue["RefreshUnit"] = RefreshUnit;
+
+            UnitScript.Builtin_FuncInfo DamageArea = new UnitScript.Builtin_FuncInfo();
+            DamageArea.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(int),typeof(int)};
+            DamageArea.ResultType = typeof(void);
+            DamageArea.ValidContexts = UnitScript.EvalContext.Resolve;
+            DamageArea.Callable = p_DamageArea;
+            ReturnValue["DamageArea"] = DamageArea;
 
             UnitScript.Builtin_FuncInfo Enemy = new UnitScript.Builtin_FuncInfo();
             Enemy.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
@@ -2771,6 +2836,13 @@ namespace RuleManager
             PlayAnimation.ValidContexts = UnitScript.EvalContext.Resolve;
             PlayAnimation.Callable = p_PlayAnimation;
             ReturnValue["PlayAnimation"] = PlayAnimation;
+
+            UnitScript.Builtin_FuncInfo Silence = new UnitScript.Builtin_FuncInfo();
+            Silence.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            Silence.ResultType = typeof(void);
+            Silence.ValidContexts = UnitScript.EvalContext.Continous;
+            Silence.Callable = p_Silence;
+            ReturnValue["Silence"] = Silence;
 
             return ReturnValue;
         }

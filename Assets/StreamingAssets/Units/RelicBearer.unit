@@ -1,0 +1,27 @@
+RelicBearer
+{
+    stats
+    {
+        HP = 100;
+        Movement = 7;
+        Range = 0;
+        Damage = 0;
+        ObjectiveControll = 20;
+        ActivationCost = 20;
+    }
+    visuals
+    {
+        Up = Image("./RelicBearer_2.png");
+        Down = Image("./RelicBearer_2_3.png");
+    }
+    LastRiteRange = 12;
+    activated BlindingLight ( Unit target : Friendly(target) && Distance(this,target) < LastRiteRange range Range(this,LastRiteRange))
+          :
+            Icon = Image("PH_Ability_E_Relicbearer.png");
+            Name="Last rites";
+            Flavour="Rites be final";
+            Description="Target a friendly unit withing 12 tiles: refresh it, and destroy this unit";
+    {
+        RefreshUnit(target);
+    }
+}

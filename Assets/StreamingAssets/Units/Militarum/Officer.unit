@@ -1,0 +1,48 @@
+Infantry
+{
+    stats
+    {
+        HP = 80;
+        Movement = 6;
+        Range = 8;
+        Damage = 20;
+        ObjectiveControll = 5;
+        ActivationCost = 15;
+    }
+    visuals
+    {
+        Up = Image("./PH_Officer_2.png");
+        Down = Image("./PH_Officer_3.png");
+    }
+    OrderRange = 6;
+    activated MoveMoveMove ( Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange))
+          :
+            Icon = Image("PH_Ability_S_Officer_2.png");
+            Name="Move move move";
+            Flavour="In the grim dark future, moving is important";
+            Description="Target a friendly infantry unit within 6 tiles: increase its movement by 5 this turn";
+    {
+        RegisterContinous( continous _(Unit stuff : Eq(stuff,target)){AddStat(&target.Stats.Movement,5);  },TurnDuration=1  );
+    }
+    activated FirstRankSecondRank ( Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange))
+          :
+            Icon = Image("./PH_Ability_S_Officer_2.png");
+            Name="First rank second rank";
+            Flavour="People need to be told how to shot efficiently";
+            Description="Target a friendly infantry unit within 6 tiles: increase its damage by 50 this turn";
+    {
+        RegisterContinous( continous _(Unit stuff : Eq(stuff,target)){AddStat(&target.Stats.Damage,50);  },TurnDuration=1  );
+    }
+    activated InstaMove ( 
+            Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange),
+            Tile TargetTile : Distance(target,TargetTile) < 3 range Range(target,3)
+                        )
+          :
+            Icon = Image("./PH_Ability_S_Officer_2.png");
+            Name="Insta Move";
+            Flavour="Fast as fuck";
+            Description="Target a friendly infantry unit within 6 tiles, and a tile within 3 tiles of that unit: move the unit to the tile";
+    {
+        MoveUnit(target,TargetTile);
+    }
+}

@@ -765,7 +765,7 @@ PrefabInstance:
     - target: {fileID: 9175123667821927883, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_SortingOrder
-      value: 200
+      value: 10000
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e733d5ac57037e64ea596ae37a806bee, type: 3}
