@@ -351,7 +351,7 @@ namespace ResourceManager
             };
             
             UnitScript.Builtin_FuncInfo Image = new UnitScript.Builtin_FuncInfo();
-            Image.ArgTypes = new List<Type>{typeof(string)};
+            Image.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(string)}};
             Image.ResultType = typeof(Animation);
             Image.ValidContexts = UnitScript.EvalContext.Compile;
             Image.Callable = p_Image;
@@ -359,7 +359,7 @@ namespace ResourceManager
             ReturnValue["Image"] = Image;
 
             UnitScript.Builtin_FuncInfo Video = new UnitScript.Builtin_FuncInfo();
-            Video.ArgTypes = new List<Type>{typeof(string)};
+            Video.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(string)}};
             Video.ResultType = typeof(Animation);
             Video.ValidContexts = UnitScript.EvalContext.Compile;
             Video.Callable = p_Video;
@@ -367,7 +367,7 @@ namespace ResourceManager
             ReturnValue["Video"] = Video;
 
             UnitScript.Builtin_FuncInfo Animation = new UnitScript.Builtin_FuncInfo();
-            Animation.ArgTypes = new List<Type>{typeof(string)};
+            Animation.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(string)}};
             Animation.ResultType = typeof(Animation);
             Animation.ValidContexts = UnitScript.EvalContext.Compile;
             Animation.Callable = p_Animation;

@@ -98,7 +98,7 @@ namespace UnitScript
     {
         public Type ResultType;
         public EvalContext ValidContexts = EvalContext.None;
-        public List<Type> ArgTypes = new List<Type>();//required arguments
+        public List<HashSet<Type>> ArgTypes = new List<HashSet<Type>>();//required arguments
         public Dictionary<string, Type> KeyArgTypes =  new Dictionary<string, Type>();//keyword required types
         public Func<BuiltinFuncArgs,object> Callable;
     }
@@ -115,9 +115,14 @@ namespace UnitScript
     public class EvaluationEnvironment
     {
         Dictionary<string,object> m_Contents = new Dictionary<string,object>();
+        HashSet<string> m_ShadowRemoved = new HashSet<string>();
         EvaluationEnvironment m_Parent = null;
         public bool HasVar(string VariableToCheck)
         {
+            if(m_ShadowRemoved.Contains(VariableToCheck))
+            {
+                return false;   
+            }
             bool  ReturnValue = m_Contents.ContainsKey(VariableToCheck);
             if(!ReturnValue && m_Parent != null)
             {
@@ -144,6 +149,10 @@ namespace UnitScript
         public void AddVar(string Variable,object Value)
         {
             m_Contents[Variable] = Value;
+        }
+        public void ShadowRemove(string Variable)
+        {
+            m_ShadowRemoved.Add(Variable);   
         }
     }
     public class UnitConverter
@@ -392,49 +401,49 @@ namespace UnitScript
             m_SpecialFuncs.Add("AddStat",ParseAddStat);
             m_SpecialFuncs.Add("SetStat",ParseSetStat);
             Builtin_FuncInfo And = new Builtin_FuncInfo();
-            And.ArgTypes = new List<Type>{typeof(bool),typeof(bool)};
+            And.ArgTypes = new List<HashSet<Type>>{ new HashSet<Type>{typeof(bool)},new HashSet<Type>{typeof(bool)}};
             And.ResultType = typeof(bool);
             And.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             And.Callable = p_And;
             m_BuiltinFuncs["&&"] = And;
 
             Builtin_FuncInfo Or = new Builtin_FuncInfo();
-            Or.ArgTypes = new List<Type>{typeof(bool),typeof(bool)};
+            Or.ArgTypes = new List<HashSet<Type>>{  new HashSet<Type>{typeof(bool)}, new HashSet<Type>{typeof(bool)}};
             Or.ResultType = typeof(bool);
             Or.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             Or.Callable = p_Or;
             m_BuiltinFuncs["||"] = Or;
 
             Builtin_FuncInfo Not = new Builtin_FuncInfo();
-            Not.ArgTypes = new List<Type>{typeof(bool)};
+            Not.ArgTypes = new List<HashSet<Type>>{  new HashSet<Type>{typeof(bool)}};
             Not.ResultType = typeof(bool);
             Not.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             Not.Callable = p_Not;
             m_BuiltinFuncs["!"] = Not;
 
             Builtin_FuncInfo Le = new Builtin_FuncInfo();
-            Le.ArgTypes = new List<Type>{typeof(int),typeof(int)};
+            Le.ArgTypes = new List<HashSet<Type>>{  new HashSet<Type>{typeof(int)},   new HashSet<Type>{typeof(int)}};
             Le.ResultType = typeof(bool);
             Le.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             Le.Callable = p_Le;
             m_BuiltinFuncs["<"] = Le;
 
             Builtin_FuncInfo Leq = new Builtin_FuncInfo();
-            Leq.ArgTypes = new List<Type>{typeof(int),typeof(int)};
+            Leq.ArgTypes = new List<HashSet<Type>>{  new HashSet<Type>{typeof(int)},   new HashSet<Type>{typeof(int)}};
             Leq.ResultType = typeof(bool);
             Leq.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             Leq.Callable = p_Leq;
             m_BuiltinFuncs["<="] = Leq;
 
             Builtin_FuncInfo Ge = new Builtin_FuncInfo();
-            Ge.ArgTypes = new List<Type>{typeof(int),typeof(int)};
+            Ge.ArgTypes = new List<HashSet<Type>>{  new HashSet<Type>{typeof(int)},   new HashSet<Type>{typeof(int)}};
             Ge.ResultType = typeof(bool);
             Ge.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             Ge.Callable = p_Ge;
             m_BuiltinFuncs[">"] = Ge;
 
             Builtin_FuncInfo Geq = new Builtin_FuncInfo();
-            Geq.ArgTypes = new List<Type>{typeof(int),typeof(int)};
+            Geq.ArgTypes = new List<HashSet<Type>>{  new HashSet<Type>{typeof(int)},   new HashSet<Type>{typeof(int)}};
             Geq.ResultType = typeof(bool);
             Geq.ValidContexts = EvalContext.Compile | EvalContext.Predicate |EvalContext.Resolve;
             Geq.Callable = p_Geq;
@@ -529,6 +538,17 @@ namespace UnitScript
                         else if(ModExpr.ModType == ModificationType.Set)
                         {
                             UnitToModify.Stats.Movement += (int)ModificationValue;
+                        }
+                    }
+                    else if(ModExpr.Stat.FieldName == "Damage")
+                    {
+                        if(ModExpr.ModType == ModificationType.Add)
+                        {
+                            UnitToModify.Stats.Damage += (int)ModificationValue;
+                        }
+                        else if(ModExpr.ModType == ModificationType.Set)
+                        {
+                            UnitToModify.Stats.Damage += (int)ModificationValue;
                         }
                     }
                 }
@@ -629,9 +649,20 @@ namespace UnitScript
                     Builtin_FuncInfo FuncInfo = m_BuiltinFuncs[Func.FuncName.Value];
                     for (int i = 0; i < Math.Min(NewFunc.Args.Count, FuncInfo.ArgTypes.Count); i++)
                     {
-                        if (ArgTypes[i] != FuncInfo.ArgTypes[i])
+                        if (!FuncInfo.ArgTypes[i].Contains(ArgTypes[i]))
                         {
-                            OutDiagnostics.Add(new Diagnostic(Func.FuncName, "Argument has invalid type: "+FuncInfo.ArgTypes[i].Name + " expected"));
+                            string TypeString = "";
+                            int Index = 0;
+                            foreach(Type ValidType in FuncInfo.ArgTypes[i])
+                            {
+                                TypeString += ValidType.Name;
+                                if(Index + 1 < FuncInfo.ArgTypes[i].Count)
+                                {
+                                    TypeString += " or ";
+                                }
+                                Index += 1;
+                            }
+                            OutDiagnostics.Add(new Diagnostic(Func.FuncName, "Argument has invalid type: "+ TypeString + " expected"));
                             OutType = typeof(int);
                         }
                     }
@@ -903,11 +934,15 @@ namespace UnitScript
         public RuleManager.Ability_Continous ConvertContinous(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability_Continous ParsedAbility)
         {
             RuleManager.Ability_Continous ReturnValue = new RuleManager.Ability_Continous();
+
+            EvaluationEnvironment EffectEnvir = new EvaluationEnvironment();
+            EffectEnvir.ShadowRemove("this");
+            EffectEnvir.SetParent(Envir);
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
             ReturnValue.AffectedEntities =((RuleManager.TargetInfo_List)  ConvertTargets(OutDiagnostics,Envir,new List<Parser.ActivatedAbilityTarget>{ ParsedAbility.AffectedEntities})).Targets[0];
             RuleManager.Effect_ContinousUnitScript Effect = new RuleManager.Effect_ContinousUnitScript();
             Effect.UnitName = ParsedAbility.AffectedEntities.Name.Value;
-            Effect.Expr = ((RuleManager.Effect_UnitScript)  ConvertEffect(OutDiagnostics,EvalContext.Continous,Envir,ParsedAbility.Statements)).Expr;
+            Effect.Expr = ((RuleManager.Effect_UnitScript)  ConvertEffect(OutDiagnostics,EvalContext.Continous,EffectEnvir,ParsedAbility.Statements)).Expr;
             ReturnValue.EffectToApply = Effect;
             return ReturnValue;
         }
@@ -1038,10 +1073,7 @@ namespace UnitScript
             {
                 EvaluationEnvironment NewEnvir = new EvaluationEnvironment();
                 NewEnvir.SetParent(ReturnValue.GameInfo.Envir);
-                if(Ability is Parser.Ability_Activated)
-                {
-                    NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(CurrentUnitID));
-                }
+                NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(CurrentUnitID));
                 AbilityInformation NewAbility = ConvertAbility(OutDiagnostics,NewEnvir,Ability);
                 ReturnValue.GameInfo.Abilities.Add(NewAbility.Ability);
                 ReturnValue.UIInfo.AbilityIcons[Index] = NewAbility.Icon;

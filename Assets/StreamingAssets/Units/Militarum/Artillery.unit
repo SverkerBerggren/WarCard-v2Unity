@@ -1,0 +1,25 @@
+Artillery
+{
+    stats
+    {
+        HP = 200;
+        Movement = 4;
+        Range = 30;
+        Damage = 25;
+        ObjectiveControll = 5;
+        ActivationCost = 30;
+    }
+    visuals
+    {
+        Up = Image("./PH_Artillery_2.png");
+        Down = Image("./PH_Artillery_3.png");
+    }
+    activated IsHeavy(Tile stuff : Distance(this,stuff) < 30 range Range(this,30))
+          :
+            Icon = Image("./PH_Ability_S_Artillery.png");
+            Name="Bomb";
+            Flavour="Parket lot pog";
+            Description="Make a place on the map gebombt";
+    {
+    }
+}

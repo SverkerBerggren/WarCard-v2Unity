@@ -1,0 +1,26 @@
+HeavyWeapon
+{
+    stats
+    {
+        HP = 200;
+        Movement = 5;
+        Range = 15;
+        Damage = 65;
+        ObjectiveControll = 5;
+        ActivationCost = 15;
+    }
+    visuals
+    {
+        Up = Image("./PH_HeavyWeapon_1.png");
+        Down = Image("./PH_HeavyWeapon_2.png");
+    }
+    continous IsHeavy(Unit stuff : Eq(stuff,this))
+          :
+            Icon = Image("./PH_Ability_S_HeavyWeapon.png");
+            Name="Heavy";
+            Flavour="Heavy weapon for weak faction";
+            Description="Cannot attack the same turn this unit has moved";
+    {
+        Heavy(stuff);
+    }
+}

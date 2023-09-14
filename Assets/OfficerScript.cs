@@ -15,6 +15,7 @@ public class OfficerScript : Unit
     }
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("Officer");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Officer";
         ReturnValue.GameInfo = Militarium.GetOfficer();

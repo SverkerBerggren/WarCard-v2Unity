@@ -10,6 +10,7 @@ public class HeavyWeaponInfo : Unit
 
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("HeavyWeapon");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.GameInfo = Militarium.GetHeavyWeapons();
         ReturnValue.UIInfo = new ResourceManager.UnitUIInfo();

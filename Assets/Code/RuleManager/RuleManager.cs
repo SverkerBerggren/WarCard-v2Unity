@@ -2677,13 +2677,25 @@ namespace RuleManager
             return null;
         }
         //
+        List<Coordinate> h_TilesFromArg(object Arg)
+        {
+            if(Arg is UnitIdentifier)
+            {
+                UnitIdentifier Unit = (UnitIdentifier)Arg;
+                var FirstUnitInfo = m_UnitInfos[Unit.ID];
+                return p_GetAbsolutePositions(FirstUnitInfo.TopLeftCorner,FirstUnitInfo.UnitTileOffsets);
+            }
+            else if(Arg is Coordinate)
+            {
+                return new List<Coordinate>{(Coordinate)Arg};   
+            }
+            return new List<Coordinate>();
+        }
         object p_Distance(UnitScript.BuiltinFuncArgs Args)
         {
-            UnitIdentifier FirstUnit = (UnitIdentifier)Args.Arguments[0];
-            UnitIdentifier SecondUnit = (UnitIdentifier)Args.Arguments[1];
-            var FirstUnitInfo = m_UnitInfos[FirstUnit.ID];
-            var SecondUnitInfo = m_UnitInfos[SecondUnit.ID];
-            return p_CalculateUnitDistance(FirstUnitInfo,SecondUnitInfo);
+            List<Coordinate> FirstTiles = h_TilesFromArg(Args.Arguments[0]);
+            List<Coordinate> SecondTiles = h_TilesFromArg(Args.Arguments[1]);
+            return p_CalculateTileDistance(FirstTiles,SecondTiles);
         }
         object p_Range(UnitScript.BuiltinFuncArgs Args)
         {
@@ -2732,6 +2744,15 @@ namespace RuleManager
             UnitToSilence.Flags |= UnitFlags.Silenced;
             return null;
         }
+        object p_Heavy(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitInfo InfoToModify = (UnitInfo)Args.Arguments[0];
+            if((InfoToModify.Flags & UnitFlags.HasMoved) != 0)
+            {
+                InfoToModify.Flags |= UnitFlags.CantAttack;
+            }
+            return null;
+        }
         object p_PlayAnimation(UnitScript.BuiltinFuncArgs Args)
         {
             object AnimationObject = Args.Arguments[0];
@@ -2752,77 +2773,77 @@ namespace RuleManager
             Dictionary<string,UnitScript.Builtin_FuncInfo> ReturnValue = new Dictionary<string, UnitScript.Builtin_FuncInfo>();
 
             UnitScript.Builtin_FuncInfo DealDamage = new UnitScript.Builtin_FuncInfo();
-            DealDamage.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(int)};
+            DealDamage.ArgTypes = new List<HashSet<Type>>{ new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(int)}};
             DealDamage.ResultType = typeof(void);
             DealDamage.ValidContexts = UnitScript.EvalContext.Resolve;
             DealDamage.Callable = p_DealDamage;
             ReturnValue["DealDamage"] = DealDamage;
 
             UnitScript.Builtin_FuncInfo DestroyUnit = new UnitScript.Builtin_FuncInfo();
-            DestroyUnit.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            DestroyUnit.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
             DestroyUnit.ResultType = typeof(void);
             DestroyUnit.ValidContexts = UnitScript.EvalContext.Resolve;
             DestroyUnit.Callable = p_DestroyUnit;
             ReturnValue["DestroyUnit"] = DestroyUnit;
 
             UnitScript.Builtin_FuncInfo MoveUnit = new UnitScript.Builtin_FuncInfo();
-            MoveUnit.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            MoveUnit.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
             MoveUnit.ResultType = typeof(void);
             MoveUnit.ValidContexts = UnitScript.EvalContext.Resolve;
-            MoveUnit.Callable = p_DestroyUnit;
-            ReturnValue["DestroyUnit"] = DestroyUnit;
+            MoveUnit.Callable = p_MoveUnit;
+            ReturnValue["MoveUnit"] = MoveUnit;
 
             UnitScript.Builtin_FuncInfo RefreshUnit = new UnitScript.Builtin_FuncInfo();
-            RefreshUnit.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            RefreshUnit.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
             RefreshUnit.ResultType = typeof(void);
             RefreshUnit.ValidContexts = UnitScript.EvalContext.Resolve;
             RefreshUnit.Callable = p_RefreshUnit;
             ReturnValue["RefreshUnit"] = RefreshUnit;
 
             UnitScript.Builtin_FuncInfo DamageArea = new UnitScript.Builtin_FuncInfo();
-            DamageArea.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(int),typeof(int)};
+            DamageArea.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(int)},new HashSet<Type>{typeof(int)}};
             DamageArea.ResultType = typeof(void);
             DamageArea.ValidContexts = UnitScript.EvalContext.Resolve;
             DamageArea.Callable = p_DamageArea;
             ReturnValue["DamageArea"] = DamageArea;
 
             UnitScript.Builtin_FuncInfo Enemy = new UnitScript.Builtin_FuncInfo();
-            Enemy.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            Enemy.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
             Enemy.ResultType = typeof(bool);
             Enemy.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Enemy.Callable = p_Enemy;
             ReturnValue["Enemy"] = Enemy;
 
             UnitScript.Builtin_FuncInfo Friendly = new UnitScript.Builtin_FuncInfo();
-            Friendly.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            Friendly.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
             Friendly.ResultType = typeof(bool);
             Friendly.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Friendly.Callable = p_Friendly;
             ReturnValue["Friendly"] = Friendly;
             
             UnitScript.Builtin_FuncInfo Tag = new UnitScript.Builtin_FuncInfo();
-            Tag.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(string)};
+            Tag.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(string)}};
             Tag.ResultType = typeof(bool);
             Tag.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Tag.Callable = p_Tag;
             ReturnValue["Tag"] = Tag;
 
             UnitScript.Builtin_FuncInfo Distance = new UnitScript.Builtin_FuncInfo();
-            Distance.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(UnitIdentifier)};
+            Distance.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier),typeof(Coordinate)},new HashSet<Type>{typeof(UnitIdentifier), typeof(Coordinate)}};
             Distance.ResultType = typeof(int);
             Distance.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Distance.Callable = p_Distance;
             ReturnValue["Distance"] = Distance;
 
             UnitScript.Builtin_FuncInfo Range = new UnitScript.Builtin_FuncInfo();
-            Range.ArgTypes = new List<Type>{typeof(UnitIdentifier),typeof(int)};
+            Range.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(int)}};
             Range.ResultType = typeof(List<Coordinate>);
             Range.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Range.Callable = p_Range;
             ReturnValue["Range"] = Range;
 
             UnitScript.Builtin_FuncInfo RegisterContinous = new UnitScript.Builtin_FuncInfo();
-            RegisterContinous.ArgTypes = new List<Type>{typeof(UnitScript.ContinousAbility)};
+            RegisterContinous.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitScript.ContinousAbility)}};
             RegisterContinous.KeyArgTypes = new Dictionary<string, Type>{{"TurnDuration",typeof(int)},{"PassDuration",typeof(int)}};
             RegisterContinous.ResultType = typeof(void);
             RegisterContinous.ValidContexts = UnitScript.EvalContext.Resolve;
@@ -2830,7 +2851,7 @@ namespace RuleManager
             ReturnValue["RegisterContinous"] = RegisterContinous;
 
             UnitScript.Builtin_FuncInfo PlayAnimation = new UnitScript.Builtin_FuncInfo();
-            PlayAnimation.ArgTypes = new List<Type>{typeof(ResourceManager.Animation),typeof(UnitIdentifier)};
+            PlayAnimation.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(ResourceManager.Animation)},new HashSet<Type>{typeof(UnitIdentifier)}};
             PlayAnimation.KeyArgTypes = new Dictionary<string, Type>{{"Overlayed",typeof(bool)}};
             PlayAnimation.ResultType = typeof(void);
             PlayAnimation.ValidContexts = UnitScript.EvalContext.Resolve;
@@ -2838,11 +2859,18 @@ namespace RuleManager
             ReturnValue["PlayAnimation"] = PlayAnimation;
 
             UnitScript.Builtin_FuncInfo Silence = new UnitScript.Builtin_FuncInfo();
-            Silence.ArgTypes = new List<Type>{typeof(UnitIdentifier)};
+            Silence.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
             Silence.ResultType = typeof(void);
             Silence.ValidContexts = UnitScript.EvalContext.Continous;
             Silence.Callable = p_Silence;
             ReturnValue["Silence"] = Silence;
+
+            UnitScript.Builtin_FuncInfo Heavy = new UnitScript.Builtin_FuncInfo();
+            Heavy.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
+            Heavy.ResultType = typeof(void);
+            Heavy.ValidContexts = UnitScript.EvalContext.Continous;
+            Heavy.Callable = p_Heavy;
+            ReturnValue["Heavy"] = Heavy;
 
             return ReturnValue;
         }

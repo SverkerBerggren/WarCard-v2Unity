@@ -15,6 +15,7 @@ public class ArtilleryScript : Unit
 
     public override ResourceManager.UnitResource CreateUnitInfo()
     {
+        return MainUI.g_ResourceManager.GetUnitResource("Artillery");
         ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
         ReturnValue.Name = "Artillery";
         ReturnValue.GameInfo = Militarium.GetArtillery();
