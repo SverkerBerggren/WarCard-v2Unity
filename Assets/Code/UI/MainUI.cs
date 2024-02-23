@@ -411,8 +411,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public struct UnitInArmy
     {
         public Unit unit;
-
         public RuleManager.Coordinate cord; 
+    }
+
+    public struct RegisteredUnit
+    {
+        public ResourceManager.UnitResource Unit;
+        public RuleManager.Coordinate cord;
     }
 
     public void SendAction(RuleManager.Action ActionToSend)
@@ -1027,42 +1032,28 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         Vector3 LowestPos = gridManager.GetTilePosition(new Coordinate(gridManager.Width-1, gridManager.Height-1));
         return ((int)((-gridManager.GetTilePosition(position).y+Math.Abs(LowestPos.y))));
     }
-    void p_CreateArmy(Dictionary<string,int> UnitOpaqueIDMap,int CurrentUnitOpaqueID,out int UnitOpaqueID,int PlayerIndex,int FactionIndex)
+    void p_CreateArmy(Dictionary<string,int> UnitOpaqueIDMap,int CurrentUnitOpaqueID,out int UnitOpaqueID,int PlayerIndex,List<RegisteredUnit> Units,bool Mirror)
     {
         UnitOpaqueID = 1337;
-        List<UnitInArmy> ArmyToInstantiate = firstPlayerArmy;
-        if(FactionIndex == 0)
+        List<RegisteredUnit> ArmyToInstantiate = Units;
+        foreach (RegisteredUnit unitFromList in ArmyToInstantiate)
         {
-            ArmyToInstantiate = firstPlayerArmy;
-        }
-        else if(FactionIndex == 1)
-        {
-            ArmyToInstantiate = secondPlayerArmy;
-        }
-        foreach (UnitInArmy unitFromList in ArmyToInstantiate)
-        {
-        
-            ResourceManager.UnitResource unitToCreate = unitFromList.unit.CreateUnitInfo();
-        
-            if (!UnitOpaqueIDMap.ContainsKey(unitFromList.unit.GetType().Name))
+            ResourceManager.UnitResource unitToCreate = unitFromList.Unit;
+            if (!UnitOpaqueIDMap.ContainsKey(unitToCreate.Name))
             {
-                UnitOpaqueIDMap.Add(unitFromList.unit.GetType().Name, CurrentUnitOpaqueID);
+                UnitOpaqueIDMap.Add(unitToCreate.Name, CurrentUnitOpaqueID);
                 m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitToCreate;
                 CurrentUnitOpaqueID += 1;
             }
-            unitToCreate.GameInfo.OpaqueInteger = UnitOpaqueIDMap[unitFromList.unit.GetType().Name];
-        
+            unitToCreate.GameInfo.OpaqueInteger = UnitOpaqueIDMap[unitToCreate.Name];
         
             unitToCreate.GameInfo.TopLeftCorner = unitFromList.cord;
             if(PlayerIndex == 1)
             {
                 unitToCreate.GameInfo.TopLeftCorner.X = (gridManager.Width-1)- unitToCreate.GameInfo.TopLeftCorner.X;
             }
-            //unitToCreate.Position.Add(new Coordinate(unitToCreate.TopLeftCorner));
-
 
             int unitInt = ruleManager.RegisterUnit(unitToCreate.GameInfo, PlayerIndex);
-            //UnitSprites unitSprites = unitFromList.unit.GetUnitSidewaySprite();
 
             UnitSceneInfo SceneUnit = new UnitSceneInfo();
             SceneUnit.Resource = unitToCreate;
@@ -1082,26 +1073,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 ActivationIndicators.Add(activationIndicator);
             }        
             listOfActivationIndicators.Add(unitInt, ActivationIndicators);
-        
-        
             listOfImages.Add(unitInt, SceneUnit);
-
-            //if(!m_UnitTypeUIInfo.ContainsKey(unitToCreate.Name))
-            //{
-                //UnitSceneUIInfo NewInfo = new UnitSceneUIInfo();
-                //NewInfo.Width = unitToCreate.UIInfo.UpAnimation.VisualInfo.Width;
-                //Texture2D Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.DownAnimation.VisualInfo).Sprite;
-                //NewInfo.DownSprite = Sprite.Create(Texture,
-                //    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,0,SpriteMeshType.FullRect);
-                //Texture = ((ResourceManager.Visual_Image)unitToCreate.UIInfo.UpAnimation.VisualInfo).Sprite;
-                //NewInfo.UpSprite = Sprite.Create(Texture,
-                //    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0),100,1,SpriteMeshType.FullRect);
-                //m_UnitTypeUIInfo[unitToCreate.Name] = NewInfo;
-            //}
             SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();
             p_SetUnitVisual(unitInt, unitToCreate.UIInfo.UpAnimation.VisualInfo);
-
-            //unitToCreateVisualObject.GetComponent<SpriteRenderer>().sprite = unitSprites.sidewaySprite;
             if (PlayerIndex == 1)
             {
                 unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
@@ -1111,30 +1085,102 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         UnitOpaqueID = CurrentUnitOpaqueID;
     }
 
+    static List<RegisteredUnit> p_Convert(List<UnitInArmy> Units)
+    {
+        List<RegisteredUnit> ReturnValue = new();
+        foreach(var Unit in Units)
+        {
+            RegisteredUnit NewUnit = new();
+            NewUnit.cord = Unit.cord;
+            NewUnit.Unit = Unit.unit.CreateUnitInfo();
+            ReturnValue.Add(NewUnit);
+        }
+        return ReturnValue;
+    }
     private void CreateArmies()
     {
 
         Dictionary<string, int> UnitOpaqueIDMap = new Dictionary<string, int>();
         int CurrentUnitOpaqueID = 0;
-        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID,out CurrentUnitOpaqueID,0,GlobalNetworkState.PlayerFactionIndex[0]);
-        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1,GlobalNetworkState.PlayerFactionIndex[1]);
 
+        //if the file exists, use it instead
+        List<List<UserTileInfo>> SavedTiles = new();
+        string ArmyFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Army.json";
+        var Player1Army = p_Convert(firstPlayerArmy);
+        var Player2Army = p_Convert(secondPlayerArmy);
+        bool Mirror = true;
 
-        foreach(RuleManager.Coordinate Coord in new Coordinate[] {
-            new Coordinate(20,10),
-            new Coordinate(20,9),
-            new Coordinate(20,8),
-            new Coordinate(21,10),
-            new Coordinate(21,9),
-            new Coordinate(21,8),
+        List<Coordinate> ImpassableTerrain = new List<Coordinate> {
+                new Coordinate(20,10),
+                new Coordinate(20,9),
+                new Coordinate(20,8),
+                new Coordinate(21,10),
+                new Coordinate(21,9),
+                new Coordinate(21,8),
 
-            new Coordinate(20,22),
-            new Coordinate(20,21),
-            new Coordinate(20,20),
-            new Coordinate(21,22),
-            new Coordinate(21,21),
-            new Coordinate(21,20),
-        })
+                new Coordinate(20,22),
+                new Coordinate(20,21),
+                new Coordinate(20,20),
+                new Coordinate(21,22),
+                new Coordinate(21,21),
+                new Coordinate(21,20),
+             };
+        if (System.IO.File.Exists(ArmyFile))
+        {
+            SavedTiles =
+             MBJson.JSONObject.DeserializeObject<List<List<UserTileInfo>>>(   
+                 MBJson.JSONObject.ParseJSONObject( 
+                     System.Text.Encoding.UTF8.GetBytes(
+                         (new System.IO.StreamReader(System.IO.File.Open(ArmyFile, System.IO.FileMode.Open))).ReadToEnd())));
+            List<Coordinate> NewObjectiveCoordinates = new();
+            List<Coordinate> NewImpassableTerrain = new();
+            List<RegisteredUnit> NewPlayer1Army = new();
+            List<RegisteredUnit> NewPlayer2Army = new();
+            int CurrentRow = 0;
+            int CurrentCol = 0;
+            foreach (var Row in SavedTiles)
+            {
+                foreach(var Tile in Row)
+                {
+                    var CurrentCoordinate = new Coordinate(CurrentRow, CurrentCol);
+                    if(Tile.UnitName == "Impassable")
+                    {
+                        NewImpassableTerrain.Add(CurrentCoordinate);
+                    }
+                    else if (Tile.UnitName == "Objective")
+                    {
+                        NewObjectiveCoordinates.Add(CurrentCoordinate);
+                    }
+                    else if(Tile.UnitName != "")
+                    {
+                        RegisteredUnit NewUnit = new();
+                        NewUnit.cord = CurrentCoordinate;
+                        NewUnit.Unit = g_ResourceManager.GetUnitResource(Tile.UnitName);
+                        if (Tile.PlayerIndex == 0)
+                        {
+                            NewPlayer1Army.Add(NewUnit);
+                        }
+                        else if (Tile.PlayerIndex == 1)
+                        {
+                            NewPlayer2Army.Add(NewUnit);
+                        }
+                    }
+                    CurrentCol += 1;
+                }
+                CurrentCol = 0;
+                CurrentRow += 1;
+            }
+            Player1Army = NewPlayer1Army;
+            Player2Army = NewPlayer2Army;
+            Mirror = false;
+            listOfObjectives = NewObjectiveCoordinates;
+            ImpassableTerrain = NewImpassableTerrain;
+        }
+
+        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID,out CurrentUnitOpaqueID,0, Player1Army ,Mirror);
+        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1, Player2Army,Mirror);
+
+        foreach(RuleManager.Coordinate Coord in ImpassableTerrain)
         {
             ruleManager.GetTileInfo(Coord.X, Coord.Y).Flags |= RuleManager.TileFlags.Impassable;
             GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(Coord), new Quaternion());
@@ -1142,31 +1188,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
 
         }
-
-
-
         foreach (RuleManager.Coordinate cord in listOfObjectives)
         {
             ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective = true;
-
             GameObject objectiveImage = Instantiate(objectivePrefab, gridManager.GetTilePosition(cord), new Quaternion());
-
             objectiveImage.GetComponent<Objective>().setNeutralControl();
-
             objectiveImage.GetComponent<SpriteRenderer>().sortingOrder =p_GetSortingOrder(cord);
-
             dictionaryOfObjectiveCords.Add(cord,objectiveImage.GetComponent<Objective>());
-
         }
-        //   RuleManager.UnitInfo officer = Militarium.GetOfficer();
-        //   officer.Position = new RuleManager.Coordinate(3, 3);
-        //   int officerInt = -1;
-        //   officerInt = ruleManager.RegisterUnit(officer, 0);
-        //
-        //   GameObject officerObj = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(officer.Position), new Quaternion());
-        //   listOfImages.Add(officerInt, officerObj); 
-        //   officerObj.GetComponent<SpriteRenderer>().sprite = theSprites[0];
-
     }
 
 
@@ -1228,7 +1257,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 }
-
+[Serializable]
+public class UserTileInfo
+{
+    [SerializeField]
+    public string UnitName = "";
+    [SerializeField]
+    public int PlayerIndex = 0;
+};
 
 class UnitSceneUIInfo
 {

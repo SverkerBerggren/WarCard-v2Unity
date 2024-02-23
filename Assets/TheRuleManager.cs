@@ -6,7 +6,6 @@ public class TheRuleManager : MonoBehaviour
 {
     // Start is called before the first frame update
 
-    public RuleManager.RuleManager ruleManager = new RuleManager.RuleManager((uint)10,(uint)10); 
     void Start()
     {
 

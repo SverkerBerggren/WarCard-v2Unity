@@ -364,7 +364,16 @@ namespace MBJson
             OutOffset = ParseOffset;
             return (new JSONObject(Contents));
         }
-
+        public static JSONObject ParseJSONObject(byte[] ByteBuffer)
+        {
+            int TempOffset = 0;
+            return ParseJSONObject(ByteBuffer, 0, out TempOffset);
+        }
+        public static JSONObject ParseJSONObject(byte[] ByteBuffer, int Offset)
+        {
+            int TempOffset = 0;
+            return ParseJSONObject(ByteBuffer, Offset, out TempOffset);
+        }
         public static JSONObject ParseJSONObject(byte[] ByteBuffer,int Offset,out int OutOffset)
         {
             JSONObject ReturnValue = null;

@@ -2768,7 +2768,7 @@ namespace RuleManager
             }
             return null;
         }
-        Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
+        public Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
         {
             Dictionary<string,UnitScript.Builtin_FuncInfo> ReturnValue = new Dictionary<string, UnitScript.Builtin_FuncInfo>();
 

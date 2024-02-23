@@ -84,7 +84,7 @@ namespace ResourceManager
     
     public class ResourceManager
     {
-        Dictionary<string, UnitResource> m_LoadedUnitInfos = new Dictionary<string, UnitResource>();
+        public Dictionary<string, UnitResource> m_LoadedUnitInfos = new Dictionary<string, UnitResource>();
         Dictionary<string, Visual> m_LoadedVisuals = new Dictionary<string, Visual>();
         UnitScript.UnitConverter m_ScriptHandler = new UnitScript.UnitConverter();
         Parser.Parser m_Parser = new Parser.Parser();
@@ -97,6 +97,19 @@ namespace ResourceManager
             m_ResourceFolder = ResourceFolder;
             m_Tokenizer = m_Parser.GetTokenizer();
             m_ScriptHandler.AddBuiltins(GetUnitScriptFuncs());
+        }
+
+        IEnumerable<UnitResource> p_UnitIterator()
+        {
+            foreach(var pair in m_LoadedUnitInfos)
+            {
+                yield return pair.Value;
+            }
+            yield break;
+        }
+        public IEnumerable<UnitResource> GetUnits()
+        {
+            return p_UnitIterator();
         }
         public UnitScript.UnitConverter GetScriptHandler()
         {
@@ -117,30 +130,30 @@ namespace ResourceManager
             ReturnValue = Path.GetDirectoryName(FilePath) +"/"+ RelativePath;
             return (ReturnValue);
         }
-        Visual_Animation p_ParseVisualAnimation(string UnitFilePath,MBJson.JSONObject VisualAnimation)
-        {
-            Visual_Animation ReturnValue = new Visual_Animation();
-            ReturnValue.FPS = VisualAnimation["FPS"].GetIntegerData();
-
-            string AnimationDir = p_GetRelativePath(UnitFilePath, VisualAnimation["Directory"].GetStringData());
-            List<string> DirectionContent = new List<string>(UnitDirectoryIterator.GetDirectoryFiles_Recursive(AnimationDir));
-            DirectionContent.Sort();
-            foreach(string AnimationFile in DirectionContent)
-            {
-                if(AnimationFile.EndsWith(".meta"))
-                {
-                    continue;
-                }
-                byte[] ImageData = File.ReadAllBytes(AnimationFile);
-                UnityEngine.Texture2D NewTexture = new UnityEngine.Texture2D(2, 2);
-                NewTexture.LoadImage(ImageData);
-                UnityEngine.Sprite NewSprite = Sprite.Create(NewTexture,
-                    new Rect(0, 0, NewTexture.width, NewTexture.height), new Vector2(ReturnValue.XCenter, ReturnValue.YCenter), 100, 0, SpriteMeshType.FullRect);
-                
-                ReturnValue.AnimationContent.Add(NewSprite);
-            }
-            return (ReturnValue);
-        }
+        //Visual_Animation p_ParseVisualAnimation(string UnitFilePath,MBJson.JSONObject VisualAnimation)
+        //{
+        //    Visual_Animation ReturnValue = new Visual_Animation();
+        //    ReturnValue.FPS = VisualAnimation["FPS"].GetIntegerData();
+        //
+        //    string AnimationDir = p_GetRelativePath(UnitFilePath, VisualAnimation["Directory"].GetStringData());
+        //    List<string> DirectionContent = new List<string>(UnitDirectoryIterator.GetDirectoryFiles_Recursive(AnimationDir));
+        //    DirectionContent.Sort();
+        //    foreach(string AnimationFile in DirectionContent)
+        //    {
+        //        if(AnimationFile.EndsWith(".meta"))
+        //        {
+        //            continue;
+        //        }
+        //        byte[] ImageData = File.ReadAllBytes(AnimationFile);
+        //        UnityEngine.Texture2D NewTexture = new UnityEngine.Texture2D(2, 2);
+        //        NewTexture.LoadImage(ImageData);
+        //        UnityEngine.Sprite NewSprite = Sprite.Create(NewTexture,
+        //            new Rect(0, 0, NewTexture.width, NewTexture.height), new Vector2(ReturnValue.XCenter, ReturnValue.YCenter), 100, 0, SpriteMeshType.FullRect);
+        //        
+        //        ReturnValue.AnimationContent.Add(NewSprite);
+        //    }
+        //    return (ReturnValue);
+        //}
 
         static public Sprite SpriteFromTexture(Texture2D TextureToConvert)
         {
@@ -148,87 +161,87 @@ namespace ResourceManager
                     new Rect(0, 0, TextureToConvert.width, TextureToConvert.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect));
         }
         //used only in the case of the JSON format
-        Visual p_ParseVisual(MBJson.JSONObject UIInfo,string UnitFilePath)
-        {
-            Visual ReturnValue = null;
-            if(UIInfo["VisualType"].GetStringData() == "Image")
-            {
-                Visual_Image NewImage = new Visual_Image();
-                string SpritePath = p_GetRelativePath(UnitFilePath, UIInfo["File"].GetStringData());
-                byte[] ImageData = File.ReadAllBytes(SpritePath);
-                Texture2D Texture = new UnityEngine.Texture2D(2, 2);
-                Texture.LoadImage(ImageData);
-                NewImage.Sprite = Sprite.Create(Texture,
-                    new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect);
-                ReturnValue = NewImage;
-            }
-            else if (UIInfo["VisualType"].GetStringData() == "Video")
-            {
-                Visual_Video NewVideo = new Visual_Video();
-                string SpritePath = p_GetRelativePath(UnitFilePath, UIInfo["File"].GetStringData());
-                NewVideo.VideoURL = SpritePath;
-                ReturnValue = NewVideo;
-            }
-            else if(UIInfo["VisualType"].GetStringData() == "Animation")
-            {
-                ReturnValue = p_ParseVisualAnimation(UnitFilePath,UIInfo);
-            }
-            else
-            {
-                throw new System.Exception("Invalid visual type");
-            }
-            if (UIInfo.HasAttribute("XCenter"))
-            {
-                ReturnValue.XCenter = UIInfo["XCenter"].GetIntegerData()/ (float)100;
-            }
-            if (UIInfo.HasAttribute("YCenter"))
-            {
-                ReturnValue.YCenter = UIInfo["YCenter"].GetIntegerData()/ (float)100;
-            }
-            if(UIInfo.HasAttribute("Width"))
-            {
-                ReturnValue.Width = UIInfo["Width"].GetIntegerData();
-            }
-            return (ReturnValue);
-        }
-        Animation p_ParseAnimation(MBJson.JSONObject UIInfo, string UnitFilePath)
-        {
-            Animation ReturnValue = new Animation();
-            ReturnValue.VisualInfo = p_ParseVisual(UIInfo, UnitFilePath);
-            return (ReturnValue);
-        }
-        private UnitResource p_ParseUnit(MBJson.JSONObject UnitInfo,string UnitFilePath)
-        {
-            UnitResource ResourceToAdd = new UnitResource();
-            //stats
-            MBJson.JSONObject Stats = UnitInfo["Stats"];
-            ResourceToAdd.Name = UnitInfo["Name"].GetStringData();
-            ResourceToAdd.GameInfo.Stats.HP = Stats["HP"].GetIntegerData();
-            ResourceToAdd.GameInfo.Stats.Damage = Stats["Damage"].GetIntegerData();
-            ResourceToAdd.GameInfo.Stats.Range = Stats["Range"].GetIntegerData();
-            ResourceToAdd.GameInfo.Stats.Movement = Stats["Movement"].GetIntegerData();
-            ResourceToAdd.GameInfo.Stats.ObjectiveControll = Stats["ObjectiveControll"].GetIntegerData();
-            //visual
-            MBJson.JSONObject Visuals = UnitInfo["Visuals"];
-            if(Visuals.HasAttribute("AttackVisual"))
-            {
-                ResourceToAdd.UIInfo.AttackAnimation = p_ParseAnimation(Visuals["AttackVisual"],UnitFilePath);
-            }
-            else if(Visuals.HasAttribute("UpVisual"))
-            {
-                ResourceToAdd.UIInfo.UpAnimation = p_ParseAnimation(Visuals["UpVisual"], UnitFilePath);
-            }
-            else if(Visuals.HasAttribute("DownVisual"))
-            {
-                ResourceToAdd.UIInfo.DownAnimation = p_ParseAnimation(Visuals["DownVisual"], UnitFilePath);
-            }
-
-            foreach(var Key in Visuals.GetAggregateData())
-            {
-                //ResourceToAdd.UIInfo.OtherAnimations[Key.Key] = p_ParseAnimation(Key.Value,UnitFilePath);
-            }
-            return (ResourceToAdd);
-        }
+        //Visual p_ParseVisual(MBJson.JSONObject UIInfo,string UnitFilePath)
+        //{
+        //    Visual ReturnValue = null;
+        //    if(UIInfo["VisualType"].GetStringData() == "Image")
+        //    {
+        //        Visual_Image NewImage = new Visual_Image();
+        //        string SpritePath = p_GetRelativePath(UnitFilePath, UIInfo["File"].GetStringData());
+        //        byte[] ImageData = File.ReadAllBytes(SpritePath);
+        //        Texture2D Texture = new UnityEngine.Texture2D(2, 2);
+        //        Texture.LoadImage(ImageData);
+        //        NewImage.Sprite = Sprite.Create(Texture,
+        //            new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect);
+        //        ReturnValue = NewImage;
+        //    }
+        //    else if (UIInfo["VisualType"].GetStringData() == "Video")
+        //    {
+        //        Visual_Video NewVideo = new Visual_Video();
+        //        string SpritePath = p_GetRelativePath(UnitFilePath, UIInfo["File"].GetStringData());
+        //        NewVideo.VideoURL = SpritePath;
+        //        ReturnValue = NewVideo;
+        //    }
+        //    else if(UIInfo["VisualType"].GetStringData() == "Animation")
+        //    {
+        //        ReturnValue = p_ParseVisualAnimation(UnitFilePath,UIInfo);
+        //    }
+        //    else
+        //    {
+        //        throw new System.Exception("Invalid visual type");
+        //    }
+        //    if (UIInfo.HasAttribute("XCenter"))
+        //    {
+        //        ReturnValue.XCenter = UIInfo["XCenter"].GetIntegerData()/ (float)100;
+        //    }
+        //    if (UIInfo.HasAttribute("YCenter"))
+        //    {
+        //        ReturnValue.YCenter = UIInfo["YCenter"].GetIntegerData()/ (float)100;
+        //    }
+        //    if(UIInfo.HasAttribute("Width"))
+        //    {
+        //        ReturnValue.Width = UIInfo["Width"].GetIntegerData();
+        //    }
+        //    return (ReturnValue);
+        //}
+        //Animation p_ParseAnimation(MBJson.JSONObject UIInfo, string UnitFilePath)
+        //{
+        //    Animation ReturnValue = new Animation();
+        //    ReturnValue.VisualInfo = p_ParseVisual(UIInfo, UnitFilePath);
+        //    return (ReturnValue);
+        //}
+        //private UnitResource p_ParseUnit(MBJson.JSONObject UnitInfo,string UnitFilePath)
+        //{
+        //    UnitResource ResourceToAdd = new UnitResource();
+        //    //stats
+        //    MBJson.JSONObject Stats = UnitInfo["Stats"];
+        //    ResourceToAdd.Name = UnitInfo["Name"].GetStringData();
+        //    ResourceToAdd.GameInfo.Stats.HP = Stats["HP"].GetIntegerData();
+        //    ResourceToAdd.GameInfo.Stats.Damage = Stats["Damage"].GetIntegerData();
+        //    ResourceToAdd.GameInfo.Stats.Range = Stats["Range"].GetIntegerData();
+        //    ResourceToAdd.GameInfo.Stats.Movement = Stats["Movement"].GetIntegerData();
+        //    ResourceToAdd.GameInfo.Stats.ObjectiveControll = Stats["ObjectiveControll"].GetIntegerData();
+        //    //visual
+        //    MBJson.JSONObject Visuals = UnitInfo["Visuals"];
+        //    if(Visuals.HasAttribute("AttackVisual"))
+        //    {
+        //        ResourceToAdd.UIInfo.AttackAnimation = p_ParseAnimation(Visuals["AttackVisual"],UnitFilePath);
+        //    }
+        //    else if(Visuals.HasAttribute("UpVisual"))
+        //    {
+        //        ResourceToAdd.UIInfo.UpAnimation = p_ParseAnimation(Visuals["UpVisual"], UnitFilePath);
+        //    }
+        //    else if(Visuals.HasAttribute("DownVisual"))
+        //    {
+        //        ResourceToAdd.UIInfo.DownAnimation = p_ParseAnimation(Visuals["DownVisual"], UnitFilePath);
+        //    }
+        //
+        //    foreach(var Key in Visuals.GetAggregateData())
+        //    {
+        //        //ResourceToAdd.UIInfo.OtherAnimations[Key.Key] = p_ParseAnimation(Key.Value,UnitFilePath);
+        //    }
+        //    return (ResourceToAdd);
+        //}
         //used whether or not the json/*parser* format is used
         void LoadUnitFile(string PathToLoad)
         {
@@ -256,7 +269,7 @@ namespace ResourceManager
                 throw new Exception("Parsed unit files had diagnostics errors");
             }
         }
-        void LoadResourceFolder(string PathToLoad)
+        public void LoadResourceFolder(string PathToLoad)
         {
             if(m_VisualsLoaded)
             {
@@ -297,6 +310,7 @@ namespace ResourceManager
             byte[] ImageData = File.ReadAllBytes(SpritePath);
             Texture2D Texture = new UnityEngine.Texture2D(2, 2);
             Texture.LoadImage(ImageData);
+            Texture.filterMode = FilterMode.Point;
             NewImage.Sprite = Sprite.Create(Texture,
                 new Rect(0, 0, Texture.width, Texture.height), new Vector2(0.5f, 0), 100, 0, SpriteMeshType.FullRect);
             ReturnValue = NewImage;

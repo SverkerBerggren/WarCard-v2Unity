@@ -315,7 +315,6 @@ namespace RuleServer
     public class ActiveGameInfo
     {
         Mutex m_InternalsMutex = new Mutex();
-        private RuleManager.RuleManager m_GameRuleManager = new RuleManager.RuleManager(15,15);
         public List<List<RuleManager.Action>> m_PlayerActions = new List<List<RuleManager.Action>>();
         //Connection -> player index
         public Dictionary<int, int> ParticipatingPlayers = new Dictionary<int, int>();
