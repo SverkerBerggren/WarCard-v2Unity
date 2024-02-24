@@ -22,11 +22,30 @@ public interface UIAnimation
 
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever,AnimationPlayer
 {
-    //class DestroyUnitAnimation : UIAnimation
-    //{
-    //
-    //}
 
+    public static MainUI instance = null;
+
+    public static MainUI GetStaticInstance()
+    {
+        return instance;
+    }
+    public RuleManager.RuleManager GetRuleState()
+    {
+        return ruleManager;
+    }
+    public ResourceManager.UnitResource UnitIDToResource(int UnitID)
+    {
+        ResourceManager.UnitResource ReturnValue = null;
+        var UnitInfo = ruleManager.GetUnitInfo(UnitID);
+        if(UnitInfo != null)
+        {
+            if(m_OpaqueToUIInfo.ContainsKey(UnitInfo.OpaqueInteger))
+            {
+                return m_OpaqueToUIInfo[UnitInfo.OpaqueInteger];
+            }
+        }
+        return ReturnValue;
+    }
 
     public void PlayAnimation(int Unit,object AnimationToAnime)
     {
@@ -674,6 +693,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             CreateStackUI();
         }
+        foreach(var Handler in m_StackEventsHandlers)
+        {
+            Handler.OnStackPop(PoppedEntity);
+        }
     }
 
     public void OnPlayerPassPriority(int currentPlayerString)
@@ -685,8 +708,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
                 RuleManager.PassAction passAction = new RuleManager.PassAction();
                 passAction.PlayerIndex = currentPlayerString;
-
-                //ExecutedActions.Enqueue(passAction);
                 EnqueueAction(passAction);
         }
 
@@ -727,9 +748,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 return;
             }
             StartCoroutine(canvasUIScript.changeReactionText(true, "Reaction?"));
-         //   canvasUIScript.changeReactionText(true, "Reaction?");
-            
-    
         }
 
         
@@ -741,8 +759,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         DestroyStackUI();
 
         CreateStackUI();
-        
- 
+
+        foreach (var Handler in m_StackEventsHandlers)
+        {
+            Handler.OnStackPush(PushedEntity);
+        }
     }
     private void CreateStackUI()
     {
@@ -760,8 +781,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         {
             firstItemPosition = stackPadding * ((amountOfItems / 2) - 1);//Screen.width - (stackPadding * (amountOfItems / 2)) + (stackPadding/2);
         }
-     //   if (localStack.Count == 2) ;
-
         foreach (RuleManager.StackEntity entity in localStack)
         {
             print("Hur manga saker i stacken " + localStack.Count);
@@ -790,8 +809,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 }
                 print("Stack entity effect: " + entity.EffectToResolve.GetText());
             }
-          //  createdImage.GetComponent<AbilityButton>().abilityDescriptionText = 
-           // createdImage.GetComponent<RectTransform>().position = new Vector3((canvas.rect.width/2) - (firstItemPosition - originalPadding + increasingPadding), canvas.rect.height/2);
             increasingPadding += originalPadding;
         }
         GameObject.Find("StackAbilityHolder").GetComponent<UnitActions>().sortChildren();
@@ -799,6 +816,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     void Awake()
     {
         g_ResourceManager = new ResourceManager.ResourceManager(Application.streamingAssetsPath);
+        if(instance != null)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            instance = this;
+        }
+    }
+    void OnDestroy()
+    {
+        instance = null;
     }
     private void DestroyStackUI()
     {
@@ -820,21 +849,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnUnitAttack(int AttackerID, int DefenderID)
     {
-        //UnitSceneUIInfo UnitInfo = m_UnitTypeUIInfo[listOfImages[AttackerID].Resource.Name];
-        //GameObject SceneObject  = listOfImages[AttackerID].objectInScene;
-        //ResourceManager.UnitResource Resource = listOfImages[AttackerID].Resource;
-        //if(Resource.UIInfo.AttackAnimation == null)
-        //{
-        //    return;
-        //}
-        //UnityEngine.Video.VideoPlayer Renderer = SceneObject.GetComponent<UnityEngine.Video.VideoPlayer>();
-        //if(Renderer == null)
-        //{
-        //    Renderer = SceneObject.AddComponent<UnityEngine.Video.VideoPlayer>();
-        //}
-        //
-        //Renderer.url = ((ResourceManager.Visual_Video)Resource.UIInfo.AttackAnimation.VisualInfo).VideoURL;
-        //Renderer.Play();
         m_ActiveAnimations.Enqueue(new MoveCameraAnimation(m_ActiveCamera.gameObject,gridManager.GetTilePosition(ruleManager.GetUnitInfo(AttackerID).TopLeftCorner) 
             ,m_ActiveCamera.gameObject.transform.position,0.4f));
         m_ActiveAnimations.Enqueue(new AttackAnimation(this, AttackerID, DefenderID));
@@ -852,8 +866,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
-        //    currentPlayerTurnText.text = "Current Player: " + (CurrentPlayerTurnIndex +1);
-
         canvasUIScript.changeTopFrame(CurrentPlayerTurnIndex);
         currentTurnText.text = "Turn: " + CurrentTurnCount;
     }
@@ -917,21 +929,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
     }
 
-//    private void DestroyButtons()
-//    {
-//        foreach(GameObject obj in buttonDestroyList)
-//        {   
-//            obj.transform.SetParent(null);
-//            Destroy(obj);
-//            
-//        }
-//        buttonDestroyList.Clear();
-//    }
-
     public void OnInitiativeChange(int newIntitiative, int whichPlayer)
     {
-      //  currentInitiative.text = "Current Initiative " + newIntitiative + "/15";
-
         if(whichPlayer == 0)
         {
             initiativePlayer0.text = "Player 1 Initiative " + newIntitiative + "/100";
@@ -942,60 +941,28 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
     }
 
+    //Generic callbacks
+
+    List<RuleManager.StackEventHandler> m_StackEventsHandlers = new();
+
+    public void RegisterStackEventHandler(StackEventHandler NewHandler)
+    {
+        m_StackEventsHandlers.Add(NewHandler);
+    }
 
 
-
-//   private void ExecuteAbility(RuleManager.TargetInfo Info)
-//   {
-//       RuleManager.TargetInfo targetInfo = Info; 
-//
-//       
-//
-//       if(targetInfo is RuleManager.TargetInfo_List)
-//       {
-//           RuleManager.TargetInfo_List targetInfoList = (RuleManager.TargetInfo_List)targetInfo;
-//
-//           if(targetInfoList.Targets.Count == 1)
-//           {
-//               RuleManager.TargetCondition targetType = targetInfoList.Targets[0];        
-//
-//
-//           }
-//       }
-//
-//       
-//
-//    //   if()
-//   }
 
     public void SwitchPlayerPriority()
     {
         RuleManager.PassAction passAction = new RuleManager.PassAction();
-
-
         passAction.PlayerIndex = ruleManager.getPlayerPriority();
-        //   if(m_playerid == 0)
-        //   {
-        //       passAction.PlayerIndex = 0;
-        //       m_playerid = 1; 
-        //   }
-        //   else
-        //   {
-        //       passAction.PlayerIndex = 1;
-        //       m_playerid = 0;
-        //   }
         string errorMessageText = "";
-
         if (!ruleManager.ActionIsValid(passAction, out errorMessageText))
         {
-
             canvasUIScript.errorMessage(errorMessageText);
-
         }
         else
         {
-
-            //ExecutedActions.Enqueue(passAction);
             EnqueueAction(passAction);
         }
 
@@ -1008,24 +975,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {
         return ExecutedActions.Count;
     }
-
- //   public void resetSelection()
- //   {
- //       selectedUnit = null;
- //       unitCard.SetActive(false);
- //       unitActions.SetActive(false);
- //       canvasUIScript.DestroyButtons();
- //
- //       DestroyMovementRange();
- //
- //       requiredAbilityTargets.Clear();
- //
- //       MoveActionSelected = false;
- //       AttackActionSelected = false;
- //       abilitySelectionStarted = false;
- //       currentTargetToSelect = 0;
- //       selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
- //   } 
 
     int p_GetSortingOrder(Coordinate position)
     {
@@ -1048,7 +997,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitToCreate.GameInfo.OpaqueInteger = UnitOpaqueIDMap[unitToCreate.Name];
         
             unitToCreate.GameInfo.TopLeftCorner = unitFromList.cord;
-            if(PlayerIndex == 1)
+            if(PlayerIndex == 1 && Mirror)
             {
                 unitToCreate.GameInfo.TopLeftCorner.X = (gridManager.Width-1)- unitToCreate.GameInfo.TopLeftCorner.X;
             }
@@ -1278,23 +1227,3 @@ class UnitSceneInfo
     public GameObject objectInScene;
     public Vector3 AnimationOffset = new Vector3(0, 0, 0);
 }
-
-//public struct UnitSprites
-//{
-//    public Sprite forwardSprite;
-//
-//    public Sprite backwardSprite;
-//
-//    public Sprite sidewaySprite;
-//
-//    public Sprite activationIndicator;
-//
-//    public GameObject objectInScene;
-//}
-//
-//
-//public class UIInfo
-//{
-//    public Sprite WhichImage; 
-//}
-

@@ -1119,21 +1119,28 @@ namespace RuleManager
         }
     }
 
+    public interface StackEventHandler
+    {
+        void OnStackPush(StackEntity NewEntity);
+        void OnStackPop(StackEntity PoppedEntity);
+    }
+
     public interface RuleEventHandler
     {
         void OnStackPush(StackEntity NewEntity);
         void OnStackPop(StackEntity PoppedEntity);
+
         void OnUnitMove(int UnitID, Coordinate PreviousPosition, Coordinate NewPosition);
         void OnUnitRotation(int UnitID, Coordinate NewDirection);
         void OnUnitAttack(int AttackerID, int DefenderID);
         void OnUnitDestroyed(int UnitID);
+
         void OnTurnChange(int CurrentPlayerTurnIndex,int CurrentTurnCount);
         void OnRoundChange(int CurrentPlayerTurnIndex,int CurrentRoundCount);
-        void OnUnitCreate(UnitInfo NewUnit);
-
         void OnInitiativeChange(int newInitiativen, int whichPlayer ); 
-
         void OnPlayerPassPriority(int currentPlayerString);
+
+        void OnUnitCreate(UnitInfo NewUnit);
 
         void OnPlayerWin(int WinningPlayerIndex);
         void OnScoreChange(int PlayerIndex, int NewScore);
