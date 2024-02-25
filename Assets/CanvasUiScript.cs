@@ -114,11 +114,11 @@ public class CanvasUiScript : MonoBehaviour
 
 
 
-            GameObject newButton = Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding, attackButton.transform.position.y, 0), new Quaternion());
+            GameObject newButton = Instantiate(genericAbilityButton, new Vector3(attackButton.transform.position.x + padding, -390, 0), new Quaternion());
             padding += ogPadding;
 
             newButton.transform.SetParent(GameObject.Find("UnitAbilitys").transform);
-            //    newButton.transform.parent = GameObject.Find("UnitActions").transform;
+            newButton.transform.position = new Vector3(attackButton.transform.position.x + padding, 0, 0);
 
             AbilityButton abilityButton = newButton.GetComponent<AbilityButton>();
 

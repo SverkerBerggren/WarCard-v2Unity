@@ -705,14 +705,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnStackPop(RuleManager.StackEntity PoppedEntity)
     {
-        localStack.Pop();
-
-        DestroyStackUI();
-
-        if(localStack.Count != 0)
-        {
-            CreateStackUI();
-        }
+        //localStack.Pop();
+        //
+        //DestroyStackUI();
+        //
+        //if(localStack.Count != 0)
+        //{
+        //    CreateStackUI();
+        //}
         foreach(var Handler in m_StackEventsHandlers)
         {
             Handler.OnStackPop(PoppedEntity);
@@ -774,11 +774,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
     public void OnStackPush(RuleManager.StackEntity PushedEntity)
     {
-        localStack.Push(PushedEntity);
-
-        DestroyStackUI();
-
-        CreateStackUI();
+        //localStack.Push(PushedEntity);
+        //
+        //DestroyStackUI();
+        //
+        //CreateStackUI();
 
         foreach (var Handler in m_StackEventsHandlers)
         {

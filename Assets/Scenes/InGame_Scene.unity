@@ -751,6 +751,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 9bfd4976f954a4d41bb83a122927508d,
         type: 3}
+    - target: {fileID: 1384812823422216030, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: heightPadding
+      value: -200
+      objectReference: {fileID: 0}
+    - target: {fileID: 1384812823422216030, guid: e733d5ac57037e64ea596ae37a806bee,
+        type: 3}
+      propertyPath: paddingBetweenButtons
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 1485511409993009674, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: secondPlayerTopFrame
@@ -855,7 +865,7 @@ PrefabInstance:
     - target: {fileID: 6159647960704597370, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -1525
+      value: -1841.9
       objectReference: {fileID: 0}
     - target: {fileID: 8692909383599367548, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
@@ -865,7 +875,7 @@ PrefabInstance:
     - target: {fileID: 8692909383599367548, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -1310
+      value: -1642
       objectReference: {fileID: 0}
     - target: {fileID: 9175123667821927883, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
