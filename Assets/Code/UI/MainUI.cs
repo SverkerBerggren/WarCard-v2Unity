@@ -6,8 +6,7 @@ using TMPro;
 using System;
 using System.Xml;
 using RuleManager;
-
-
+using System.Runtime.CompilerServices;
 
 public interface UIAnimation
 {
@@ -442,7 +441,85 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public GameObject EndScreenUI = null;
     public Sprite WinSprite = null;
     public Sprite DefeatSprite = null;
-    public GameObject objectivePrefab; 
+    public GameObject objectivePrefab;
+
+
+    [SerializeField] private GameObject tileIndicatorPrefab;
+
+    private int tileColorIndicatorIndex = 0; 
+    private List<List<TileColorIndicator>> tileColorIndicators = new List<List<TileColorIndicator>>();
+    private SortedDictionary<int, TileColoringCondition> coloringConditons;
+
+    
+    public int GetColorIndicatorIndex()
+    {
+        tileColorIndicatorIndex += 1;
+
+        return tileColorIndicatorIndex -1;
+    }
+
+    public void AddRangeToColor(List<RuleManager.Coordinate> range, TileColoringCondition coloringCondition, int coloringConditionId)
+    {
+        foreach(RuleManager.Coordinate coordinate in range)
+        {
+            coloringConditons.Add(coloringConditionId, coloringCondition);
+            tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringCondition);
+        }
+    }
+    public void RemoveRangeToColor(List<RuleManager.Coordinate> range, TileColoringCondition coloringCondition, int coloringConditionId)
+    {
+        foreach(RuleManager.Coordinate coordinate in range)
+        {
+            tileColorIndicators[coordinate.X][coordinate.Y].RemoveColoringCondition(coloringConditionId);
+        }
+    }
+    public void AddColoringCondition(int conditionId, TileColoringCondition coloringCondition)
+    {
+        coloringConditons.Add(conditionId, coloringCondition);
+        PaintTiles(coloringCondition);
+
+    }
+    public void RemoveColoringCondition(int id)
+    {
+
+    }
+
+    private void PaintTiles(TileColoringCondition tileColoringConditon)
+    {
+        spriteRenderer.color = tileColoringConditon.color;
+    }
+
+    private void CreateTileColorIndicators()
+    {
+        for (int i = 0; i < gridManager.Width; i++)
+        {
+            tileColorIndicators.Add(new List<TileColorIndicator>());
+
+            for (int z = 0; z < gridManager.Height; z++)
+            {
+                tileColorIndicators[i].Add(null);
+            }
+        }
+
+        for (int i = 0; i < gridManager.Width; i++)
+        {
+            for (int z = 0; z < gridManager.Height; z++)
+            {
+                GameObject newObject = Instantiate(tileIndicatorPrefab);
+                newObject.transform.eulerAngles = gridManager.GetEulerAngle();
+                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+                //    print(tempCord.X + " " + tempCord.Y);
+                newObject.transform.position = gridManager.GetTilePosition(tempCord);
+                tileColorIndicators[i][z] = newObject.GetComponent<TileColorIndicator>();
+                
+                newObject.SetActive(false);
+            }
+        }
+    }
+
+
+
+
 
     [Serializable]
     public struct UnitInArmy
@@ -481,11 +558,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         canvasUIScript = FindObjectOfType<CanvasUiScript>();
 
-        ruleManager = GlobalState.GetRuleManager();
-         
+        ruleManager = GlobalState.GetRuleManager();          
         
-
         GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex, this);
+
         if(GlobalNetworkState.OpponentActionRetriever != null)
         {
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, GlobalNetworkState.OpponentActionRetriever);
