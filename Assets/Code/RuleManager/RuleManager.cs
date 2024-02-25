@@ -1168,41 +1168,9 @@ namespace RuleManager
         private int m_BattleRoundCount = 0;
         
         private bool m_EndOfTurnPass = false;
-
-        class RegisteredContinousEffect
-        {
-            //public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
-            public int PassDuration = 0;
-            public int TurnDuration = 0;
-            public EffectSource AbilitySource;
-            public TargetCondition AffectedEntities;
-            public Effect EffectToApply;
-        }
-        class RegisteredTrigger
-        {
-            public bool IsOneShot = false;//hacky, but encapsulates important and very common functionality
-            public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
-            public TriggerCondition TriggerCondition;
-            public EffectSource TriggerSource;
-            public TargetRetriever AffectedEntities;
-            public Effect TriggerEffect;
-        }
         int m_CurrentTriggerID = 1000; 
-        int p_RegisterTrigger(RegisteredTrigger Trigger)
-        {
-            int ReturnValue = m_CurrentTriggerID;
-            m_RegisteredTriggeredAbilities.Add(m_CurrentTriggerID, Trigger);
-            m_CurrentTriggerID += 1;
-            return (ReturnValue);
-        }
         int m_CurrentContinousID = 1000000;
-        int p_RegisterContinousEffect(RegisteredContinousEffect ContinousEffect)
-        {
-            int ReturnValue = m_CurrentContinousID;
-            m_RegisteredContinousAbilities.Add(ReturnValue, ContinousEffect);
-            m_CurrentContinousID += 1;
-            return (m_CurrentContinousID);
-        }
+
         //effects to remove on unit killed, continous id to remove
         Dictionary<int, int> m_UnitRegisteredContinousAbilityMap = new Dictionary<int, int>();
 
@@ -1236,6 +1204,39 @@ namespace RuleManager
         List<Target> m_ChoosenTargets = null;
 
         private int m_FirstRound = 2;
+
+        class RegisteredContinousEffect
+        {
+            //public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
+            public int PassDuration = 0;
+            public int TurnDuration = 0;
+            public EffectSource AbilitySource;
+            public TargetCondition AffectedEntities;
+            public Effect EffectToApply;
+        }
+        class RegisteredTrigger
+        {
+            public bool IsOneShot = false;//hacky, but encapsulates important and very common functionality
+            public bool IsEndOfTurn = false;//hacky, but encapsulates important and very common functionality
+            public TriggerCondition TriggerCondition;
+            public EffectSource TriggerSource;
+            public TargetRetriever AffectedEntities;
+            public Effect TriggerEffect;
+        }
+        int p_RegisterTrigger(RegisteredTrigger Trigger)
+        {
+            int ReturnValue = m_CurrentTriggerID;
+            m_RegisteredTriggeredAbilities.Add(m_CurrentTriggerID, Trigger);
+            m_CurrentTriggerID += 1;
+            return (ReturnValue);
+        }
+        int p_RegisterContinousEffect(RegisteredContinousEffect ContinousEffect)
+        {
+            int ReturnValue = m_CurrentContinousID;
+            m_RegisteredContinousAbilities.Add(ReturnValue, ContinousEffect);
+            m_CurrentContinousID += 1;
+            return (m_CurrentContinousID);
+        }
         
 
         bool p_TriggerIsTriggered(TriggerEvent Event,TriggerCondition ConditionToVerify)

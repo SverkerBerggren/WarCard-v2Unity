@@ -46,6 +46,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         return ReturnValue;
     }
+    public RuleManager.UnitInfo GetUnitInfo(int UnitID)
+    {
+        var UnitInfo = ruleManager.GetUnitInfo(UnitID);
+        return UnitInfo;
+    }
+
+    float m_DefaultCameraSpeed = 0.4f;
+    private void MoveCamera(Vector3 NewPosition,float Speed)
+    {
+        m_ActiveAnimations.Enqueue(new MoveCameraAnimation(m_ActiveCamera.gameObject, NewPosition, m_ActiveCamera.transform.position, Speed));
+    }
+    public void MoveCamera(Vector3 NewPosition)
+    {
+        MoveCamera(NewPosition, m_DefaultCameraSpeed);
+    }
+
+    public Vector3 TileToWorldSpace(RuleManager.Coordinate TilePosition)
+    {
+        return gridManager.GetTilePosition(TilePosition);
+    }
 
     public void PlayAnimation(int Unit,object AnimationToAnime)
     {
@@ -1202,6 +1222,24 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
     public void updateUnit(UnitInfo unitInfo)
+    {
+
+    }
+
+
+    int RegisterTileNotification(List<Coordinate> AffectedCoordinates,Func<string> Description,int UnitID)
+    {
+        return 0;
+    }
+    void RemoveTileNotification(int NotificationID)
+    {
+    }
+
+    int RegisterImage(Coordinate AffectedCoordinate,ResourceManager.Visual VisualToShow)
+    {
+        return 0;
+    }
+    void RemoveImage(int ImageID)
     {
 
     }
