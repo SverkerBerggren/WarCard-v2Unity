@@ -19,7 +19,6 @@ public interface UIAnimation
 
 
 
-
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever,AnimationPlayer
 {
 
@@ -384,7 +383,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public GameObject activationIndicatorPrefab;
 
-    //private Dictionary<string, UnitSceneUIInfo> m_UnitTypeUIInfo = new Dictionary<string, UnitSceneUIInfo>();
     private Queue<UIAnimation> m_ActiveAnimations = new Queue<UIAnimation>();
 
 
@@ -498,11 +496,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GlobalNetworkState.IsLocal = true;
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, this);
         }
-
-            //    gridManager = FindObjectOfType<GridManager>();
-
- 
-
         ruleManager.SetEventHandler(this);
         ruleManager.SetScriptHandler(g_ResourceManager.GetScriptHandler());
         ruleManager.SetAnimationPlayer(this);
@@ -515,8 +508,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             clickHandlers.Add(newClickHandler.GetComponent<ClickHandler>());
             newClickHandler.GetComponent<ClickHandler>().Setup(this);
         }
-
-
         CreateArmies();
 
     }
