@@ -466,17 +466,17 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringCondition);
         }
     }
-    public void RemoveRangeToColor(List<RuleManager.Coordinate> range, TileColoringCondition coloringCondition, int coloringConditionId)
+    public void RemoveRangeToColor( int coloringConditionId)
     {
-        foreach(RuleManager.Coordinate coordinate in range)
-        {
-            tileColorIndicators[coordinate.X][coordinate.Y].RemoveColoringCondition(coloringConditionId);
-        }
+
+        coloringConditons.Remove(coloringConditionId);
+        PaintTiles();
+        
     }
     public void AddColoringCondition(int conditionId, TileColoringCondition coloringCondition)
     {
         coloringConditons.Add(conditionId, coloringCondition);
-        PaintTiles(coloringCondition);
+        PaintTiles();
 
     }
     public void RemoveColoringCondition(int id)
@@ -484,9 +484,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     }
 
-    private void PaintTiles(TileColoringCondition tileColoringConditon)
+    private void PaintTiles( )
     {
-        spriteRenderer.color = tileColoringConditon.color;
+        foreach(KeyValuePair<int,TileColoringCondition> coloringCondition in coloringConditons)
+        {
+            foreach (RuleManager.Coordinate coordinate in coloringCondition.Value.coordinateList)
+            {
+                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringCondition.Value);
+            }
+        }
     }
 
     private void CreateTileColorIndicators()
