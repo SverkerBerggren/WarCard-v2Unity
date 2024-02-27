@@ -989,6 +989,14 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
     public RuleManager.Action PopAction()
     {
+        //DEBUG
+        string SaveFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Save.json";
+        var OutFile = new System.IO.FileStream(SaveFile, System.IO.FileMode.Create);
+        var ObjectToWrite = ruleManager.Serialize();
+        OutFile.Write(System.Text.UTF8Encoding.UTF8.GetBytes( ObjectToWrite.ToString()));
+        OutFile.Flush();
+        OutFile.Close();
+        var DeserializedFile = MBJson.JSONObject.DeserializeObject<RuleManager.RuleManager>(ObjectToWrite);
         return ExecutedActions.Dequeue();
     }
     public int getAvailableActions()

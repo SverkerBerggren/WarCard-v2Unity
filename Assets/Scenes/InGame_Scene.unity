@@ -754,12 +754,12 @@ PrefabInstance:
     - target: {fileID: 1384812823422216030, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: heightPadding
-      value: -200
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1384812823422216030, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: paddingBetweenButtons
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1485511409993009674, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
@@ -835,12 +835,12 @@ PrefabInstance:
     - target: {fileID: 3544125286779993332, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: heightPadding
-      value: -420
+      value: -390
       objectReference: {fileID: 0}
     - target: {fileID: 3544125286779993332, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}
       propertyPath: paddingBetweenButtons
-      value: 360
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 4519728062291101603, guid: e733d5ac57037e64ea596ae37a806bee,
         type: 3}

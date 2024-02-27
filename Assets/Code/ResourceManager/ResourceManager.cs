@@ -55,9 +55,13 @@ namespace ResourceManager
 
     public class UnitResource
     {
-        public string Name = ""; 
+        public string Name = "";
         public RuleManager.UnitInfo GameInfo = new RuleManager.UnitInfo();
         public UnitUIInfo UIInfo = new UnitUIInfo();
+        //needed to support serialisation
+        public Dictionary<int, RuleManager.Effect> TotalEffects = new();
+        public Dictionary<int, RuleManager.TargetCondition> TotalTargetConditions = new();
+        public int CurrentEffectID = 0;
     }
 
     class UnitDirectoryIterator
