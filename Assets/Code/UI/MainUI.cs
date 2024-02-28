@@ -19,7 +19,10 @@ public interface UIAnimation
 
 
 
-
+public interface RestorableUIElement
+{
+    void RestoreFromGamestate(RuleManager.RuleManager RestoredGamestate);
+}
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever,AnimationPlayer
 {
 
@@ -39,9 +42,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         var UnitInfo = ruleManager.GetUnitInfo(UnitID);
         if(UnitInfo != null)
         {
-            if(m_OpaqueToUIInfo.ContainsKey(UnitInfo.OpaqueInteger))
+            if(g_ResourceManager.HasResourceWithID(UnitInfo.OpaqueInteger))
             {
-                return m_OpaqueToUIInfo[UnitInfo.OpaqueInteger];
+                return g_ResourceManager.GetUnitResource(UnitInfo.OpaqueInteger);
             }
         }
         return ReturnValue;
@@ -395,7 +398,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
 
 
-    public Dictionary<int, ResourceManager.UnitResource> m_OpaqueToUIInfo = new Dictionary<int, ResourceManager.UnitResource>();
+    //public Dictionary<int, ResourceManager.UnitResource> m_OpaqueToUIInfo = new Dictionary<int, ResourceManager.UnitResource>();
 
 
 
@@ -474,20 +477,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     void Start()
     {
         gridManager = FindObjectOfType<GridManager>();
-
-        //  initiativeText = GameObject.Find("InitiativeText").GetComponent<TextMeshProUGUI>();
-        //  print(initiativeText);
         m_ActiveCamera = FindObjectOfType<MapCamera>();
-
         GameState GlobalState = FindObjectOfType<GameState>();
-
         canvasUIScript = FindObjectOfType<CanvasUiScript>();
-
         ruleManager = GlobalState.GetRuleManager();
-         
-        
-
         GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex, this);
+
         if(GlobalNetworkState.OpponentActionRetriever != null)
         {
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, GlobalNetworkState.OpponentActionRetriever);
@@ -499,10 +494,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             GlobalState.SetActionRetriever(GlobalNetworkState.LocalPlayerIndex == 0 ? 1 : 0, this);
         }
 
-            //    gridManager = FindObjectOfType<GridManager>();
-
- 
-
         ruleManager.SetEventHandler(this);
         ruleManager.SetScriptHandler(g_ResourceManager.GetScriptHandler());
         ruleManager.SetAnimationPlayer(this);
@@ -511,14 +502,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         foreach (GameObject obj in clickHandlerPrefabs)
         {
            GameObject newClickHandler =  Instantiate(obj, new Vector3(), new Quaternion());
-
-            clickHandlers.Add(newClickHandler.GetComponent<ClickHandler>());
-            newClickHandler.GetComponent<ClickHandler>().Setup(this);
+           clickHandlers.Add(newClickHandler.GetComponent<ClickHandler>());
+           newClickHandler.GetComponent<ClickHandler>().Setup(this);
         }
-
-
-        CreateArmies();
-
+        InitializeGamestate();
     }
 
     // Update is called once per frame
@@ -816,7 +803,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 RuleManager.EffectSource_Unit Source = (RuleManager.EffectSource_Unit)entity.Source;
                 if(Source.EffectIndex != -1)
                 {
-                    var UnitResource = m_OpaqueToUIInfo[ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger];
+                    var UnitResource = g_ResourceManager.GetUnitResource(ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger);
                     if (UnitResource.UIInfo.AbilityIcons.ContainsKey(Source.EffectIndex)) 
                     {
                         var Visual = UnitResource.UIInfo.AbilityIcons[Source.EffectIndex];
@@ -892,7 +879,33 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public void OnUnitCreate(RuleManager.UnitInfo NewUnit)
     {
+        int unitInt = NewUnit.UnitID;
+        UnitSceneInfo SceneUnit = new UnitSceneInfo();
+        SceneUnit.Resource = GetUnitUIInfo(NewUnit);
 
+        GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(NewUnit.TopLeftCorner), new Quaternion());
+
+        SceneUnit.objectInScene = unitToCreateVisualObject;
+
+        List<GameObject> ActivationIndicators = new List<GameObject>();
+        foreach (Coordinate Offset in NewUnit.UnitTileOffsets)
+        {
+            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(NewUnit.TopLeftCorner + Offset), new Quaternion());
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
+            activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
+            activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
+            ActivationIndicators.Add(activationIndicator);
+        }
+        listOfActivationIndicators.Add(unitInt, ActivationIndicators);
+        listOfImages.Add(unitInt, SceneUnit);
+        SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();
+        p_SetUnitVisual(unitInt, SceneUnit.Resource.UIInfo.UpAnimation.VisualInfo);
+        if (NewUnit.PlayerIndex == 1)
+        {
+            unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
+        }
+        unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(NewUnit.TopLeftCorner.X, NewUnit.TopLeftCorner.Y));
     }
 
     public void OnPlayerWin(int WinningPlayerIndex)
@@ -964,12 +977,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     //Generic callbacks
 
     List<RuleManager.StackEventHandler> m_StackEventsHandlers = new();
-
+    List<RestorableUIElement> m_RestorableUIElements = new();
     public void RegisterStackEventHandler(StackEventHandler NewHandler)
     {
         m_StackEventsHandlers.Add(NewHandler);
     }
-
+    public void RegisterGameRestorableUIElement(RestorableUIElement NewHandler)
+    {
+        m_RestorableUIElements.Add(NewHandler);
+    }
 
 
     public void SwitchPlayerPriority()
@@ -1009,57 +1025,19 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         Vector3 LowestPos = gridManager.GetTilePosition(new Coordinate(gridManager.Width-1, gridManager.Height-1));
         return ((int)((-gridManager.GetTilePosition(position).y+Math.Abs(LowestPos.y))));
     }
-    void p_CreateArmy(Dictionary<string,int> UnitOpaqueIDMap,int CurrentUnitOpaqueID,out int UnitOpaqueID,int PlayerIndex,List<RegisteredUnit> Units,bool Mirror)
+    void p_CreateArmy(int PlayerIndex,List<RegisteredUnit> Units,bool Mirror)
     {
-        UnitOpaqueID = 1337;
         List<RegisteredUnit> ArmyToInstantiate = Units;
         foreach (RegisteredUnit unitFromList in ArmyToInstantiate)
         {
             ResourceManager.UnitResource unitToCreate = unitFromList.Unit;
-            if (!UnitOpaqueIDMap.ContainsKey(unitToCreate.Name))
-            {
-                UnitOpaqueIDMap.Add(unitToCreate.Name, CurrentUnitOpaqueID);
-                m_OpaqueToUIInfo[CurrentUnitOpaqueID] = unitToCreate;
-                CurrentUnitOpaqueID += 1;
-            }
-            unitToCreate.GameInfo.OpaqueInteger = UnitOpaqueIDMap[unitToCreate.Name];
-        
             unitToCreate.GameInfo.TopLeftCorner = unitFromList.cord;
             if(PlayerIndex == 1 && Mirror)
             {
                 unitToCreate.GameInfo.TopLeftCorner.X = (gridManager.Width-1)- unitToCreate.GameInfo.TopLeftCorner.X;
             }
-
-            int unitInt = ruleManager.RegisterUnit(unitToCreate.GameInfo, PlayerIndex);
-
-            UnitSceneInfo SceneUnit = new UnitSceneInfo();
-            SceneUnit.Resource = unitToCreate;
-
-            GameObject unitToCreateVisualObject = Instantiate(prefabToInstaniate, gridManager.GetTilePosition(unitToCreate.GameInfo.TopLeftCorner), new Quaternion());
-
-            SceneUnit.objectInScene = unitToCreateVisualObject;
-
-            List<GameObject> ActivationIndicators = new List<GameObject>();
-            foreach(Coordinate Offset in unitToCreate.GameInfo.UnitTileOffsets)
-            {
-                GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(unitToCreate.GameInfo.TopLeftCorner+Offset), new Quaternion());
-                activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
-                activationIndicator.GetComponent<SpriteRenderer>().color = new Color(42, 254, 0);
-                activationIndicator.GetComponent<SpriteRenderer>().color = Color.green;
-                activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
-                ActivationIndicators.Add(activationIndicator);
-            }        
-            listOfActivationIndicators.Add(unitInt, ActivationIndicators);
-            listOfImages.Add(unitInt, SceneUnit);
-            SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();
-            p_SetUnitVisual(unitInt, unitToCreate.UIInfo.UpAnimation.VisualInfo);
-            if (PlayerIndex == 1)
-            {
-                unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
-            }
-            unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(unitToCreate.GameInfo.TopLeftCorner.X,unitToCreate.GameInfo.TopLeftCorner .Y));
+            ruleManager.RegisterUnit(unitToCreate.GameInfo, PlayerIndex);
         }
-        UnitOpaqueID = CurrentUnitOpaqueID;
     }
 
     static List<RegisteredUnit> p_Convert(List<UnitInArmy> Units)
@@ -1074,15 +1052,74 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
         return ReturnValue;
     }
-    private void CreateArmies()
+
+    void p_CreateObjective(Coordinate ObjectiveCoordinate)
     {
+        ruleManager.GetTileInfo(ObjectiveCoordinate.X, ObjectiveCoordinate.Y).HasObjective = true;
+        GameObject objectiveImage = Instantiate(objectivePrefab, gridManager.GetTilePosition(ObjectiveCoordinate), new Quaternion());
+        objectiveImage.GetComponent<Objective>().setNeutralControl();
+        objectiveImage.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(ObjectiveCoordinate);
+        dictionaryOfObjectiveCords.Add(ObjectiveCoordinate, objectiveImage.GetComponent<Objective>());
+    }
+    void p_CreateImpassableTerrain(Coordinate ObjectiveCoordinate)
+    {
+        ruleManager.GetTileInfo(ObjectiveCoordinate.X, ObjectiveCoordinate.Y).Flags |= RuleManager.TileFlags.Impassable;
+        GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(ObjectiveCoordinate), new Quaternion());
+        activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
+        activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
+    }
 
-        Dictionary<string, int> UnitOpaqueIDMap = new Dictionary<string, int>();
-        int CurrentUnitOpaqueID = 0;
+    private void InitilizeFromSave(MBJson.JSONObject SavedData)
+    {
+        ruleManager.RestoreState(g_ResourceManager, SavedData);
+        int Height = ruleManager.GetHeight();
+        int Width = ruleManager.GetHeight();
 
+        HashSet<int> RegisteredUnits = new();
+        for(int i = 0; i < Height;i++)
+        {
+            for(int j = 0; j < Width;j++)
+            {
+                Coordinate CurrentCoord = new Coordinate(j, i);
+                var TileInfo = ruleManager.GetTileInfo(j, i);
+                if(TileInfo.HasObjective)
+                {
+                    p_CreateObjective(CurrentCoord);
+                }
+                else if(TileInfo.Flags != 0)
+                {
+                    p_CreateImpassableTerrain(CurrentCoord);
+                }
+                else if(TileInfo.StandingUnitID != 0 && !RegisteredUnits.Contains(TileInfo.StandingUnitID))
+                {
+                    OnUnitCreate(ruleManager.GetUnitInfo(TileInfo.StandingUnitID));
+                    RegisteredUnits.Add(TileInfo.StandingUnitID);
+                }
+            }
+        }
+        foreach(var Element in m_RestorableUIElements)
+        {
+            Element.RestoreFromGamestate(ruleManager);
+        }
+
+    }
+    private void InitializeGamestate()
+    {
         //if the file exists, use it instead
         List<List<UserTileInfo>> SavedTiles = new();
         string ArmyFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Army.json";
+        string SaveFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Save.json";
+
+        if(System.IO.File.Exists(SaveFile))
+        {
+            var File = new System.IO.StreamReader(SaveFile);
+            var Content = System.Text.UTF8Encoding.UTF8.GetBytes(File.ReadToEnd());
+            File.Close();
+            var JsonObject = MBJson.JSONObject.ParseJSONObject(Content);
+            InitilizeFromSave(JsonObject);
+            return;
+        }
+
         var Player1Army = p_Convert(firstPlayerArmy);
         var Player2Army = p_Convert(secondPlayerArmy);
         bool Mirror = true;
@@ -1154,24 +1191,15 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             ImpassableTerrain = NewImpassableTerrain;
         }
 
-        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID,out CurrentUnitOpaqueID,0, Player1Army ,Mirror);
-        p_CreateArmy(UnitOpaqueIDMap, CurrentUnitOpaqueID, out CurrentUnitOpaqueID, 1, Player2Army,Mirror);
-
+        p_CreateArmy(0, Player1Army ,Mirror);
+        p_CreateArmy(1, Player2Army,Mirror);
         foreach(RuleManager.Coordinate Coord in ImpassableTerrain)
         {
-            ruleManager.GetTileInfo(Coord.X, Coord.Y).Flags |= RuleManager.TileFlags.Impassable;
-            GameObject activationIndicator = Instantiate(activationIndicatorPrefab, gridManager.GetTilePosition(Coord), new Quaternion());
-            activationIndicator.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
-            activationIndicator.transform.eulerAngles = gridManager.GetEulerAngle();
-
+            p_CreateImpassableTerrain(Coord);
         }
         foreach (RuleManager.Coordinate cord in listOfObjectives)
         {
-            ruleManager.GetTileInfo(cord.X,cord.Y).HasObjective = true;
-            GameObject objectiveImage = Instantiate(objectivePrefab, gridManager.GetTilePosition(cord), new Quaternion());
-            objectiveImage.GetComponent<Objective>().setNeutralControl();
-            objectiveImage.GetComponent<SpriteRenderer>().sortingOrder =p_GetSortingOrder(cord);
-            dictionaryOfObjectiveCords.Add(cord,objectiveImage.GetComponent<Objective>());
+            p_CreateObjective(cord);
         }
     }
 
@@ -1216,7 +1244,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
     public ResourceManager.UnitResource GetUnitUIInfo(RuleManager.UnitInfo UnitToInspect)
     {
-        return (m_OpaqueToUIInfo[UnitToInspect.OpaqueInteger]);
+        return g_ResourceManager.GetUnitResource(UnitToInspect.OpaqueInteger);
+    }
+    public ResourceManager.UnitResource GetUnitUIInfo(int UnitID)
+    {
+        return g_ResourceManager.GetUnitResource(ruleManager.GetUnitInfo(UnitID).OpaqueInteger);
     }
     public void DeactivateClickHandler()
     {

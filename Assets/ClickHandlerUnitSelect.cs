@@ -142,7 +142,7 @@ public class ClickHandlerUnitSelect : ClickHandler
                 GetComponent<AudioSource>().PlayOneShot(UIInfo.UIInfo.SelectSound);
             }
             resetSelection();
-            canvasUIScript.createUnitCard(selectedUnit, mainUi.m_OpaqueToUIInfo);
+            canvasUIScript.createUnitCard(selectedUnit);
             ConstructMovementRange(selectedUnit);
         }
         else

@@ -929,8 +929,17 @@ namespace UnitScript
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
             ReturnValue.ActivationTargets = ConvertTargets(OutDiagnostics,AssociatedUnit,Envir,ParsedAbility.Targets);
             ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,EvalContext.Resolve,AssociatedUnit,Envir,ParsedAbility.Statements);
+            //get targets
+            if(ParsedAbility.Targets.Count > 0)
+            {
+                var EffectToModify = ReturnValue.ActivatedEffect as RuleManager.Effect_UnitScript;
+                EffectToModify.Targets = ((ReturnValue.ActivationTargets as RuleManager.TargetInfo_List).Targets[0] as RuleManager.TargetCondition_UnitScript).Targets;
+            }
 
             AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivatedEffect;
+            var Effect = (ReturnValue.ActivatedEffect as RuleManager.Effect_UnitScript);
+            Effect.ResourceID = AssociatedUnit.ResourceID;
+            Effect.EffectID = AssociatedUnit.CurrentEffectID;
             AssociatedUnit.CurrentEffectID += 1;
             //AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivationTargets;
 
@@ -951,8 +960,14 @@ namespace UnitScript
             ReturnValue.EffectToApply = Effect;
 
             AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue.EffectToApply;
+            Effect.ResourceID = AssociatedUnit.ResourceID;
+            Effect.EffectID = AssociatedUnit.CurrentEffectID;
+
             AssociatedUnit.CurrentEffectID += 1;
             AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.AffectedEntities;
+            var TargetCondition = ReturnValue.AffectedEntities as RuleManager.TargetCondition_UnitScript;
+            TargetCondition.ConditionID = AssociatedUnit.CurrentEffectID;
+            TargetCondition.ResourceID = AssociatedUnit.ResourceID;
             AssociatedUnit.CurrentEffectID++;
             return ReturnValue;
         }
@@ -1052,9 +1067,11 @@ namespace UnitScript
             OutError = "";
             return ResultObject;
         }
-        public  ResourceManager.UnitResource ConvertUnit(List<Diagnostic> OutDiagnostics,Parser.Unit ParsedUnit)
+        public  ResourceManager.UnitResource ConvertUnit(List<Diagnostic> OutDiagnostics,Parser.Unit ParsedUnit,int ResourceID)
         {
             ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
+            ReturnValue.ResourceID = ResourceID;
+            ReturnValue.GameInfo.OpaqueInteger = ResourceID;
             int CurrentUnitID = m_CurrentUnitID;
             m_StringToUnit[ParsedUnit.Name.Value] = m_CurrentUnitID;
             m_LoadedUnits[m_CurrentUnitID] = ReturnValue;

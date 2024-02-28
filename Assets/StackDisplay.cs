@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class StackDisplay : MonoBehaviour, RuleManager.StackEventHandler
+public class StackDisplay : MonoBehaviour, RuleManager.StackEventHandler,RestorableUIElement
 {
     // Start is called before the first frame update
 
@@ -19,11 +19,20 @@ public class StackDisplay : MonoBehaviour, RuleManager.StackEventHandler
         gameObject.SetActive(IsVisible);
         m_Visible = IsVisible;
     }
-    void Start()
+    void Awake()
     {
         m_UI = MainUI.GetStaticInstance();
         m_UI.RegisterStackEventHandler(this);
+        m_UI.RegisterGameRestorableUIElement(this);
         p_ToggleVisability(m_Visible);
+    }
+
+    public void RestoreFromGamestate( RuleManager.RuleManager CurrentGamestate)
+    {
+        foreach(var Entity in CurrentGamestate.GetStack())
+        {
+            OnStackPush(Entity);
+        }
     }
 
     void ResetOtherElements(int ActiveIndex)
