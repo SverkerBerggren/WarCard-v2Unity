@@ -7,6 +7,7 @@ using System;
 using System.Xml;
 using RuleManager;
 using System.Runtime.CompilerServices;
+using UnityEngine.Assertions.Must;
 
 public interface UIAnimation
 {
@@ -448,7 +449,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private int tileColorIndicatorIndex = 0; 
     private List<List<TileColorIndicator>> tileColorIndicators = new List<List<TileColorIndicator>>();
-    private SortedDictionary<int, TileColoringCondition> coloringConditons;
+    private SortedDictionary<int, TileColoringEffect> coloringEffects = new SortedDictionary<int, TileColoringEffect>();
 
     
     public int GetColorIndicatorIndex()
@@ -458,39 +459,44 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         return tileColorIndicatorIndex -1;
     }
 
-    public void AddRangeToColor(List<RuleManager.Coordinate> range, TileColoringCondition coloringCondition, int coloringConditionId)
-    {
-        foreach(RuleManager.Coordinate coordinate in range)
-        {
-            coloringConditons.Add(coloringConditionId, coloringCondition);
-            tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringCondition);
-        }
-    }
-    public void RemoveRangeToColor( int coloringConditionId)
+  //  public void AddRangeToColor(List<RuleManager.Coordinate> range, TileColoringEffect coloringEffect, int coloringEffectId)
+  //  {
+  //      foreach(RuleManager.Coordinate coordinate in range)
+  //      {
+  //          coloringEffects.Add(coloringEffectId, coloringEffect);
+  //          tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringEffect);
+  //      }
+  //  }
+    public void RemoveColoringEffect( int coloringConditionId)
     {
 
-        coloringConditons.Remove(coloringConditionId);
+        coloringEffects.Remove(coloringConditionId);
         PaintTiles();
         
     }
-    public void AddColoringCondition(int conditionId, TileColoringCondition coloringCondition)
+    public int AddColoringEffect(TileColoringEffect coloringCondition)
     {
-        coloringConditons.Add(conditionId, coloringCondition);
+        int coloringEffectId = GetColorIndicatorIndex();
+        coloringEffects.Add(coloringEffectId, coloringCondition);
         PaintTiles();
+        return coloringEffectId;
 
     }
-    public void RemoveColoringCondition(int id)
-    {
-
-    }
-
     private void PaintTiles( )
     {
-        foreach(KeyValuePair<int,TileColoringCondition> coloringCondition in coloringConditons)
+        foreach(List<TileColorIndicator> tileColorIndicatorList in tileColorIndicators)
         {
-            foreach (RuleManager.Coordinate coordinate in coloringCondition.Value.coordinateList)
+            foreach(TileColorIndicator tileColorIndicator in tileColorIndicatorList)
             {
-                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringCondition.Value);
+                tileColorIndicator.gameObject.SetActive(false);
+            }
+        }
+        foreach(KeyValuePair<int,TileColoringEffect> coloringEffect in coloringEffects)
+        {
+            foreach (RuleManager.Coordinate coordinate in coloringEffect.Value.coordinateList)
+            {
+                tileColorIndicators[coordinate.X][coordinate.Y].gameObject.SetActive(true);
+                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringEffect.Value);
             }
         }
     }
@@ -522,10 +528,6 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             }
         }
     }
-
-
-
-
 
     [Serializable]
     public struct UnitInArmy
@@ -590,12 +592,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             clickHandlers.Add(newClickHandler.GetComponent<ClickHandler>());
             newClickHandler.GetComponent<ClickHandler>().Setup(this);
         }
+        CreateTileColorIndicators();
         CreateArmies();
 
     }
 
     // Update is called once per frame
     int m_PreviousUICount = 0;
+
+    bool debugTileColoring = false;
+    bool debugTileColoring2 = false;
+    int tileColorINdexTORemoveDebug;
+    int tileColorINdexTORemoveDebug2;
     void Update()
     {
    //     m_playerid = ruleManager.getPlayerPriority();
@@ -670,6 +678,56 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             {
                 dictionaryOfObjectiveCords[cord].setNeutralControl();
             }
+        }
+
+        if(Input.GetKeyDown(KeyCode.H))
+        {
+            print("kommer hit");
+            if(!debugTileColoring)
+            {
+                List<RuleManager.Coordinate> coordinates = new List<RuleManager.Coordinate>();
+
+                coordinates.Add(new RuleManager.Coordinate(5, 6));
+                coordinates.Add(new RuleManager.Coordinate(2, 6));
+                coordinates.Add(new RuleManager.Coordinate(3, 6));
+                coordinates.Add(new RuleManager.Coordinate(4, 6));
+
+                TileColoringEffect effect = new TileColoringEffect(Color.cyan, null, coordinates);
+                tileColorINdexTORemoveDebug = AddColoringEffect(effect);
+                debugTileColoring = true;
+            }
+            else
+            {
+                RemoveColoringEffect(tileColorINdexTORemoveDebug);
+                debugTileColoring = false;
+            }
+
+        }
+
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            print("kommer hit");
+            if (!debugTileColoring2)
+            {
+                List<RuleManager.Coordinate> coordinates = new List<RuleManager.Coordinate>();
+
+                coordinates.Add(new RuleManager.Coordinate(3, 3));
+                coordinates.Add(new RuleManager.Coordinate(3,4));
+                coordinates.Add(new RuleManager.Coordinate(3, 5));
+                coordinates.Add(new RuleManager.Coordinate(3, 6));
+
+                TileColoringEffect effect = new TileColoringEffect(Color.red, null, coordinates);
+                tileColorINdexTORemoveDebug2 = AddColoringEffect(effect);
+                debugTileColoring2 = true;
+            }
+            else
+            {
+                print("kommer hit inne");
+
+                RemoveColoringEffect(tileColorINdexTORemoveDebug2);
+                debugTileColoring2 = false;
+            }
+
         }
     }
     public void OnUnitRotation(int UnitID, RuleManager.Coordinate NewRotation)

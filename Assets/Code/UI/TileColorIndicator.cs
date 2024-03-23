@@ -8,7 +8,7 @@ public class TileColorIndicator : MonoBehaviour
 {
 
     [SerializeField] private SpriteRenderer spriteRenderer;
-    public void PaintTile(TileColoringCondition tileColoringConditon)
+    public void PaintTile(TileColoringEffect tileColoringConditon)
     {
         spriteRenderer.color = tileColoringConditon.color;
     }
