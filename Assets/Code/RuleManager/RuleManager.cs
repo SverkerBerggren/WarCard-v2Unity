@@ -1318,7 +1318,7 @@ namespace RuleManager
         void OnPlayerWin(int WinningPlayerIndex);
         void OnScoreChange(int PlayerIndex, int NewScore);
 
-
+        void OnUnitDamage(int UnitID, int Amount);
     }
     public class StackEntity
     {
@@ -2475,6 +2475,10 @@ namespace RuleManager
         }
         void p_DealDamage(int UnitID, int Damage)
         {
+            if(m_EventHandler != null)
+            {
+                m_EventHandler.OnUnitDamage(UnitID, Damage);
+            }
             m_UnitInfos[UnitID].Stats.HP -= Damage;
         }
         List<int> p_GetObjectiveScores(Coordinate ObjectiveCoordinate)
@@ -2811,14 +2815,12 @@ namespace RuleManager
             {
                 AttackAction AttackToExecute = (AttackAction)ActionToExecute;
                 UnitInfo AttackerInfo = p_GetProcessedUnitInfo(AttackToExecute.AttackerID); //m_UnitInfos[AttackToExecute.AttackerID];
-                UnitInfo DefenderInfo = p_GetProcessedUnitInfo(AttackToExecute.DefenderID);//m_UnitInfos[AttackToExecute.DefenderID];
                 if (m_EventHandler != null)
                 {
                     m_EventHandler.OnUnitAttack(AttackToExecute.AttackerID, AttackToExecute.DefenderID);
                 }
-                UnitInfo UnderlyingDefenderInfo = m_UnitInfos[AttackToExecute.DefenderID];
                 //DefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
-                UnderlyingDefenderInfo.Stats.HP -= AttackerInfo.Stats.Damage;
+                p_DealDamage(AttackToExecute.DefenderID, AttackerInfo.Stats.Damage);
                 UnitInfo InfoToModify = m_UnitInfos[AttackToExecute.AttackerID];
                 if ((AttackerInfo.Flags & UnitFlags.IsActivated) == 0)
                 {
