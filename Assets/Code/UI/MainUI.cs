@@ -455,7 +455,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     private List<List<TileColorIndicator>> tileColorIndicators = new List<List<TileColorIndicator>>();
     private SortedDictionary<int, TileColoringEffect> coloringEffects = new SortedDictionary<int, TileColoringEffect>();
 
-    
+
+    [SerializeField] private GameObject damageTextVFX;
+
+    [SerializeField] private GameObject localPositionCanvas;
+
     public int GetColorIndicatorIndex()
     {
         tileColorIndicatorIndex += 1;
@@ -591,8 +595,10 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
            clickHandlers.Add(newClickHandler.GetComponent<ClickHandler>());
            newClickHandler.GetComponent<ClickHandler>().Setup(this);
         }
+
+
         CreateTileColorIndicators();
-        CreateArmies();
+        //CreateArmies();
 
         InitializeGamestate();
     }
@@ -732,8 +738,21 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     }
 
 
-    public void DamageVFX()
+    public void OnUnitDamage(int unitId, int amount)
     {
+        DamageVFX(unitId, amount);
+    }
+
+    public void DamageVFX(int unitId, int amount)
+    {
+        RuleManager.UnitInfo damagedUnit = ruleManager.GetUnitInfo(unitId);
+
+        GameObject textToCreate = Instantiate(damageTextVFX,localPositionCanvas.transform);
+
+        textToCreate.transform.position = gridManager.GetTilePosition(damagedUnit.TopLeftCorner);
+
+
+        
 
     }
 
