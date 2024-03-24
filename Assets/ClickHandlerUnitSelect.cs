@@ -12,7 +12,6 @@ public class ClickHandlerUnitSelect : ClickHandler
     private Color MovementColor;
     private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
     private List<List<GameObject>> attackIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
-    private List<GameObject> buttonDestroyList = new List<GameObject>();
     public UnitInfo selectedUnit;
 
     private bool abilityActionSelected = false;
@@ -143,7 +142,7 @@ public class ClickHandlerUnitSelect : ClickHandler
                 GetComponent<AudioSource>().PlayOneShot(UIInfo.UIInfo.SelectSound);
             }
             resetSelection();
-            canvasUIScript.createUnitCard(selectedUnit, mainUi.m_OpaqueToUIInfo);
+            canvasUIScript.createUnitCard(selectedUnit);
             ConstructMovementRange(selectedUnit);
         }
         else

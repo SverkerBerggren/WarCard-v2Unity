@@ -55,9 +55,15 @@ namespace ResourceManager
 
     public class UnitResource
     {
-        public string Name = ""; 
+        public string Name = "";
         public RuleManager.UnitInfo GameInfo = new RuleManager.UnitInfo();
         public UnitUIInfo UIInfo = new UnitUIInfo();
+        //needed to support serialisation
+        public Dictionary<int, RuleManager.Effect> TotalEffects = new();
+        public Dictionary<int, RuleManager.TargetCondition> TotalTargetConditions = new();
+        public int ResourceID = 0;
+
+        public int CurrentEffectID = 0;
     }
 
     class UnitDirectoryIterator
@@ -85,12 +91,14 @@ namespace ResourceManager
     public class ResourceManager
     {
         public Dictionary<string, UnitResource> m_LoadedUnitInfos = new Dictionary<string, UnitResource>();
+        public Dictionary<int, UnitResource> m_IDToUnitResource = new();
         Dictionary<string, Visual> m_LoadedVisuals = new Dictionary<string, Visual>();
         UnitScript.UnitConverter m_ScriptHandler = new UnitScript.UnitConverter();
         Parser.Parser m_Parser = new Parser.Parser();
         MBCC.Tokenizer m_Tokenizer;
         bool m_VisualsLoaded = false;
         string m_ResourceFolder = "";
+        int m_CurrentResourceID = 0;
 
         public ResourceManager(string ResourceFolder)
         {
@@ -123,6 +131,20 @@ namespace ResourceManager
                 return (m_LoadedUnitInfos[NameOfUnit]);
             }
             throw new System.Exception("No unit with name " + NameOfUnit + " is loaded");
+        }
+        public UnitResource GetUnitResource(int ResourceID)
+        {
+            LoadResourceFolder(m_ResourceFolder);
+            if (m_IDToUnitResource.ContainsKey(ResourceID))
+            {
+                return (m_IDToUnitResource[ResourceID]);
+            }
+            throw new System.Exception("No unit with id " + ResourceID + " is loaded");
+        }
+        public bool HasResourceWithID(int ResourceID)
+        {
+            LoadResourceFolder(m_ResourceFolder);
+            return m_IDToUnitResource.ContainsKey(ResourceID);
         }
         static string p_GetRelativePath(string FilePath, string RelativePath)
         {
@@ -257,7 +279,11 @@ namespace ResourceManager
             try
             {
                 Parser.Unit ParsedUnit = m_Parser.ParseUnit(m_Tokenizer);
-                UnitResource NewResource = m_ScriptHandler.ConvertUnit(Errors,ParsedUnit);
+                UnitResource NewResource = m_ScriptHandler.ConvertUnit(Errors,ParsedUnit,m_CurrentResourceID);
+                //NewResource.ResourceID = m_CurrentResourceID;
+                //NewResource.GameInfo.OpaqueInteger = NewResource.ResourceID;
+                m_IDToUnitResource[NewResource.ResourceID] = NewResource;
+                m_CurrentResourceID++;
                 m_LoadedUnitInfos[NewResource.Name] = NewResource;
             }
             catch(Exception e)

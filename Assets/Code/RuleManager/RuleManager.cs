@@ -19,9 +19,50 @@ namespace RuleManager
         Activated,
         Null
     }
-    public class Effect
+    public class Effect :  MBJson.JSONSerializable,MBJson.JSONDeserializeable
     {
         int PlayerIndex = 0;
+
+        public MBJson.JSONObject Serialize()
+        {
+            Dictionary<string, MBJson.JSONObject> Content = new();
+            Content["PlayerIndex"] = new MBJson.JSONObject( PlayerIndex);
+            if(this is Effect_UnitScript)
+            {
+                Content["EffectID"] = new MBJson.JSONObject( (this as Effect_UnitScript).EffectID);
+                Content["ResourceID"] = new MBJson.JSONObject((this as Effect_UnitScript).ResourceID);
+            }
+            else if (this is Effect_ContinousUnitScript)
+            {
+                Content["EffectID"] = new MBJson.JSONObject((this as Effect_ContinousUnitScript).EffectID);
+                Content["ResourceID"] = new MBJson.JSONObject((this as Effect_ContinousUnitScript).ResourceID);
+            }
+            else
+            {
+                Content["EffectID"] = new (-1);
+                Content["ResourceID"] = new (-1);
+            }
+            MBJson.JSONObject ReturnValue = new MBJson.JSONObject(Content);
+            return ReturnValue;
+        }
+        public object Deserialize(MBJson.JSONObject ObjectToParse)
+        {
+            Effect_UnitScript ReturnValue = new();
+            if(ObjectToParse.HasAttribute("PlayerIndex"))
+            {
+                ReturnValue.PlayerIndex = ObjectToParse["PlayerIndex"].GetIntegerData();
+            }
+            if(ObjectToParse.HasAttribute("EffectID"))
+            {
+                ReturnValue.EffectID = ObjectToParse["EffectID"].GetIntegerData();
+            }
+            if (ObjectToParse.HasAttribute("ResourceID"))
+            {
+                ReturnValue.ResourceID= ObjectToParse["ResourceID"].GetIntegerData();
+            }
+            return ReturnValue;
+        }
+
         string m_Text = "test";
         public AnimationSpecification Animation = null;
         public virtual string GetText()
@@ -99,11 +140,17 @@ namespace RuleManager
     }
     public class Effect_UnitScript : Effect
     {
+        //needed for restoration from UnitInfo 
+        public int EffectID = -1;
+        public int ResourceID = -1;
         public UnitScript.Expression Expr;
+        public List<UnitScriptTarget> Targets = null;
     }
     public class Effect_ContinousUnitScript : Effect
     {
         public string UnitName;
+        public int EffectID = -1;
+        public int ResourceID = -1;
         public UnitScript.Expression Expr;
     }
     public class Effect_GainInitiative : Effect
@@ -273,8 +320,31 @@ namespace RuleManager
         Empty,
         Null
     }
-    public class TargetRetriever
+    public class TargetRetriever : MBJson.JSONTypeConverter
     {
+        public Type GetType(int i)
+        {
+            Type ReturnValue = typeof(TargetRetriever);
+            RetrieverType NewType = (RetrieverType)i;
+            if(NewType == RetrieverType.Choose)
+            {
+                return typeof(TargetRetriever_Choose);
+            }
+            else if(NewType == RetrieverType.Index)
+            {
+                return typeof(TargetRetriever_Index);
+            }
+            else if(NewType == RetrieverType.Literal)
+            {
+                return typeof(TargetRetriever_Literal);
+            }
+            else if(NewType == RetrieverType.Empty)
+            {
+                return typeof(TargetRetriever_Empty);
+            }
+
+            return ReturnValue;
+        }
 
         public RetrieverType Type = RetrieverType.Null;
         protected TargetRetriever(RetrieverType NewType)
@@ -583,12 +653,39 @@ namespace RuleManager
     {
         public List<UnitScriptTarget> Targets;
     }
-    public class TargetCondition
+    public class TargetCondition : MBJson.JSONSerializable, MBJson.JSONDeserializeable
     {
+        public MBJson.JSONObject Serialize()
+        {
+            Dictionary<string, MBJson.JSONObject> Content = new();
+            MBJson.JSONObject ReturnValue = new(Content);
+            if(this is TargetCondition_UnitScript)
+            {
+                var Data = this as TargetCondition_UnitScript;
+                Content["ConditionID"] = new(Data.ConditionID);
+                Content["ResourceID"] = new(Data.ResourceID);
+            }
+            return ReturnValue;
+        }
+        public object Deserialize(MBJson.JSONObject ObjectToDeserialize)
+        {
+            TargetCondition_UnitScript ReturnValue = new();
+            if (ObjectToDeserialize.HasAttribute("ConditionID"))
+            {
+                ReturnValue.ConditionID = ObjectToDeserialize["ConditionID"].GetIntegerData();
+            }
+            else if (ObjectToDeserialize.HasAttribute("ResourceID"))
+            {
+                ReturnValue.ResourceID = ObjectToDeserialize["ResourceID"].GetIntegerData();
+            }
+            return ReturnValue;
+        }
     }
     //duplicated for each target
     public class TargetCondition_UnitScript : TargetCondition
     {
+        public int ConditionID = 0;
+        public int ResourceID = 0;
         public List<UnitScriptTarget> Targets;
     }
     public class TargetCondition_Type : TargetCondition
@@ -672,17 +769,59 @@ namespace RuleManager
     {
 
     }
-    public class EffectSource
+
+    public enum SourceType
     {
+        None,
+        Empty,
+        Unit,
+        Player
+    }
+    public class EffectSource : MBJson.JSONTypeConverter, MBJson.JSONDeserializeable
+    {
+        public SourceType Type = SourceType.None;
+        public Type GetType(int IntegerToConvert)
+        {
+            Type ReturnValue = null;
+            SourceType SerializedType = (SourceType)IntegerToConvert;
+            if (SerializedType == SourceType.Player)
+            {
+                ReturnValue = typeof(EffectSource_Player);
+            }
+            else if (SerializedType == SourceType.Unit)
+            {
+                ReturnValue = typeof(EffectSource_Unit);
+            }
+            else if (SerializedType == SourceType.Empty)
+            {
+                ReturnValue = typeof(EffectSource_Empty);
+            }
+            else
+            {
+                throw new Exception("Invalid target type to serialize: " + Type);
+            }
+            return (ReturnValue);
+        }
+
+        public object Deserialize(MBJson.JSONObject ObjectToDeserialize)
+        {
+            object ReturnValue = null;
+            MBJson.DynamicJSONDeserializer Deserializer = new MBJson.DynamicJSONDeserializer(this);
+            ReturnValue = Deserializer.Deserialize(ObjectToDeserialize);
+            return (ReturnValue);
+        }
         public int PlayerIndex = -1;
-        protected EffectSource()
+        public EffectSource()
         {
 
         }
     }
     public class EffectSource_Empty : EffectSource
     {
-
+        public EffectSource_Empty()
+        {
+            Type = SourceType.Empty;
+        }
     }
     public class EffectSource_Unit : EffectSource
     {
@@ -693,10 +832,20 @@ namespace RuleManager
             PlayerIndex = NewPlayerIndex;
             UnitID = NewUnitID;
             EffectIndex = NewEffectIndex;
+            Type = SourceType.Unit;
+        }
+        public EffectSource_Unit()
+        {
+            Type = SourceType.Unit;
         }
     }
     public class EffectSource_Player : EffectSource
     {
+        public EffectSource_Player()
+        {
+            Type = SourceType.Player;
+        }
+
     }
 
     public enum TriggerType
@@ -726,19 +875,44 @@ namespace RuleManager
         }
     }
 
-    public class TriggerCondition
+    public enum TriggerConditionType
     {
-
+        And,
+        Type,
+        None
+    }
+    public class TriggerCondition : MBJson.JSONTypeConverter
+    {
+        public Type GetType(int Value)
+        {
+            Type ReturnValue = typeof(TriggerCondition);
+            TriggerConditionType NewType = (TriggerConditionType)Value;
+            if(NewType == TriggerConditionType.Type)
+            {
+                return typeof(TriggerCondition_Type);
+            }
+            else if(NewType == TriggerConditionType.And)
+            {
+                return typeof(TriggerCondition_And);
+            }
+            else
+            {
+                throw new Exception("Error parsing TriggerCondition");
+            }
+            return ReturnValue;
+        }
+        public TriggerConditionType Type = TriggerConditionType.None;
     }
     public class TriggerCondition_And : TriggerCondition
     {
         public List<TriggerCondition> ConditionsToSatisfy = new List<TriggerCondition>();
         public TriggerCondition_And()
         {
-
+            Type = TriggerConditionType.And;
         }
         public TriggerCondition_And(params TriggerCondition[] Conditions)
         {
+            Type = TriggerConditionType.And;
             ConditionsToSatisfy = new List<TriggerCondition>(Conditions);
         }
     }
@@ -747,10 +921,11 @@ namespace RuleManager
         public TriggerType ApplicableType = TriggerType.Null;
         public TriggerCondition_Type()
         {
-            
+            Type = TriggerConditionType.Type;
         }
         public TriggerCondition_Type(TriggerType NewType)
         {
+            Type = TriggerConditionType.Type;
             ApplicableType = NewType;
         }
     }
@@ -968,7 +1143,7 @@ namespace RuleManager
 
         }
     }
-    public enum UnitFlags : uint
+    public enum UnitFlags 
     {
         Silenced = 1,
         CantAttack = 1<<1,
@@ -985,10 +1160,12 @@ namespace RuleManager
         public int UnitID = 0;
         public int PlayerIndex = 0;
         public int OpaqueInteger = -1;
+        
+        [NonSerialized]
         public List<Ability> Abilities = new List<Ability>();
         public UnitStats Stats = new UnitStats();
-        public HashSet<string> Tags = new HashSet<string>();
-
+        public List<string> Tags = new List<string>();
+        [NonSerialized]
         public UnitScript.EvaluationEnvironment Envir = new UnitScript.EvaluationEnvironment();
 
         //Dynamic stuff
@@ -997,11 +1174,7 @@ namespace RuleManager
         //used so that positions can be calculated with a simple diff
         public Coordinate TopLeftCorner = new Coordinate(0, 0);
         public List<Coordinate> UnitTileOffsets = new List<Coordinate>(new Coordinate[] { new Coordinate(0,0)});
-        //public bool IsActivated = false;
-        //public bool HasMoved = false;
-        //public bool HasAttacked = false;
         public UnitFlags Flags = 0;
-        //
         public UnitInfo()
         {
 
@@ -1078,7 +1251,7 @@ namespace RuleManager
             OpaqueInteger = InfoToCopy.OpaqueInteger;
             Abilities = new List<Ability>(InfoToCopy.Abilities);
             Stats = new UnitStats(InfoToCopy.Stats);
-            Tags = new HashSet<string>(InfoToCopy.Tags);
+            Tags = new List<string>(InfoToCopy.Tags);
             //IsActivated =   InfoToCopy.IsActivated;
             //HasMoved    =   InfoToCopy.HasMoved   ;
             //HasAttacked =   InfoToCopy.HasAttacked;
@@ -1188,22 +1361,135 @@ namespace RuleManager
 
         List<int> m_PlayerPoints = new List<int>();
         List<int> m_PlayerIntitiative = new List<int>();
+
+        //special care when restoring gamestate
         Dictionary<int, RegisteredContinousEffect> m_RegisteredContinousAbilities = new Dictionary<int, RegisteredContinousEffect>();
         Dictionary<int, RegisteredTrigger> m_RegisteredTriggeredAbilities = new Dictionary<int, RegisteredTrigger>();
-
         Stack<StackEntity> m_TheStack = new Stack<StackEntity>();
-        IEnumerator m_CurrentResolution = null;
 
         List<bool> m_EmptyPassed = new List<bool>();
 
         private int m_CurrentID = 0;
-        RuleEventHandler m_EventHandler;
-        AnimationPlayer m_AnimationPlayer;
-        UnitScript.UnitConverter m_ScriptHandler;
-
         List<Target> m_ChoosenTargets = null;
-
         private int m_FirstRound = 2;
+        bool m_PriorityTabled = false;
+
+        [NonSerialized]
+        IEnumerator m_CurrentResolution = null;
+        [NonSerialized]
+        RuleEventHandler m_EventHandler;
+        [NonSerialized]
+        AnimationPlayer m_AnimationPlayer;
+        [NonSerialized]
+        UnitScript.UnitConverter m_ScriptHandler;
+        
+
+        public RuleManager()
+        {
+
+        }
+        public MBJson.JSONObject Serialize()
+        {
+            MBJson.JSONObject ReturnValue = MBJson.JSONObject.SerializeObject(this);
+            return ReturnValue;
+        }
+
+        public int GetWidth()
+        {
+            return m_Tiles[0].Count;
+        }
+        public int GetHeight()
+        {
+            return m_Tiles.Count;
+        }
+
+        public IEnumerable<StackEntity> GetStack()
+        {
+            return m_TheStack;
+        }
+
+
+        Effect p_RestoreEffect(ResourceManager.ResourceManager Resources, Effect OldEffect)
+        {
+            Effect ReturnValue = null;
+            if(OldEffect is Effect_UnitScript)
+            {
+                var SavedEffect = OldEffect as Effect_UnitScript;
+                var EffectFromResource = Resources.GetUnitResource(SavedEffect.ResourceID).TotalEffects[SavedEffect.EffectID];
+                if(EffectFromResource is Effect_UnitScript)
+                {
+                    SavedEffect.Animation = EffectFromResource.Animation;
+                    SavedEffect.Expr = (EffectFromResource as Effect_UnitScript).Expr;
+                    SavedEffect.Targets = (EffectFromResource as Effect_UnitScript).Targets;
+                }
+                else if(EffectFromResource is Effect_ContinousUnitScript)
+                {
+                    var ResourceEffect = EffectFromResource as Effect_ContinousUnitScript;
+                    var NewContinousEffect = new Effect_ContinousUnitScript();
+                    NewContinousEffect.ResourceID = SavedEffect.ResourceID;
+                    NewContinousEffect.EffectID = SavedEffect.EffectID;
+                    NewContinousEffect.Animation = EffectFromResource.Animation;
+                    NewContinousEffect.UnitName = ResourceEffect.UnitName;
+                    NewContinousEffect.Expr = ResourceEffect.Expr;
+                }
+                return SavedEffect;
+            }
+            else
+            {
+                throw new Exception("Can only deserialise saved unit script effects!");
+            }
+            return ReturnValue;
+        }
+        TargetCondition p_RestoreTargetCondition(ResourceManager.ResourceManager Resources, TargetCondition OldCondition)
+        {
+            TargetCondition ReturnValue = null;
+            if (OldCondition is TargetCondition_UnitScript)
+            {
+                var SavedCondition = OldCondition as TargetCondition_UnitScript;
+                var ConditionFromResource = Resources.GetUnitResource(SavedCondition.ResourceID).TotalTargetConditions[SavedCondition.ConditionID];
+                SavedCondition.Targets = (ConditionFromResource as TargetCondition_UnitScript).Targets;
+                return ReturnValue;
+            }
+            else
+            {
+                throw new Exception("Can only deserialise saved unit script target conditions!");
+            }
+            return ReturnValue;
+        }
+        public void RestoreState(ResourceManager.ResourceManager Resources,MBJson.JSONObject SavedGamestate)
+        {
+            var RawStoredGamestate = MBJson.JSONObject.DeserializeObject<RuleManager>(SavedGamestate);
+            //reflection, lmao
+            var Fields = GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            foreach(var Field in Fields)
+            {
+                if( (Field.Attributes & FieldAttributes.NotSerialized) != 0)
+                {
+                    continue;
+                }
+                Field.SetValue(this, Field.GetValue(RawStoredGamestate));
+            }
+            //restored units from resource manager
+            foreach(var Unit in m_UnitInfos)
+            {
+                //assign abilities
+                Unit.Value.Abilities = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Abilities;
+                Unit.Value.Envir = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Envir;
+            }
+            foreach(var Trigger in m_RegisteredTriggeredAbilities)
+            {
+                Trigger.Value.TriggerEffect = p_RestoreEffect(Resources, Trigger.Value.TriggerEffect);
+            }
+            foreach(var ContinousAbility in m_RegisteredContinousAbilities)
+            {
+                ContinousAbility.Value.EffectToApply = p_RestoreEffect(Resources, ContinousAbility.Value.EffectToApply);
+                ContinousAbility.Value.AffectedEntities = p_RestoreTargetCondition(Resources, ContinousAbility.Value.AffectedEntities);
+            }
+            foreach(var StackEntity in m_TheStack)
+            {
+                StackEntity.EffectToResolve = p_RestoreEffect(Resources, StackEntity.EffectToResolve);
+            }
+        }
 
         class RegisteredContinousEffect
         {
@@ -1380,7 +1666,10 @@ namespace RuleManager
                 Coordinate CurrentTile = NewUnit.TopLeftCorner + Coord; 
                 m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID = NewID;
             }
-
+            if(m_EventHandler != null)
+            {
+                m_EventHandler.OnUnitCreate(NewUnit);
+            }
             return (NewID);
         }
 
@@ -1564,6 +1853,23 @@ namespace RuleManager
                 UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
                 AssociatedUnit.Envir.AddVar("SOURCE",UnitSource);
                 AssociatedUnit.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID) );
+                //Add targets
+                int CurrentIndex = 0;
+                if(UnitEffect.Targets != null)
+                {
+                    foreach (var Target in Targets)
+                    {
+                        if (Target is Target_Unit)
+                        {
+                            AssociatedUnit.Envir.AddVar(UnitEffect.Targets[CurrentIndex].Name, new UnitIdentifier(((Target_Unit)Target).UnitID));
+                        }
+                        else if (Target is Target_Tile)
+                        {
+                            AssociatedUnit.Envir.AddVar(UnitEffect.Targets[CurrentIndex].Name , ((Target_Tile)Target).TargetCoordinate);
+                        }
+                        CurrentIndex++;
+                    }
+                }
                 //Add "this"
                 m_ScriptHandler.Eval(AssociatedUnit.Envir,UnitEffect.Expr);
             }
@@ -1738,7 +2044,7 @@ namespace RuleManager
                     OriginTile =p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)Origins[0]).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)Origins[0]).UnitID].UnitTileOffsets);
                 }
 
-                HashSet<int> AffectedUnits = new HashSet<int>();
+                List<int> AffectedUnits = new List<int>();
                 foreach(Coordinate CurrentTile in p_GetTiles(AreaDamageEffect.Range,OriginTile))
                 {
                     if(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID == 0 || AffectedUnits.Contains(m_Tiles[CurrentTile.Y][CurrentTile.X].StandingUnitID))
@@ -2441,9 +2747,6 @@ namespace RuleManager
             }
         }
         
-
-        bool m_PriorityTabled = false;
-
         //Modifiers
         public void ExecuteAction(Action ActionToExecute)
         {

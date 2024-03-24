@@ -170,7 +170,7 @@ namespace UnitScript
         }
         int m_CurrentUnitID = 0;
 
-        delegate Expression SpecialFunc(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType);
+        delegate Expression SpecialFunc(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType);
         Dictionary<string,SpecialFunc> m_SpecialFuncs;
         StatReference p_GetStatType(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_StatReference Stat)
         {
@@ -266,7 +266,7 @@ namespace UnitScript
 
     
         
-        Expression_StatModification p_ParseStatModification(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        Expression_StatModification p_ParseStatModification(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
         {
             Type OutType = typeof(void);
             Expression_StatModification ReturnValue = new Expression_StatModification();
@@ -278,8 +278,8 @@ namespace UnitScript
             }
             Type FirstArgType;
             Type SecondArgType;
-            Expression FirstArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[0],out FirstArgType);
-            Expression SecondArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[1],out SecondArgType);
+            Expression FirstArg = ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit,Envir, ParsedExpression.Args[0],out FirstArgType);
+            Expression SecondArg = ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit,Envir, ParsedExpression.Args[1],out SecondArgType);
             if( !(FirstArg is Expression_Literal) && !(((Expression_Literal)FirstArg).Value is StatReference) )
             {
                 OutDiagnostics.Add(new Diagnostic(ParsedExpression.FuncName,"AddStat requires that the first argument is a field reference"));
@@ -296,19 +296,19 @@ namespace UnitScript
             ResultType = OutType;
             return ReturnValue;
         }
-        public Expression ParseAddStat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        public Expression ParseAddStat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
         {
-            Expression_StatModification Modification = p_ParseStatModification(OutDiagnostics,CurrentContext,Envir,ParsedExpression,out ResultType);
+            Expression_StatModification Modification = p_ParseStatModification(OutDiagnostics,CurrentContext,AssociatedUnit, Envir,ParsedExpression,out ResultType);
             Modification.ModType = ModificationType.Add;
             return Modification;
         }
-        public Expression ParseSetStat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        public Expression ParseSetStat(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
         {
-            Expression_StatModification Modification = p_ParseStatModification(OutDiagnostics,CurrentContext,Envir,ParsedExpression,out ResultType);
+            Expression_StatModification Modification = p_ParseStatModification(OutDiagnostics,CurrentContext,AssociatedUnit,Envir,ParsedExpression,out ResultType);
             Modification.ModType = ModificationType.Set;
             return Modification;
         }
-        public Expression ParseEq(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
+        public Expression ParseEq(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression_FuncCall ParsedExpression,out Type ResultType)
         {
             ResultType = typeof(bool);
             Expression_Eq ReturnValue = new Expression_Eq();
@@ -319,8 +319,8 @@ namespace UnitScript
             }
             Type FirstArgType;
             Type SecondArgType;
-            Expression FirstArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[0],out FirstArgType);
-            Expression SecondArg = ConvertExpression(OutDiagnostics,CurrentContext,Envir, ParsedExpression.Args[1],out SecondArgType);
+            Expression FirstArg = ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit,Envir, ParsedExpression.Args[0],out FirstArgType);
+            Expression SecondArg = ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit,Envir, ParsedExpression.Args[1],out SecondArgType);
             ReturnValue.Lhs  = FirstArg;
             ReturnValue.Rhs = SecondArg;
             if(FirstArgType != SecondArgType)
@@ -593,7 +593,7 @@ namespace UnitScript
            ResultType = OutType;
            return ReturnValue;
         }
-        public Expression ConvertExpression_Ability(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression_Ability ParsedExpression,out Type ResultType)
+        public Expression ConvertExpression_Ability(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression_Ability ParsedExpression,out Type ResultType)
         {
             Expression ReturnValue = null;
             Type OutType = typeof(void);
@@ -605,14 +605,14 @@ namespace UnitScript
             {
 
                 Expression_ContinousAbility Result = new Expression_ContinousAbility();
-                Result.Ability = ConvertContinous(OutDiagnostics,Envir,(Parser.Ability_Continous)ParsedExpression.AbilityLiteral);
+                Result.Ability = ConvertContinous(OutDiagnostics,AssociatedUnit,Envir,(Parser.Ability_Continous)ParsedExpression.AbilityLiteral);
                 ReturnValue = Result;
                 OutType = typeof(ContinousAbility);
             }
             ResultType = OutType;
             return ReturnValue;
         }
-        public Expression ConvertExpression(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext,EvaluationEnvironment Envir ,Parser.Expression ParsedExpression,out Type ResultType)
+        public Expression ConvertExpression(List<Diagnostic> OutDiagnostics,EvalContext CurrentContext, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir ,Parser.Expression ParsedExpression,out Type ResultType)
         {
             Expression ReturnValue = new Expression();
             Type OutType = typeof(void);
@@ -625,7 +625,7 @@ namespace UnitScript
                 Parser.Expression_FuncCall Func = (Parser.Expression_FuncCall)ParsedExpression;
                 if(Func.FuncName.Value == "")
                 {
-                    return ConvertExpression(OutDiagnostics,CurrentContext,Envir,Func.Args[0],out ResultType);
+                    return ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit,Envir,Func.Args[0],out ResultType);
                 }
                 Expression_FuncCall NewFunc = new Expression_FuncCall();
                 NewFunc.FuncName = Func.FuncName.Value;
@@ -634,13 +634,13 @@ namespace UnitScript
                 foreach (Parser.Expression Argument in Func.Args)
                 {
                     Type ArgType;
-                    Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext, Envir,Argument, out ArgType);
+                    Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit, Envir,Argument, out ArgType);
                     NewFunc.Args.Add(ArgExpr);
                     ArgTypes.Add(ArgType);
                 }
                 foreach (Parser.KeyArg Argument in Func.KeyArgs) {
                     Type ArgType;
-                    Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext, Envir,Argument.Value, out ArgType);
+                    Expression ArgExpr = ConvertExpression(OutDiagnostics,CurrentContext,AssociatedUnit, Envir,Argument.Value, out ArgType);
                     NewFunc.KeyArgs[Argument.Name.Value] = ArgExpr;
                     KeyArgTypes[Argument.Name] = ArgType;
                 }
@@ -691,7 +691,7 @@ namespace UnitScript
                 }
                 else if(m_SpecialFuncs.ContainsKey(Func.FuncName.Value))
                 {
-                    return m_SpecialFuncs[Func.FuncName.Value](OutDiagnostics,CurrentContext,Envir, Func,out ResultType);
+                    return m_SpecialFuncs[Func.FuncName.Value](OutDiagnostics,CurrentContext,AssociatedUnit, Envir, Func,out ResultType);
                 }
                 else
                 {
@@ -722,7 +722,7 @@ namespace UnitScript
             }
             else if(ParsedExpression is Parser.Expression_Ability)
             {
-                return ConvertExpression_Ability(OutDiagnostics,CurrentContext ,Envir,(Parser.Expression_Ability)ParsedExpression,out ResultType);
+                return ConvertExpression_Ability(OutDiagnostics,CurrentContext,AssociatedUnit ,Envir,(Parser.Expression_Ability)ParsedExpression,out ResultType);
             }
             ResultType = OutType;
             //ResultType = ResultType;
@@ -800,14 +800,14 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        public ResourceManager.UnitUIInfo ConvertVisuals(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir, Parser.Visuals ParsedVisuals)
+        public ResourceManager.UnitUIInfo ConvertVisuals(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir, Parser.Visuals ParsedVisuals)
         {
             ResourceManager.UnitUIInfo ReturnValue = new ResourceManager.UnitUIInfo();
             foreach(Parser.VariableDeclaration Declaration in ParsedVisuals.Declarations)
             {
                 int PrevCount = OutDiagnostics.Count;
                 Type ResultType = null;
-                Expression ExpressionToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile,Envir,Declaration.VariableValue,out ResultType);
+                Expression ExpressionToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile,AssociatedUnit,Envir,Declaration.VariableValue,out ResultType);
                 ResourceManager.Animation Result = null;
                 try
                 {
@@ -843,7 +843,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        RuleManager.Effect  ConvertEffect(List<Diagnostic> OutDiagnostics,EvalContext Context ,EvaluationEnvironment Envir,List<Parser.AbilityStatement> ParsedAbility)
+        RuleManager.Effect  ConvertEffect(List<Diagnostic> OutDiagnostics,EvalContext Context, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,List<Parser.AbilityStatement> ParsedAbility)
         {
             RuleManager.Effect_UnitScript ReturnValue = new RuleManager.Effect_UnitScript();
             Expression_List NewEffect = new Expression_List();
@@ -852,7 +852,7 @@ namespace UnitScript
                 if(Statement is Parser.AbilityStatement_Expression)
                 {
                     Type OutType = null;
-                    NewEffect.Contents.Add(ConvertExpression(OutDiagnostics,Context,Envir, ((Parser.AbilityStatement_Expression)Statement).Expr,out OutType));
+                    NewEffect.Contents.Add(ConvertExpression(OutDiagnostics,Context,AssociatedUnit,Envir, ((Parser.AbilityStatement_Expression)Statement).Expr,out OutType));
                 }
             }
             ReturnValue.Expr = NewEffect;
@@ -875,7 +875,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        RuleManager.UnitScriptTarget ConvertTarget(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.ActivatedAbilityTarget ParsedTarget)
+        RuleManager.UnitScriptTarget ConvertTarget(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,Parser.ActivatedAbilityTarget ParsedTarget)
         {
             RuleManager.UnitScriptTarget ReturnValue = new RuleManager.UnitScriptTarget();
             ReturnValue.Name = ParsedTarget.Name.Value;
@@ -888,7 +888,7 @@ namespace UnitScript
             if(!(ParsedTarget.RangeBegin.Line == 0 && ParsedTarget.RangeBegin.ByteOffset == 0))
             {
                 Type ResultType;
-                ReturnValue.Range = ConvertExpression(OutDiagnostics,EvalContext.Predicate,Envir,ParsedTarget.RangeExpression,out ResultType);
+                ReturnValue.Range = ConvertExpression(OutDiagnostics,EvalContext.Predicate,AssociatedUnit,Envir,ParsedTarget.RangeExpression,out ResultType);
                 if(ResultType != typeof(List<RuleManager.Coordinate>))
                 {
                     OutDiagnostics.Add(new Diagnostic(ParsedTarget.RangeBegin,5,"Result of range expression must be of type List<Coordinate>"));
@@ -904,16 +904,16 @@ namespace UnitScript
                 Envir.AddVar(ReturnValue.Name,new RuleManager.Coordinate());
             }
             Type OutType  = null;
-            ReturnValue.Condition = ConvertExpression(OutDiagnostics,EvalContext.Predicate,Envir,ParsedTarget.Condition,out OutType);
+            ReturnValue.Condition = ConvertExpression(OutDiagnostics,EvalContext.Predicate,AssociatedUnit,Envir,ParsedTarget.Condition,out OutType);
             return ReturnValue;
         }
-        RuleManager.TargetInfo ConvertTargets(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,List<Parser.ActivatedAbilityTarget> Targets)
+        RuleManager.TargetInfo ConvertTargets(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,List<Parser.ActivatedAbilityTarget> Targets)
         {
             RuleManager.TargetInfo_List ReturnValue = new RuleManager.TargetInfo_List();
             List<RuleManager.UnitScriptTarget> ConvertedTargets = new List<RuleManager.UnitScriptTarget>();
             foreach(Parser.ActivatedAbilityTarget  Target in Targets)
             {
-                ConvertedTargets.Add(ConvertTarget(OutDiagnostics,Envir,Target));
+                ConvertedTargets.Add(ConvertTarget(OutDiagnostics, AssociatedUnit, Envir,Target));
             }
             RuleManager.TargetCondition_UnitScript Condition = new RuleManager.TargetCondition_UnitScript();
             Condition.Targets = ConvertedTargets;
@@ -923,15 +923,29 @@ namespace UnitScript
             }
             return ReturnValue;
         }
-        public RuleManager.Ability_Activated ConvertActivated(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability_Activated ParsedAbility)
+        public RuleManager.Ability_Activated ConvertActivated(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,Parser.Ability_Activated ParsedAbility)
         {
             RuleManager.Ability_Activated ReturnValue = new RuleManager.Ability_Activated();
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
-            ReturnValue.ActivationTargets = ConvertTargets(OutDiagnostics,Envir,ParsedAbility.Targets);
-            ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,EvalContext.Resolve,Envir,ParsedAbility.Statements);
+            ReturnValue.ActivationTargets = ConvertTargets(OutDiagnostics,AssociatedUnit,Envir,ParsedAbility.Targets);
+            ReturnValue.ActivatedEffect = ConvertEffect(OutDiagnostics,EvalContext.Resolve,AssociatedUnit,Envir,ParsedAbility.Statements);
+            //get targets
+            if(ParsedAbility.Targets.Count > 0)
+            {
+                var EffectToModify = ReturnValue.ActivatedEffect as RuleManager.Effect_UnitScript;
+                EffectToModify.Targets = ((ReturnValue.ActivationTargets as RuleManager.TargetInfo_List).Targets[0] as RuleManager.TargetCondition_UnitScript).Targets;
+            }
+
+            AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivatedEffect;
+            var Effect = (ReturnValue.ActivatedEffect as RuleManager.Effect_UnitScript);
+            Effect.ResourceID = AssociatedUnit.ResourceID;
+            Effect.EffectID = AssociatedUnit.CurrentEffectID;
+            AssociatedUnit.CurrentEffectID += 1;
+            //AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivationTargets;
+
             return ReturnValue;
         }
-        public RuleManager.Ability_Continous ConvertContinous(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability_Continous ParsedAbility)
+        public RuleManager.Ability_Continous ConvertContinous(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,Parser.Ability_Continous ParsedAbility)
         {
             RuleManager.Ability_Continous ReturnValue = new RuleManager.Ability_Continous();
 
@@ -939,11 +953,22 @@ namespace UnitScript
             EffectEnvir.ShadowRemove("this");
             EffectEnvir.SetParent(Envir);
             //Hopefully backwards compatible way to implement this, new TargetInfo and Effect that uses this internally
-            ReturnValue.AffectedEntities =((RuleManager.TargetInfo_List)  ConvertTargets(OutDiagnostics,Envir,new List<Parser.ActivatedAbilityTarget>{ ParsedAbility.AffectedEntities})).Targets[0];
+            ReturnValue.AffectedEntities =((RuleManager.TargetInfo_List)  ConvertTargets(OutDiagnostics,AssociatedUnit,Envir,new List<Parser.ActivatedAbilityTarget>{ ParsedAbility.AffectedEntities})).Targets[0];
             RuleManager.Effect_ContinousUnitScript Effect = new RuleManager.Effect_ContinousUnitScript();
             Effect.UnitName = ParsedAbility.AffectedEntities.Name.Value;
-            Effect.Expr = ((RuleManager.Effect_UnitScript)  ConvertEffect(OutDiagnostics,EvalContext.Continous,EffectEnvir,ParsedAbility.Statements)).Expr;
+            Effect.Expr = ((RuleManager.Effect_UnitScript)  ConvertEffect(OutDiagnostics,EvalContext.Continous,AssociatedUnit,EffectEnvir,ParsedAbility.Statements)).Expr;
             ReturnValue.EffectToApply = Effect;
+
+            AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue.EffectToApply;
+            Effect.ResourceID = AssociatedUnit.ResourceID;
+            Effect.EffectID = AssociatedUnit.CurrentEffectID;
+
+            AssociatedUnit.CurrentEffectID += 1;
+            AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.AffectedEntities;
+            var TargetCondition = ReturnValue.AffectedEntities as RuleManager.TargetCondition_UnitScript;
+            TargetCondition.ConditionID = AssociatedUnit.CurrentEffectID;
+            TargetCondition.ResourceID = AssociatedUnit.ResourceID;
+            AssociatedUnit.CurrentEffectID++;
             return ReturnValue;
         }
         public class AbilityInformation
@@ -951,22 +976,26 @@ namespace UnitScript
             public RuleManager.Ability Ability;
             public ResourceManager.Animation Icon = null; 
         }
-        public AbilityInformation ConvertAbility(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
+        public AbilityInformation ConvertAbility(List<Diagnostic> OutDiagnostics,ResourceManager.UnitResource AssociatedUnit,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
         {
             AbilityInformation ReturnValue = new AbilityInformation();
             //ensure that the "this" pointer is present
             if(ParsedAbility is Parser.Ability_Activated)
             {
-                ReturnValue.Ability = ConvertActivated(OutDiagnostics,Envir,(Parser.Ability_Activated)ParsedAbility);
+                var NewAbility = ConvertActivated(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Activated)ParsedAbility);
+                AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = NewAbility.ActivatedEffect;
+                AssociatedUnit.CurrentEffectID += 1;
+                ReturnValue.Ability = NewAbility;
             }
             else if(ParsedAbility is Parser.Ability_Continous)
             {
-                ReturnValue.Ability = ConvertContinous(OutDiagnostics,Envir,(Parser.Ability_Continous)ParsedAbility);
+                var NewAbility = ConvertContinous(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Continous)ParsedAbility);
+                ReturnValue.Ability = ConvertContinous(OutDiagnostics,AssociatedUnit,Envir,(Parser.Ability_Continous)ParsedAbility);
             }
             foreach(var Attribute in ParsedAbility.Attributes)
             {
                 string Error;
-                object AttributeValue = EvalConstexpr(OutDiagnostics,Envir,Attribute.VariableValue,out Error);
+                object AttributeValue = EvalConstexpr(OutDiagnostics,AssociatedUnit,Envir,Attribute.VariableValue,out Error);
                 string AttributeString = "";
                 if(AttributeValue == null)
                 {
@@ -1016,12 +1045,12 @@ namespace UnitScript
             return ReturnValue;
         }
         //returns null on error
-        object EvalConstexpr(List<Diagnostic> OutDiagnostics,EvaluationEnvironment Envir,Parser.Expression Expr,out string OutError)
+        object EvalConstexpr(List<Diagnostic> OutDiagnostics,ResourceManager.UnitResource AssociatedUnit,EvaluationEnvironment Envir,Parser.Expression Expr,out string OutError)
         {
             int ErrCount = OutDiagnostics.Count;
             object ResultObject = 1f;
             Type ResultType;
-            Expression ExprToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile,Envir,Expr,out ResultType);
+            Expression ExprToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile,AssociatedUnit,Envir,Expr,out ResultType);
             if(OutDiagnostics.Count == ErrCount)
             {
                 try
@@ -1038,15 +1067,17 @@ namespace UnitScript
             OutError = "";
             return ResultObject;
         }
-        public  ResourceManager.UnitResource ConvertUnit(List<Diagnostic> OutDiagnostics,Parser.Unit ParsedUnit)
+        public  ResourceManager.UnitResource ConvertUnit(List<Diagnostic> OutDiagnostics,Parser.Unit ParsedUnit,int ResourceID)
         {
             ResourceManager.UnitResource ReturnValue = new ResourceManager.UnitResource();
+            ReturnValue.ResourceID = ResourceID;
+            ReturnValue.GameInfo.OpaqueInteger = ResourceID;
             int CurrentUnitID = m_CurrentUnitID;
             m_StringToUnit[ParsedUnit.Name.Value] = m_CurrentUnitID;
             m_LoadedUnits[m_CurrentUnitID] = ReturnValue;
             m_CurrentUnitID++;
             ReturnValue.GameInfo.Stats = ConvertStats(ReturnValue.GameInfo,OutDiagnostics,ParsedUnit.Stats);
-            ReturnValue.UIInfo = ConvertVisuals(OutDiagnostics,ReturnValue.GameInfo.Envir,ParsedUnit.visuals);
+            ReturnValue.UIInfo = ConvertVisuals(OutDiagnostics, ReturnValue, ReturnValue.GameInfo.Envir,ParsedUnit.visuals);
             ReturnValue.Name = ParsedUnit.Name.Value;
             foreach(Parser.VariableDeclaration Vars in ParsedUnit.Variables)
             {
@@ -1054,7 +1085,7 @@ namespace UnitScript
                 Type ResultType = null;
                 //arbitrary non-allowed value
                 object ResultObject = 1f;
-                Expression ExprToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile,ReturnValue.GameInfo.Envir,Vars.VariableValue, out ResultType);
+                Expression ExprToEvaluate = ConvertExpression(OutDiagnostics,EvalContext.Compile, ReturnValue, ReturnValue.GameInfo.Envir,Vars.VariableValue, out ResultType);
                 if(OutDiagnostics.Count == ErrCount)
                 {
                     try
@@ -1074,7 +1105,7 @@ namespace UnitScript
                 EvaluationEnvironment NewEnvir = new EvaluationEnvironment();
                 NewEnvir.SetParent(ReturnValue.GameInfo.Envir);
                 NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(CurrentUnitID));
-                AbilityInformation NewAbility = ConvertAbility(OutDiagnostics,NewEnvir,Ability);
+                AbilityInformation NewAbility = ConvertAbility(OutDiagnostics,ReturnValue,NewEnvir,Ability);
                 ReturnValue.GameInfo.Abilities.Add(NewAbility.Ability);
                 ReturnValue.UIInfo.AbilityIcons[Index] = NewAbility.Icon;
                 Index++;

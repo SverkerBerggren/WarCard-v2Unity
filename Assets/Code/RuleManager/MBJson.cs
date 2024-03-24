@@ -92,7 +92,7 @@ namespace MBJson
         {
             if (m_Type != JSONType.Aggregate)
             {
-                throw new System.Exception("Object not of string type");
+                throw new System.Exception("Object not of aggregate type");
             }
             return ((Dictionary<string,JSONObject>)m_InternalData);
         }
@@ -419,6 +419,10 @@ namespace MBJson
                 int hej = 2;
             }
             JSONObject ReturnValue = null;
+            if(ObjectToSerialize == null)
+            {
+                return new JSONObject();
+            }
             Type ObjectType = ObjectToSerialize.GetType();
             if(ObjectToSerialize is string)
             {
@@ -434,19 +438,18 @@ namespace MBJson
             }
             else if(ObjectType.IsEnum)
             {
-                ReturnValue = new JSONObject((int)(object)ObjectToSerialize);
+                ReturnValue = new JSONObject(Convert.ToInt32(ObjectToSerialize));
             }
             else if (ObjectToSerialize is IDictionary)
             {
-                IEnumerable Enumerator = (IEnumerable)ObjectToSerialize;
+                IEnumerable Enumerator =  ((IEnumerable)  ObjectToSerialize);
                 Dictionary<string, JSONObject> JsonList = new Dictionary<string, JSONObject>();
-                foreach (DictionaryEntry Entry in Enumerator)
+                foreach (var Member in Enumerator)
                 {
-                    if (!(Entry.Key is string))
-                    {
-                        throw new Exception("Invalid key: key must have string type");
-                    }
-                    JsonList.Add((string)Entry.Key, SerializeObject(Entry.Value));
+                    var ItFields = Member.GetType().GetProperties();
+                    var Key = ItFields[0].GetValue(Member);
+                    var Value = ItFields[1].GetValue(Member);
+                    JsonList.Add(Key.ToString(), SerializeObject(Value));
                 }
                 ReturnValue = new JSONObject(JsonList);
             }
@@ -460,12 +463,20 @@ namespace MBJson
                 }
                 ReturnValue = new JSONObject(JsonList);
             }
+            else if(ObjectToSerialize is JSONSerializable)
+            {
+                return ((JSONSerializable)ObjectToSerialize).Serialize();
+            }
             else
             {
-                FieldInfo[] Fields = ObjectType.GetFields();
+                FieldInfo[] Fields = ObjectType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 Dictionary<string, JSONObject> JsonDictionary = new Dictionary<string, JSONObject>();
                 foreach (FieldInfo Field in Fields)
                 {
+                    if( (Field.Attributes & FieldAttributes.NotSerialized) != 0)
+                    {
+                        continue;
+                    }
                     JsonDictionary.Add(Field.Name, SerializeObject(Field.GetValue(ObjectToSerialize)));
                 }
                 ReturnValue = new JSONObject(JsonDictionary);
@@ -478,6 +489,10 @@ namespace MBJson
             //T ReturnValue = new T();
             T ReturnValue = default(T);
             bool Return = false;
+            if(ObjectToParse.GetJSONType() == JSONType.Null)
+            {
+                return ReturnValue;
+            }
             if(typeof(T) == typeof(int))
             {
                 Return = true;
@@ -514,15 +529,37 @@ namespace MBJson
                 JSONDeserializeable JsonSerializer = (JSONDeserializeable)ReturnValue;
                 ReturnValue = (T) JsonSerializer.Deserialize(ObjectToParse);
             }
+            else if(ReturnValue is JSONTypeConverter)
+            {
+                JSONTypeConverter Converter = ReturnValue as JSONTypeConverter;
+                MBJson.DynamicJSONDeserializer Deserializer = new MBJson.DynamicJSONDeserializer(Converter);
+                ReturnValue = (T)Deserializer.Deserialize(ObjectToParse);
+            }
             else if (ReturnValue is IDictionary)
             {
                 IDictionary DictionaryData = (IDictionary)ReturnValue;
                 Type ReturnType = ReturnValue.GetType();
                 Dictionary<string, JSONObject> SerializedDictionary = ObjectToParse.GetAggregateData();
+                Type KeyType = ReturnType.GetGenericArguments()[0];
                 foreach (KeyValuePair<string, JSONObject> SerializedField in SerializedDictionary)
                 {
                     object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[1]).Invoke(null, new object[] {SerializedField.Value});
-                    DictionaryData.Add(SerializedField.Key,SerializedValue);
+                    object ConvertedKey = SerializedField.Key;
+                    if(KeyType == typeof(int))
+                    {
+                        ConvertedKey = int.Parse(SerializedField.Key);
+                    }
+                    DictionaryData.Add(ConvertedKey,SerializedValue);
+                }
+            }
+            else if(ReturnValue.GetType().IsGenericType && ReturnValue.GetType().GetGenericTypeDefinition() ==  typeof(Stack<>))
+            {
+                Type ReturnType = ReturnValue.GetType();
+                foreach (JSONObject ListEntry in ObjectToParse.GetArrayData())
+                {
+                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[0]).Invoke(null, new object[] { ListEntry });
+                    var PushMethod = ReturnValue.GetType().GetMethod("Push");
+                    PushMethod.Invoke(ReturnValue, new object[] { SerializedValue });
                 }
             }
             else if (ReturnValue is IList)
@@ -539,11 +576,15 @@ namespace MBJson
             else
             {
                 Type ObjectType = ReturnValue.GetType();
-                FieldInfo[] Fields = ObjectType.GetFields();
+                FieldInfo[] Fields = ObjectType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 //Fields[0].FieldType.isen
                 Dictionary<string, JSONObject> SerializedObjectData = ObjectToParse.GetAggregateData();
                 foreach (FieldInfo Field in Fields)
                 {
+                    if ((Field.Attributes & FieldAttributes.NotSerialized) != 0)
+                    {
+                        continue;
+                    }
                     MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeObject");
                     //throw new Exception(Field.Name +" "+ Field.FieldType.ToString());
                     //throw new Exception(DeserializeMethod.ToString());
@@ -674,7 +715,11 @@ namespace MBJson
     {
         object Deserialize(JSONObject ObjectToParse);
     }
-    
+    interface JSONSerializable
+    {
+        JSONObject Serialize();
+    }
+
     interface JSONTypeConverter
     {
         Type GetType(int SerializedType);
@@ -699,11 +744,15 @@ namespace MBJson
                 throw new Exception("No valid default constructor for type: " +ObjectType.Name);
             }
             ReturnValue = ConstructorToUse.Invoke(new object[] { });
-            FieldInfo[] Fields = ObjectType.GetFields();
+            FieldInfo[] Fields = ObjectType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             //Fields[0].FieldType.isen
             Dictionary<string, JSONObject> SerializedObjectData = ObjectToParse.GetAggregateData();
             foreach (FieldInfo Field in Fields)
             {
+                if ((Field.Attributes & FieldAttributes.NotSerialized) != 0)
+                {
+                    continue;
+                }
                 MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeObject");
                 MethodInfo MethodToCall = DeserializeMethod.MakeGenericMethod(Field.FieldType);
                 object SerializedValue = MethodToCall.Invoke(null, new object[] { SerializedObjectData[Field.Name] });

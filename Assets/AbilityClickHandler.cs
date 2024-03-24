@@ -8,7 +8,6 @@ public class AbilityClickHandler : ClickHandler
 
     public List<GameObject> buttonDestroyList = new List<GameObject>();
     public RuleManager.UnitInfo selectedUnit = new RuleManager.UnitInfo();
-    bool abilitySelectionStarted;
     public List<RuleManager.TargetCondition> requiredAbilityTargets = new List<RuleManager.TargetCondition>();
     public int selectedAbilityIndex = 0;
     
@@ -134,7 +133,6 @@ public class AbilityClickHandler : ClickHandler
     }
     public override void Deactivate()
     {
-        buttonDestroyList = new List<GameObject>();
         selectedUnit = new RuleManager.UnitInfo();
          
         requiredAbilityTargets = new List<RuleManager.TargetCondition>();

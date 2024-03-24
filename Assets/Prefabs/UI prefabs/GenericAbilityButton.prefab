@@ -27,8 +27,8 @@ RectTransform:
   m_GameObject: {fileID: 540384703996152507}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 3, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 3, y: 6, z: 2}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6068231065602503086}
   - {fileID: 4960412488997225158}
@@ -37,7 +37,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 115.8}
+  m_AnchoredPosition: {x: 4.9, y: 132.7}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1114774255940567297
@@ -506,6 +506,24 @@ MonoBehaviour:
   abilityFlavourText: {fileID: 6918215862707228440}
   abilityDescriptionText: {fileID: 4287910719262775691}
   abilityNameText: {fileID: 1814763578949359998}
+  clickHandlerAbility: {fileID: 0}
+  clickHandlerUnitSelect: {fileID: 0}
+  playerIndex: 0
+  unitInfo:
+    UnitID: 0
+    PlayerIndex: 0
+    OpaqueInteger: -1
+    AbilityActivated: 
+    Direction:
+      X: 1
+      Y: 0
+    TopLeftCorner:
+      X: 0
+      Y: 0
+    UnitTileOffsets:
+    - X: 0
+      Y: 0
+    Flags: 0
 --- !u!1 &6069744787803600131
 GameObject:
   m_ObjectHideFlags: 0
