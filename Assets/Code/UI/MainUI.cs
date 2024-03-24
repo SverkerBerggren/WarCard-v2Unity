@@ -730,6 +730,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         }
     }
+
+
+    public void DamageVFX()
+    {
+
+    }
+
     public void OnUnitRotation(int UnitID, RuleManager.Coordinate NewRotation)
     {
         UnitInfo MovedUnit = ruleManager.GetUnitInfo(UnitID);
