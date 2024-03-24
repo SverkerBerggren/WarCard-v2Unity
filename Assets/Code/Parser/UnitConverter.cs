@@ -987,6 +987,10 @@ namespace UnitScript
                 AssociatedUnit.CurrentEffectID += 1;
                 ReturnValue.Ability = NewAbility;
             }
+            else if(ParsedAbility is Parser.Ability_Triggered)
+            {
+
+            }
             else if(ParsedAbility is Parser.Ability_Continous)
             {
                 var NewAbility = ConvertContinous(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Continous)ParsedAbility);

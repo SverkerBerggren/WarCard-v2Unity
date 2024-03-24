@@ -25,7 +25,7 @@ public interface RestorableUIElement
 }
 public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever,AnimationPlayer
 {
-
+    public bool LoadSave = true;
     public static MainUI instance = null;
 
     public static MainUI GetStaticInstance()
@@ -1280,7 +1280,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         string ArmyFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Army.json";
         string SaveFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Save.json";
 
-        if(System.IO.File.Exists(SaveFile))
+        if(System.IO.File.Exists(SaveFile) && LoadSave)
         {
             var File = new System.IO.StreamReader(SaveFile);
             var Content = System.Text.UTF8Encoding.UTF8.GetBytes(File.ReadToEnd());
