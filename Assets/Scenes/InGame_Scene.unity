@@ -632,32 +632,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1681569492 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 982598532997257496, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
-    type: 3}
-  m_PrefabInstance: {fileID: 982598531319967692}
-  m_PrefabAsset: {fileID: 0}
 --- !u!224 &1681569493 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 982598532997257497, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
     type: 3}
   m_PrefabInstance: {fileID: 982598531319967692}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1681569496
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1681569492}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c2995489314d9541b8daaad3cc4df51, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  timer: 0
-  heightGain: 0
 --- !u!1 &1795058184
 GameObject:
   m_ObjectHideFlags: 0
@@ -1086,7 +1066,7 @@ PrefabInstance:
     - target: {fileID: 982598532997257497, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 982598532997257497, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
         type: 3}
@@ -1374,7 +1354,8 @@ PrefabInstance:
         type: 3}
       propertyPath: damageTextVFX
       value: 
-      objectReference: {fileID: 1681569492}
+      objectReference: {fileID: 982598532997257496, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
+        type: 3}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: PlaceUnitSound

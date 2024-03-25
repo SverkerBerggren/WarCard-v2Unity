@@ -148,6 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c2995489314d9541b8daaad3cc4df51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timer: 120
-  heightGain: 0.01
+  timer: 160
+  heightGain: 0.06
   text: {fileID: 982598532997257498}
+  yOffset: 5
+  zOffset: -2

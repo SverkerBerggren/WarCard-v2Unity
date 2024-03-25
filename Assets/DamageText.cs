@@ -6,17 +6,27 @@ using UnityEngine;
 
 public class DamageText : MonoBehaviour
 {
-    [SerializeField] int timer;
-    [SerializeField] float heightGain;
-    [SerializeField] TextMeshProUGUI text;
+    [SerializeField] private int timer;
+    [SerializeField] private float heightGain;
+    [SerializeField] private TextMeshProUGUI text;
     private RectTransform rectTransform;
     private float alphaReduction;
-    private float alphaToSet =1; 
+    private float alphaToSet =1;
+    [SerializeField] float yOffset;
+    [SerializeField] float zOffset;
+
+
+    public void SetText(int amount)
+    {
+        text.text = "-" + amount.ToString();
+    }
 
     private void Start()
     {
         rectTransform = gameObject.GetComponent<RectTransform>();
         alphaReduction =(float) 1f/ timer;
+        rectTransform.position = new Vector3(rectTransform.position.x, rectTransform.position.y +yOffset, rectTransform.position.z + zOffset);
+        
     }
     // Update is called once per frame
     void FixedUpdate()
