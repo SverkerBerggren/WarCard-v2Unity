@@ -21,5 +21,6 @@ Artillery
             Flavour="Parket lot pog";
             Description="Make a place on the map gebombt";
     {
+        RegisterTrigger(triggered _ NewBattleround(){ DamageArea(stuff,3,30);},IsOneShot=true); 
     }
 }

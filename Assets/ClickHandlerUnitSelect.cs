@@ -139,7 +139,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             var UIInfo = mainUi.GetUnitUIInfo(selectedUnit);
             if(UIInfo.UIInfo.SelectSound!= null)
             {
-                GetComponent<AudioSource>().PlayOneShot(UIInfo.UIInfo.SelectSound);
+                //GetComponent<AudioSource>().PlayOneShot(UIInfo.UIInfo.SelectSound);
             }
             resetSelection();
             canvasUIScript.createUnitCard(selectedUnit);
