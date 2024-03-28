@@ -166,7 +166,7 @@ public class LobbyTest : MonoBehaviour
         //Thread MessageThread = new Thread(LobbyServerConnector);
         //MessageThread.Start();
         Thread ServerThread = new Thread(_RunServer);
-        //ServerThread.Start();
+        ServerThread.Start();
         DontDestroyOnLoad(this);
     }
 

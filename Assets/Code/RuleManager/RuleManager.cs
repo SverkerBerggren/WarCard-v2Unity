@@ -1712,7 +1712,7 @@ namespace RuleManager
         void p_RefreshUnit(UnitInfo UnitToRefresh)
         {
             UnitToRefresh.Flags = 0;
-            UnitToRefresh.Flags |= UnitFlags.IsActivated;
+            //UnitToRefresh.Flags == UnitToRefresh.Flags & (~UnitFlags.IsActivated);
             //UnitToRefresh.Flags &= ~(UnitFlags.HasAttacked);
             //UnitToRefresh.Flags &= ~(UnitFlags.HasMoved);
             //UnitToRefresh.HasAttacked = false;
