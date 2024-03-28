@@ -213,7 +213,7 @@ namespace MBJson
             int IntEnd = IntegerBegin;
             while(IntEnd < Buffer.Length)
             {
-                if(!(Buffer[IntEnd] >= '0' && Buffer[IntEnd] <= '9'))
+                if(!(Buffer[IntEnd] >= '0' && Buffer[IntEnd] <= '9') && Buffer[IntEnd] != '-')
                 {
                     break;
                 }

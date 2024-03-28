@@ -1494,8 +1494,11 @@ namespace RuleManager
             foreach(var Unit in m_UnitInfos)
             {
                 //assign abilities
-                Unit.Value.Abilities = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Abilities;
-                Unit.Value.Envir = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Envir;
+                if(Unit.Value.UnitID != -1)
+                {
+                    Unit.Value.Abilities = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Abilities;
+                    Unit.Value.Envir = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Envir;
+                }
             }
             foreach(var Trigger in m_RegisteredTriggeredAbilities)
             {
@@ -1712,7 +1715,7 @@ namespace RuleManager
         void p_RefreshUnit(UnitInfo UnitToRefresh)
         {
             UnitToRefresh.Flags = 0;
-            UnitToRefresh.Flags |= UnitFlags.IsActivated;
+            //UnitToRefresh.Flags == UnitToRefresh.Flags & (~UnitFlags.IsActivated);
             //UnitToRefresh.Flags &= ~(UnitFlags.HasAttacked);
             //UnitToRefresh.Flags &= ~(UnitFlags.HasMoved);
             //UnitToRefresh.HasAttacked = false;
