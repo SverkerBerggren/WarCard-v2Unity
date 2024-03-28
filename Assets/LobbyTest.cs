@@ -11,6 +11,8 @@ public class LobbyTest : MonoBehaviour
     string LobbyID = "";
     bool InLobby = false;
     public int ConnectionID = 0;
+
+    public bool BoolShouldRunServer = false;
     class Event
     {
 
@@ -160,48 +162,49 @@ public class LobbyTest : MonoBehaviour
     }
     void Start()
     {
-        StateObject = FindObjectOfType<GameState>();
-        Thread MessageThread = new Thread(LobbyServerConnector);
-        MessageThread.Start();
+        //StateObject = FindObjectOfType<GameState>();
+        //Thread MessageThread = new Thread(LobbyServerConnector);
+        //MessageThread.Start();
         Thread ServerThread = new Thread(_RunServer);
-        ServerThread.Start();
+        //ServerThread.Start();
+        DontDestroyOnLoad(this);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.R))
-        {
-            lock(m_Events)
-            {
-                m_Events.Push(new Register());
-            }
-            m_Semaphore.Release();
-        }
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            lock(m_Events)
-            {
-                string LobbyString = GetComponent<TextMeshPro>().text;
-                print("Join string: "+ LobbyString);
-                Connect ConnectEvent = new Connect();
-                LobbyID = LobbyString;
-                ConnectEvent.LobbyCode = LobbyString;
-                m_Events.Push(ConnectEvent);
-            }
-            m_Semaphore.Release();
-        }
-        if(LoadGameScene)
-        {
-            SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
-        }
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            lock (m_Events)
-            {
-                m_Events.Push(new StarEvent());
-            }
-            m_Semaphore.Release();
-        }
+        //if(Input.GetKeyDown(KeyCode.R))
+        //{
+        //    lock(m_Events)
+        //    {
+        //        m_Events.Push(new Register());
+        //    }
+        //    m_Semaphore.Release();
+        //}
+        //if (Input.GetKeyDown(KeyCode.J))
+        //{
+        //    lock(m_Events)
+        //    {
+        //        string LobbyString = GetComponent<TextMeshPro>().text;
+        //        print("Join string: "+ LobbyString);
+        //        Connect ConnectEvent = new Connect();
+        //        LobbyID = LobbyString;
+        //        ConnectEvent.LobbyCode = LobbyString;
+        //        m_Events.Push(ConnectEvent);
+        //    }
+        //    m_Semaphore.Release();
+        //}
+        //if(LoadGameScene)
+        //{
+        //    SceneManager.LoadScene("Assets/Scenes/SverkerTestScene.unity");
+        //}
+        //if (Input.GetKeyDown(KeyCode.S))
+        //{
+        //    lock (m_Events)
+        //    {
+        //        m_Events.Push(new StarEvent());
+        //    }
+        //    m_Semaphore.Release();
+        //}
     }
 }

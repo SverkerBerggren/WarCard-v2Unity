@@ -22,7 +22,7 @@ public class ClientConnectionHandler : MonoBehaviour
         print("Communicating");
         try
         {
-            m_Connection = new RuleServer.ClientConnection("mrboboget.se", 80);
+            m_Connection = new RuleServer.ClientConnection("192.168.0.2", 11337);
             print("Connection established");
             while(!m_Stopping)
             {
