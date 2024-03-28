@@ -545,7 +545,7 @@ namespace UnitScript
                 Result.Envir = new EvaluationEnvironment();
                 Result.Envir.SetParent(Envir);
                 Result.Ability = ContinousLiteral.Ability;
-                (Result.Ability.EffectToApply as RuleManager.Effect_UnitScript).Envir = Result.Envir;
+                //(Result.Ability.EffectToApply as RuleManager.Effect_UnitScript).Envir = Result.Envir;
 
                 ReturnValue = Result;
             }
