@@ -456,10 +456,26 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     private List<List<TileColorIndicator>> tileColorIndicators = new List<List<TileColorIndicator>>();
     private SortedDictionary<int, TileColoringEffect> coloringEffects = new SortedDictionary<int, TileColoringEffect>();
 
+    private int tileImageIndex = 0;
+    private SortedDictionary<int, Sprite> tileImages = new SortedDictionary<int, Sprite>();
 
     [SerializeField] private GameObject damageTextVFX;
 
     [SerializeField] private GameObject localPositionCanvas;
+    public int GetTileImageIndex()
+    {
+        tileImageIndex += 1;
+
+        return tileImageIndex - 1;
+    }
+
+    public int AddTileImage(RuleManager.Coordinate coordinate, Sprite sprite)
+    {
+        int imageIndex = GetTileImageIndex();
+
+        return imageIndex;
+
+    }
 
     public int GetColorIndicatorIndex()
     {
@@ -784,7 +800,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         GameObject textToCreate = Instantiate(damageTextVFX,localPositionCanvas.transform);
 
+        DamageText damageText = textToCreate.GetComponent<DamageText>();
+
+        damageText.SetText(amount);
+
         textToCreate.transform.position = gridManager.GetTilePosition(damagedUnit.TopLeftCorner);
+
 
 
         
