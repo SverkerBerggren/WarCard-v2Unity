@@ -658,6 +658,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   timer: 0
   heightGain: 0
+  text: {fileID: 0}
 --- !u!1 &1795058184
 GameObject:
   m_ObjectHideFlags: 0
@@ -1374,7 +1375,8 @@ PrefabInstance:
         type: 3}
       propertyPath: damageTextVFX
       value: 
-      objectReference: {fileID: 1681569492}
+      objectReference: {fileID: 982598532997257496, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
+        type: 3}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
       propertyPath: PlaceUnitSound

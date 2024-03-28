@@ -2755,11 +2755,14 @@ namespace RuleManager
         {
             if (m_TheStack.Count > 0 && m_PriorityTabled && m_CurrentPlayerPriority == m_TheStack.Peek().Source.PlayerIndex)
             {
-                IEnumerator ResolveResult = p_ResolveTopOfStack();
-                bool NotFinished = ResolveResult.MoveNext();
-                if (NotFinished)
+                while(m_TheStack.Count > 0)
                 {
-                    m_CurrentResolution = ResolveResult;
+                    IEnumerator ResolveResult = p_ResolveTopOfStack();
+                    bool NotFinished = ResolveResult.MoveNext();
+                    if (NotFinished)
+                    {
+                        m_CurrentResolution = ResolveResult;
+                    }
                 }
             }
             else if (m_EndOfTurnPass && m_CurrentPlayerTurn != m_CurrentPlayerPriority)
@@ -3065,10 +3068,19 @@ namespace RuleManager
         object p_Range(UnitScript.BuiltinFuncArgs Args)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
-            UnitIdentifier UnitOrigin = (UnitIdentifier)Args.Arguments[0];
-            UnitInfo Info = p_GetProcessedUnitInfo(UnitOrigin.ID);
+            List<Coordinate> Tiles = new List<Coordinate> {};
+            if(Args.Arguments[0] is UnitIdentifier)
+            {
+                UnitIdentifier UnitOrigin = (UnitIdentifier)Args.Arguments[0];
+                UnitInfo Info = p_GetProcessedUnitInfo(UnitOrigin.ID);
+                Tiles = p_GetAbsolutePositions(Info.TopLeftCorner, Info.UnitTileOffsets);
+            }
+            else if(Args.Arguments[0] is Coordinate)
+            {
+                Tiles.Add(Args.Arguments[0] as Coordinate);
+            }
             int Range = (int)Args.Arguments[1];
-            ReturnValue = p_GetTiles(Range,p_GetAbsolutePositions(Info.TopLeftCorner,Info.UnitTileOffsets));
+            ReturnValue = p_GetTiles(Range,Tiles);
             return ReturnValue;
         }
         object p_RegisterContinous(UnitScript.BuiltinFuncArgs Args)
@@ -3146,15 +3158,24 @@ namespace RuleManager
         {
             object AnimationObject = Args.Arguments[0];
             bool IsOverlayed = Args.KeyArguments.ContainsKey("Overlayed") && (bool)Args.KeyArguments["Overlayed"];
-            UnitIdentifier UnitPosition = (UnitIdentifier)Args.Arguments[1];
-            if(IsOverlayed)
+            if(Args.Arguments[1] is UnitIdentifier)
             {
-                m_AnimationPlayer.PlayAnimation(m_UnitInfos[UnitPosition.ID].TopLeftCorner,AnimationObject);
+                UnitIdentifier UnitPosition = (UnitIdentifier)Args.Arguments[1];
+                if (IsOverlayed)
+                {
+                    m_AnimationPlayer.PlayAnimation(m_UnitInfos[UnitPosition.ID].TopLeftCorner, AnimationObject);
+                }
+                else
+                {
+                    m_AnimationPlayer.PlayAnimation(UnitPosition.ID, AnimationObject);
+                }
             }
-            else
+            else if(Args.Arguments[1] is Coordinate)
             {
-                m_AnimationPlayer.PlayAnimation(UnitPosition.ID,AnimationObject);
+                m_AnimationPlayer.PlayAnimation(Args.Arguments[1] as Coordinate, AnimationObject);
             }
+
+            
             return null;
         }
         public Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
@@ -3225,7 +3246,7 @@ namespace RuleManager
             ReturnValue["Distance"] = Distance;
 
             UnitScript.Builtin_FuncInfo Range = new UnitScript.Builtin_FuncInfo();
-            Range.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(int)}};
+            Range.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier),typeof(Coordinate)},new HashSet<Type>{typeof(int)}};
             Range.ResultType = typeof(List<Coordinate>);
             Range.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Range.Callable = p_Range;
@@ -3248,7 +3269,7 @@ namespace RuleManager
             ReturnValue["RegisterTrigger"] = RegisterTrigger;
 
             UnitScript.Builtin_FuncInfo PlayAnimation = new UnitScript.Builtin_FuncInfo();
-            PlayAnimation.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(ResourceManager.Animation)},new HashSet<Type>{typeof(UnitIdentifier)}};
+            PlayAnimation.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(ResourceManager.Animation)},new HashSet<Type>{typeof(UnitIdentifier),typeof(Coordinate)}};
             PlayAnimation.KeyArgTypes = new Dictionary<string, Type>{{"Overlayed",typeof(bool)}};
             PlayAnimation.ResultType = typeof(void);
             PlayAnimation.ValidContexts = UnitScript.EvalContext.Resolve;

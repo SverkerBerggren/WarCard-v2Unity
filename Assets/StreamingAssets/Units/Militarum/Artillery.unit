@@ -14,6 +14,7 @@ Artillery
         Up = Image("./PH_Artillery_2.png");
         Down = Image("./PH_Artillery_3.png");
     }
+    Blast = Animation("Blast",FPS=25,Width=25);
     activated IsHeavy(Tile stuff : Distance(this,stuff) < 30 range Range(this,30))
           :
             Icon = Image("./PH_Ability_S_Artillery.png");
@@ -21,6 +22,12 @@ Artillery
             Flavour="Parket lot pog";
             Description="Make a place on the map gebombt";
     {
-        RegisterTrigger(triggered _ NewBattleround(){ DamageArea(stuff,3,30);},IsOneShot=true); 
+        id = AddTileColoring(Range(stuff,3));
+        RegisterTrigger(triggered _ NewBattleround(){ 
+                RemoveTileColoring(id);
+                MoveCamera(stuff);
+                PlayAnimation(Blast,stuff);
+                DamageArea(stuff,3,30);
+            },IsOneShot=true); 
     }
 }

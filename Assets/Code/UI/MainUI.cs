@@ -237,6 +237,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         public void Finish()
         {
             m_SubAnimation.Finish();
+            Destroy(m_AssociatedObject);
         }
     }
 
@@ -561,6 +562,39 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         print("Current battle round: " + CurrentBattleRound);
     }
 
+    object p_MoveCamera(UnitScript.BuiltinFuncArgs Args)
+    {
+        object ReturnValue = null;
+        Coordinate TargetCoord = null;
+        if (Args.Arguments[0] is RuleManager.Coordinate)
+        {
+            TargetCoord = Args.Arguments[0] as RuleManager.Coordinate;
+        }
+        else if (Args.Arguments[0] is RuleManager.UnitIdentifier)
+        {
+            TargetCoord = ruleManager.GetUnitInfo((Args.Arguments[0] as RuleManager.UnitIdentifier).ID).TopLeftCorner;
+        }
+        m_ActiveAnimations.Enqueue(new MoveCameraAnimation(m_ActiveCamera.gameObject, gridManager.GetTilePosition(TargetCoord), m_ActiveCamera.transform.position, m_DefaultCameraSpeed));
+        return ReturnValue;
+    }
+    object p_AddTileColoring(UnitScript.BuiltinFuncArgs Args)
+    {
+        TileColoringEffect NewColoring = new(Color.red,Args.GetSource(),Args.Arguments[0] as List<Coordinate>);
+        return AddColoringEffect(NewColoring);
+    }
+    object p_RemoveTileColoring(UnitScript.BuiltinFuncArgs Args)
+    {
+        RemoveColoringEffect((int) Args.Arguments[0]);
+        return null;
+    }
+    public Dictionary<string, UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
+    {
+        Dictionary<string, UnitScript.Builtin_FuncInfo> Funcs = UIUnitscriptDefs.GetUnitScriptFuncs();
+        Funcs["MoveCamera"].Callable = p_MoveCamera;
+        Funcs["AddTileColoring"].Callable = p_AddTileColoring;
+        Funcs["RemoveTileColoring"].Callable = p_RemoveTileColoring;
+        return Funcs;
+    }
 
     void Start()
     {
@@ -585,6 +619,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
 
         ruleManager.SetEventHandler(this);
+        g_ResourceManager.GetScriptHandler().AddBuiltins(GetUnitScriptFuncs());
         ruleManager.SetScriptHandler(g_ResourceManager.GetScriptHandler());
         ruleManager.SetAnimationPlayer(this);
         gridManager.SetInputReciever(this);

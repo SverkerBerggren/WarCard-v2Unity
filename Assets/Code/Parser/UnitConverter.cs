@@ -108,6 +108,11 @@ namespace UnitScript
         public UnitConverter Handler = null;
         public List<object> Arguments = new List<object>();
         public Dictionary<string,object> KeyArguments = new Dictionary<string, object>();
+
+        public RuleManager.EffectSource GetSource()
+        {
+            return Envir.GetVar("SOURCE") as RuleManager.EffectSource;
+        }
     }
     public class Builtin_FuncInfo
     {
