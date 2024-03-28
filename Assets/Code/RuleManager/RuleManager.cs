@@ -1890,8 +1890,7 @@ namespace RuleManager
                 }
                 EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
                 UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
-                AssociatedUnit.Envir.AddVar("SOURCE",UnitSource);
-                AssociatedUnit.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID) );
+
                 //Add targets
                 int CurrentIndex = 0;
                 if(UnitEffect.Targets != null)
@@ -1911,12 +1910,16 @@ namespace RuleManager
                 }
                 if(UnitEffect.Envir != null)
                 {
+                    UnitEffect.Envir.AddVar("SOURCE", UnitSource);
+                    UnitEffect.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
                     m_ScriptHandler.Eval(UnitEffect.Envir, UnitEffect.Expr);
                 }
                 else
                 {
                     UnitScript.EvaluationEnvironment NewEnvir = new();
                     NewEnvir.SetParent(AssociatedUnit.Envir);
+                    NewEnvir.AddVar("SOURCE", UnitSource);
+                    NewEnvir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
                     m_ScriptHandler.Eval(NewEnvir, UnitEffect.Expr);
                 }
             }
@@ -2248,17 +2251,19 @@ namespace RuleManager
                     throw new Exception("Effect for TargetCondition_UnitScript must be a unit");
                 }
                 EffectSource_Unit Unit = (EffectSource_Unit)Source;
+                UnitScript.EvaluationEnvironment NewEnvir = new();
                 UnitInfo SourceUnit = m_UnitInfos[Unit.UnitID];
+                NewEnvir.SetParent(SourceUnit.Envir);
                 int CurrentIndex = 0;
                 foreach(Target PrevTarget in CurrentTargets)
                 {
                     if(PrevTarget is Target_Unit)
                     {
-                        SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)PrevTarget).UnitID));
+                        NewEnvir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)PrevTarget).UnitID));
                     }
                     else if(PrevTarget is Target_Tile)
                     {
-                        SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)PrevTarget).TargetCoordinate);
+                        NewEnvir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)PrevTarget).TargetCoordinate);
                     }
                     CurrentIndex++;
                 }
@@ -2269,19 +2274,19 @@ namespace RuleManager
                 }
                 if(TargetToVerify is Target_Unit)
                 {
-                    SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)TargetToVerify).UnitID));
+                    NewEnvir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)TargetToVerify).UnitID));
                 }
                 else if(TargetToVerify is Target_Tile)
                 {
-                    SourceUnit.Envir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)TargetToVerify).TargetCoordinate);
+                    NewEnvir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)TargetToVerify).TargetCoordinate);
                 }
-                SourceUnit.Envir.AddVar("this", new UnitIdentifier(SourceUnit.UnitID) );
+                NewEnvir.AddVar("this", new UnitIdentifier(SourceUnit.UnitID) );
                 UnitScript.Expression ExprToEvaluate = UnitScriptTarget.Targets[CurrentIndex].Condition;
                 object Result = m_ScriptHandler.Eval(SourceUnit.Envir,ExprToEvaluate);
                 if( !(Result is bool) || !((bool)Result))
                 {
                     ReturnValue = false;
-                    if(SourceUnit.Envir.HasVar("ERROR"))
+                    if(NewEnvir.HasVar("ERROR"))
                     {
                         Error = (string)SourceUnit.Envir.GetVar("ERROR");
                     }
@@ -4101,8 +4106,10 @@ namespace RuleManager
             {
                 Effect_ContinousUnitScript UnitScriptEffect = (Effect_ContinousUnitScript)Modifier;
                 UnitInfo SourceUnit = m_UnitInfos[ ((EffectSource_Unit) Source).UnitID];
-                SourceUnit.Envir.AddVar(UnitScriptEffect.UnitName,InfoToModify);
-                m_ScriptHandler.Eval(SourceUnit.Envir,UnitScriptEffect.Expr);
+                UnitScript.EvaluationEnvironment NewEnvir = new();
+                NewEnvir.SetParent(SourceUnit.Envir);
+                NewEnvir.AddVar(UnitScriptEffect.UnitName,InfoToModify);
+                m_ScriptHandler.Eval(NewEnvir,UnitScriptEffect.Expr);
             }
             else if(Modifier is Effect_IncreaseDamage)
             {
