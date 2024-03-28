@@ -42,6 +42,11 @@ namespace UnitScript
     {
         public object Value;
     }
+    public class Expression_Assignment : Expression
+    {
+        public string VariableName;
+        public Expression VariableValue;
+    }
     public class Expression_Variable : Expression
     {
         public string VarName;
@@ -51,9 +56,19 @@ namespace UnitScript
         public EvaluationEnvironment Envir;
         public RuleManager.Ability_Continous Ability;
     }
+    public class TriggeredAbility
+    {
+        public EvaluationEnvironment Envir;
+        public RuleManager.Ability_Triggered Ability;
+    }
     public class Expression_ContinousAbility : Expression
     {
         public RuleManager.Ability_Continous Ability;
+    }
+
+    public class Expression_TriggeredAbility : Expression
+    {
+        public RuleManager.Ability_Triggered Ability;
     }
     public enum ModificationType
     {
@@ -93,6 +108,11 @@ namespace UnitScript
         public UnitConverter Handler = null;
         public List<object> Arguments = new List<object>();
         public Dictionary<string,object> KeyArguments = new Dictionary<string, object>();
+
+        public RuleManager.EffectSource GetSource()
+        {
+            return Envir.GetVar("SOURCE") as RuleManager.EffectSource;
+        }
     }
     public class Builtin_FuncInfo
     {
@@ -114,7 +134,17 @@ namespace UnitScript
 
     public class EvaluationEnvironment
     {
-        Dictionary<string,object> m_Contents = new Dictionary<string,object>();
+        class ContentPair
+        {
+            public object Value;
+            public Type ValueType;
+            public ContentPair(object NewVal,Type NewValType)
+            {
+                Value = NewVal;
+                ValueType = NewValType;
+            }
+        }
+        Dictionary<string, ContentPair> m_Contents = new Dictionary<string, ContentPair>();
         HashSet<string> m_ShadowRemoved = new HashSet<string>();
         EvaluationEnvironment m_Parent = null;
         public bool HasVar(string VariableToCheck)
@@ -134,11 +164,24 @@ namespace UnitScript
         {
             m_Parent = NewParent;
         }
+
+        public Type GetVarType(string VariableToGet)
+        {
+            if (m_Contents.ContainsKey(VariableToGet))
+            {
+                return m_Contents[VariableToGet].ValueType;
+            }
+            if (m_Parent != null)
+            {
+                return m_Parent.GetVarType(VariableToGet);
+            }
+            throw new Exception("Couldn't find variable \"" + VariableToGet + "\" in environment");
+        }
         public object GetVar(string VariableToGet)
         {
             if(m_Contents.ContainsKey(VariableToGet))
             {
-                return m_Contents[VariableToGet];
+                return m_Contents[VariableToGet].Value;
             }
             if(m_Parent != null)
             {
@@ -148,7 +191,11 @@ namespace UnitScript
         }
         public void AddVar(string Variable,object Value)
         {
-            m_Contents[Variable] = Value;
+            m_Contents[Variable] = new ContentPair(Value,Value.GetType());
+        }
+        public void AddVarType(string Variable, Type VarType)
+        {
+            m_Contents[Variable] = new ContentPair(null, VarType);
         }
         public void ShadowRemove(string Variable)
         {
@@ -486,12 +533,30 @@ namespace UnitScript
                 }
                 ReturnValue = null;
             }
+            else if(Expr is Expression_Assignment)
+            {
+                var Assignment = Expr as Expression_Assignment;
+                Envir.AddVar(Assignment.VariableName, Eval(Envir, Assignment.VariableValue));
+            }
             else if(Expr is Expression_ContinousAbility)
             {
                 Expression_ContinousAbility ContinousLiteral = (Expression_ContinousAbility)Expr;
                 ContinousAbility Result = new ContinousAbility();
-                Result.Envir = Envir;
+                Result.Envir = new EvaluationEnvironment();
+                Result.Envir.SetParent(Envir);
                 Result.Ability = ContinousLiteral.Ability;
+                (Result.Ability.EffectToApply as RuleManager.Effect_UnitScript).Envir = Result.Envir;
+
+                ReturnValue = Result;
+            }
+            else if (Expr is Expression_TriggeredAbility)
+            {
+                Expression_TriggeredAbility TriggeredLiteral = (Expression_TriggeredAbility)Expr;
+                TriggeredAbility Result = new TriggeredAbility();
+                Result.Envir = new EvaluationEnvironment();
+                Result.Envir.SetParent(Envir);
+                Result.Ability = TriggeredLiteral.Ability;
+                (Result.Ability.TriggeredEffect as RuleManager.Effect_UnitScript).Envir = Result.Envir;
                 ReturnValue = Result;
             }
             else if(Expr is Expression_Eq)
@@ -597,15 +662,23 @@ namespace UnitScript
         {
             Expression ReturnValue = null;
             Type OutType = typeof(void);
+            EvaluationEnvironment NewEnvir = new();
+            NewEnvir.SetParent(Envir);
             if(ParsedExpression.AbilityLiteral is Parser.Ability_Activated)
             {
                    
             }
+            else if(ParsedExpression.AbilityLiteral is Parser.Ability_Triggered)
+            {
+                Expression_TriggeredAbility Result = new Expression_TriggeredAbility();
+                Result.Ability = ConvertTriggered(OutDiagnostics, AssociatedUnit, NewEnvir, (Parser.Ability_Triggered)ParsedExpression.AbilityLiteral);
+                ReturnValue = Result;
+                OutType = typeof(TriggeredAbility);
+            }
             else if(ParsedExpression.AbilityLiteral is Parser.Ability_Continous)
             {
-
                 Expression_ContinousAbility Result = new Expression_ContinousAbility();
-                Result.Ability = ConvertContinous(OutDiagnostics,AssociatedUnit,Envir,(Parser.Ability_Continous)ParsedExpression.AbilityLiteral);
+                Result.Ability = ConvertContinous(OutDiagnostics,AssociatedUnit, NewEnvir, (Parser.Ability_Continous)ParsedExpression.AbilityLiteral);
                 ReturnValue = Result;
                 OutType = typeof(ContinousAbility);
             }
@@ -707,7 +780,7 @@ namespace UnitScript
                 {
                     Expression_Variable NewValue = new Expression_Variable();
                     NewValue.VarName  = VarToken.Value;
-                    OutType = Envir.GetVar(VarToken.Value).GetType();
+                    OutType = Envir.GetVarType(VarToken.Value);
                     ReturnValue = NewValue;
                 }
                 else
@@ -854,6 +927,21 @@ namespace UnitScript
                     Type OutType = null;
                     NewEffect.Contents.Add(ConvertExpression(OutDiagnostics,Context,AssociatedUnit,Envir, ((Parser.AbilityStatement_Expression)Statement).Expr,out OutType));
                 }
+                else if(Statement is Parser.AbilityStatement_Assignment)
+                {
+                    var Assignment = Statement as Parser.AbilityStatement_Assignment;
+                    if(Envir.HasVar(Assignment.Variable.Value))
+                    {
+                        OutDiagnostics.Add(new Diagnostic(Assignment.Variable, "Variables in the same scope with the same name is not allowed"));
+                    }
+                    Type OutType = null;
+                    var Expr = ConvertExpression(OutDiagnostics, Context, AssociatedUnit, Envir, Assignment.Expr,out OutType);
+                    Envir.AddVarType(Assignment.Variable.Value,OutType);
+                    Expression_Assignment Effect = new();
+                    Effect.VariableName = Assignment.Variable.Value;
+                    Effect.VariableValue = Expr;
+                    NewEffect.Contents.Add(Effect);
+                }
             }
             ReturnValue.Expr = NewEffect;
             return ReturnValue;
@@ -923,6 +1011,7 @@ namespace UnitScript
             }
             return ReturnValue;
         }
+
         public RuleManager.Ability_Activated ConvertActivated(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,Parser.Ability_Activated ParsedAbility)
         {
             RuleManager.Ability_Activated ReturnValue = new RuleManager.Ability_Activated();
@@ -943,6 +1032,71 @@ namespace UnitScript
             AssociatedUnit.CurrentEffectID += 1;
             //AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivationTargets;
 
+            return ReturnValue;
+        }
+        class TriggerEventInfo
+        {
+            public RuleManager.TriggerType Event;
+            public List<RuleManager.TargetType> PossibleTargets = new();
+
+            public TriggerEventInfo()
+            {
+
+            }
+            public TriggerEventInfo(RuleManager.TriggerType Event,List<RuleManager.TargetType> Targets)
+            {
+                this.Event = Event;
+                PossibleTargets = Targets;
+            }
+        }
+
+        Dictionary<string, TriggerEventInfo> m_TriggerEvents = new Dictionary<string, TriggerEventInfo> { 
+            { "NewBattleround", new TriggerEventInfo(RuleManager.TriggerType.BattleroundBegin,new List<RuleManager.TargetType>()) } 
+        };
+        public RuleManager.Ability_Triggered ConvertTriggered(List<Diagnostic> OutDiagnostics,ResourceManager.UnitResource AssociatedUnity,EvaluationEnvironment Envir, Parser.Ability_Triggered ParsedAbility)
+        {
+            RuleManager.Ability_Triggered ReturnValue = new();
+            RuleManager.TriggerCondition_Or Condition = new();
+            foreach(var Kind in ParsedAbility.TriggerKinds)
+            {
+                if(!m_TriggerEvents.ContainsKey(Kind.Value))
+                {
+                    OutDiagnostics.Add(new Diagnostic(Kind, "Invalid trigger kind: " + Kind.Value));
+                }
+                else
+                {
+                    var Info = m_TriggerEvents[Kind.Value];
+                    Condition.ConditionsToSatisfy.Add(new RuleManager.TriggerCondition_Type(Info.Event));
+                }
+                ReturnValue.Condition = Condition;
+            }
+            var Targets = new List<RuleManager.UnitScriptTarget>();
+            var ConvertedTargetInfo = ConvertTargets(OutDiagnostics, AssociatedUnity, Envir, ParsedAbility.Targets) as RuleManager.TargetInfo_List;
+            if(ConvertedTargetInfo.Targets.Count > 0)
+            {
+                Targets = (ConvertedTargetInfo.Targets[0] as RuleManager.TargetCondition_UnitScript).Targets;
+            }
+            ReturnValue.TriggeredEffect = ConvertEffect(OutDiagnostics,EvalContext.Resolve, AssociatedUnity, Envir, ParsedAbility.Statements);
+            (ReturnValue.TriggeredEffect as RuleManager.Effect_UnitScript).Targets = Targets;
+            if(ParsedAbility.Targets.Count != 0)
+            {
+                var Kind = ParsedAbility.TriggerKinds[ParsedAbility.TriggerKinds.Count - 1];
+                if (m_TriggerEvents.ContainsKey(Kind.Value))
+                {
+                    var Info = m_TriggerEvents[Kind.Value];
+                    for(int i = 0; i < Info.PossibleTargets.Count && i < Targets.Count;i++)
+                    {
+                        if(Info.PossibleTargets[i] != Targets[i].Type)
+                        {
+                            OutDiagnostics.Add(new Diagnostic(ParsedAbility.Targets[i].Name, "Invalid target type for trigger event \"" + Kind.Value + "\""));
+                        }
+                    }
+                    for (int i = Info.PossibleTargets.Count; i < Targets.Count; i++)
+                    {
+                        OutDiagnostics.Add(new Diagnostic(ParsedAbility.Targets[i].Name, "Invalid target type for trigger event \"" + Kind.Value + "\""));
+                    }
+                }
+            }
             return ReturnValue;
         }
         public RuleManager.Ability_Continous ConvertContinous(List<Diagnostic> OutDiagnostics, ResourceManager.UnitResource AssociatedUnit, EvaluationEnvironment Envir,Parser.Ability_Continous ParsedAbility)
@@ -985,6 +1139,11 @@ namespace UnitScript
                 var NewAbility = ConvertActivated(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Activated)ParsedAbility);
                 AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = NewAbility.ActivatedEffect;
                 AssociatedUnit.CurrentEffectID += 1;
+                ReturnValue.Ability = NewAbility;
+            }
+            else if(ParsedAbility is Parser.Ability_Triggered)
+            {
+                var NewAbility = ConvertTriggered(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Triggered)ParsedAbility);
                 ReturnValue.Ability = NewAbility;
             }
             else if(ParsedAbility is Parser.Ability_Continous)

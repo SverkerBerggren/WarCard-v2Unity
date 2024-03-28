@@ -145,6 +145,8 @@ namespace RuleManager
         public int ResourceID = -1;
         public UnitScript.Expression Expr;
         public List<UnitScriptTarget> Targets = null;
+        [NonSerialized]
+        public UnitScript.EvaluationEnvironment Envir;
     }
     public class Effect_ContinousUnitScript : Effect
     {
@@ -498,6 +500,7 @@ namespace RuleManager
     {
         public TriggerCondition Condition;
         public Effect TriggeredEffect;
+        public TargetRetriever Targets = new();
         public Ability_Triggered() : base(AbilityType.Triggered)
         {
 
@@ -879,6 +882,7 @@ namespace RuleManager
     {
         And,
         Type,
+        Or,
         None
     }
     public class TriggerCondition : MBJson.JSONTypeConverter
@@ -894,6 +898,10 @@ namespace RuleManager
             else if(NewType == TriggerConditionType.And)
             {
                 return typeof(TriggerCondition_And);
+            }
+            else if(NewType == TriggerConditionType.Or)
+            {
+                return typeof(TriggerCondition_Or);
             }
             else
             {
@@ -913,6 +921,19 @@ namespace RuleManager
         public TriggerCondition_And(params TriggerCondition[] Conditions)
         {
             Type = TriggerConditionType.And;
+            ConditionsToSatisfy = new List<TriggerCondition>(Conditions);
+        }
+    }
+    public class TriggerCondition_Or : TriggerCondition
+    {
+        public List<TriggerCondition> ConditionsToSatisfy = new List<TriggerCondition>();
+        public TriggerCondition_Or()
+        {
+            Type = TriggerConditionType.Or;
+        }
+        public TriggerCondition_Or(params TriggerCondition[] Conditions)
+        {
+            Type = TriggerConditionType.Or;
             ConditionsToSatisfy = new List<TriggerCondition>(Conditions);
         }
     }
@@ -1508,6 +1529,8 @@ namespace RuleManager
             public EffectSource TriggerSource;
             public TargetRetriever AffectedEntities;
             public Effect TriggerEffect;
+            [NonSerialized]
+            public UnitScript.EvaluationEnvironment Envir;
         }
         int p_RegisterTrigger(RegisteredTrigger Trigger)
         {
@@ -1536,6 +1559,19 @@ namespace RuleManager
                     if(!p_TriggerIsTriggered(Event,SubCondition))
                     {
                         ReturnValue = false;
+                        break;
+                    }
+                }
+            }
+            else if (ConditionToVerify is TriggerCondition_Or)
+            {
+                ReturnValue = false;
+                TriggerCondition_Or OrCondition = (TriggerCondition_Or)ConditionToVerify;
+                foreach (TriggerCondition SubCondition in OrCondition.ConditionsToSatisfy)
+                {
+                    if (p_TriggerIsTriggered(Event, SubCondition))
+                    {
+                        ReturnValue = true;
                         break;
                     }
                 }
@@ -1870,8 +1906,16 @@ namespace RuleManager
                         CurrentIndex++;
                     }
                 }
-                //Add "this"
-                m_ScriptHandler.Eval(AssociatedUnit.Envir,UnitEffect.Expr);
+                if(UnitEffect.Envir != null)
+                {
+                    m_ScriptHandler.Eval(UnitEffect.Envir, UnitEffect.Expr);
+                }
+                else
+                {
+                    UnitScript.EvaluationEnvironment NewEnvir = new();
+                    NewEnvir.SetParent(AssociatedUnit.Envir);
+                    m_ScriptHandler.Eval(NewEnvir, UnitEffect.Expr);
+                }
             }
             else if (EffectToResolve is Effect_DealDamage)
             {
@@ -2711,11 +2755,14 @@ namespace RuleManager
         {
             if (m_TheStack.Count > 0 && m_PriorityTabled && m_CurrentPlayerPriority == m_TheStack.Peek().Source.PlayerIndex)
             {
-                IEnumerator ResolveResult = p_ResolveTopOfStack();
-                bool NotFinished = ResolveResult.MoveNext();
-                if (NotFinished)
+                while(m_TheStack.Count > 0)
                 {
-                    m_CurrentResolution = ResolveResult;
+                    IEnumerator ResolveResult = p_ResolveTopOfStack();
+                    bool NotFinished = ResolveResult.MoveNext();
+                    if (NotFinished)
+                    {
+                        m_CurrentResolution = ResolveResult;
+                    }
                 }
             }
             else if (m_EndOfTurnPass && m_CurrentPlayerTurn != m_CurrentPlayerPriority)
@@ -2968,10 +3015,18 @@ namespace RuleManager
         object p_DamageArea(UnitScript.BuiltinFuncArgs Args)
         {
             EffectSource Source = (EffectSource)Args.Envir.GetVar("SOURCE");
-            UnitIdentifier SourceUnit = (UnitIdentifier)Args.Arguments[0];
+            List<Coordinate> OriginTile = new();
             int Range = (int)Args.Arguments[1];
             int Damage = (int)Args.Arguments[2];
-            List<Coordinate> OriginTile =p_GetAbsolutePositions(m_UnitInfos[SourceUnit.ID].TopLeftCorner, m_UnitInfos[SourceUnit.ID].UnitTileOffsets);
+            if (Args.Arguments[0] is UnitIdentifier)
+            {
+                UnitIdentifier SourceUnit = (UnitIdentifier)Args.Arguments[0];
+                OriginTile = p_GetAbsolutePositions(m_UnitInfos[SourceUnit.ID].TopLeftCorner, m_UnitInfos[SourceUnit.ID].UnitTileOffsets);
+            }
+            else
+            {
+                OriginTile.Add(Args.Arguments[0] as Coordinate);
+            }
             HashSet<int> AffectedUnits = new HashSet<int>();
             foreach(Coordinate CurrentTile in p_GetTiles(Range,OriginTile))
             {
@@ -3013,10 +3068,19 @@ namespace RuleManager
         object p_Range(UnitScript.BuiltinFuncArgs Args)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
-            UnitIdentifier UnitOrigin = (UnitIdentifier)Args.Arguments[0];
-            UnitInfo Info = p_GetProcessedUnitInfo(UnitOrigin.ID);
+            List<Coordinate> Tiles = new List<Coordinate> {};
+            if(Args.Arguments[0] is UnitIdentifier)
+            {
+                UnitIdentifier UnitOrigin = (UnitIdentifier)Args.Arguments[0];
+                UnitInfo Info = p_GetProcessedUnitInfo(UnitOrigin.ID);
+                Tiles = p_GetAbsolutePositions(Info.TopLeftCorner, Info.UnitTileOffsets);
+            }
+            else if(Args.Arguments[0] is Coordinate)
+            {
+                Tiles.Add(Args.Arguments[0] as Coordinate);
+            }
             int Range = (int)Args.Arguments[1];
-            ReturnValue = p_GetTiles(Range,p_GetAbsolutePositions(Info.TopLeftCorner,Info.UnitTileOffsets));
+            ReturnValue = p_GetTiles(Range,Tiles);
             return ReturnValue;
         }
         object p_RegisterContinous(UnitScript.BuiltinFuncArgs Args)
@@ -3038,6 +3102,30 @@ namespace RuleManager
             //EffectToRegister.AbilitySource = new EffectSource_Empty();
             EffectToRegister.AbilitySource = (EffectSource)Args.Envir.GetVar("SOURCE");
             p_RegisterContinousEffect(EffectToRegister);
+            return null;
+        }
+        object p_RegisterTrigger(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitScript.TriggeredAbility AbilityToRegister = (UnitScript.TriggeredAbility)Args.Arguments[0];
+            RegisteredTrigger EffectToRegister = new ();
+            EffectToRegister.TriggerCondition = AbilityToRegister.Ability.Condition;
+            EffectToRegister.TriggerEffect = AbilityToRegister.Ability.TriggeredEffect;
+            EffectToRegister.TriggerSource = (EffectSource)Args.Envir.GetVar("SOURCE");
+            EffectToRegister.AffectedEntities = new TargetRetriever_Empty();
+
+            if (Args.KeyArguments.ContainsKey("IsOneShot"))
+            {
+                EffectToRegister.IsOneShot = (bool)Args.KeyArguments["IsOneShot"];
+            }
+            if (Args.KeyArguments.ContainsKey("IsEndOfTurn"))
+            {
+                EffectToRegister.IsEndOfTurn = (bool)Args.KeyArguments["IsEndOfTurn"];
+            }
+            //OBS Effect source most likely depreactd, should bbe baked in the unit environemnt
+            //returned by the "lambda"
+            //EffectToRegister.AbilitySource = new EffectSource_Empty();
+            EffectToRegister.Envir = AbilityToRegister.Envir;
+            p_RegisterTrigger(EffectToRegister);
             return null;
         }
         object p_Tag(UnitScript.BuiltinFuncArgs Args)
@@ -3070,15 +3158,24 @@ namespace RuleManager
         {
             object AnimationObject = Args.Arguments[0];
             bool IsOverlayed = Args.KeyArguments.ContainsKey("Overlayed") && (bool)Args.KeyArguments["Overlayed"];
-            UnitIdentifier UnitPosition = (UnitIdentifier)Args.Arguments[1];
-            if(IsOverlayed)
+            if(Args.Arguments[1] is UnitIdentifier)
             {
-                m_AnimationPlayer.PlayAnimation(m_UnitInfos[UnitPosition.ID].TopLeftCorner,AnimationObject);
+                UnitIdentifier UnitPosition = (UnitIdentifier)Args.Arguments[1];
+                if (IsOverlayed)
+                {
+                    m_AnimationPlayer.PlayAnimation(m_UnitInfos[UnitPosition.ID].TopLeftCorner, AnimationObject);
+                }
+                else
+                {
+                    m_AnimationPlayer.PlayAnimation(UnitPosition.ID, AnimationObject);
+                }
             }
-            else
+            else if(Args.Arguments[1] is Coordinate)
             {
-                m_AnimationPlayer.PlayAnimation(UnitPosition.ID,AnimationObject);
+                m_AnimationPlayer.PlayAnimation(Args.Arguments[1] as Coordinate, AnimationObject);
             }
+
+            
             return null;
         }
         public Dictionary<string,UnitScript.Builtin_FuncInfo> GetUnitScriptFuncs()
@@ -3114,7 +3211,7 @@ namespace RuleManager
             ReturnValue["RefreshUnit"] = RefreshUnit;
 
             UnitScript.Builtin_FuncInfo DamageArea = new UnitScript.Builtin_FuncInfo();
-            DamageArea.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(int)},new HashSet<Type>{typeof(int)}};
+            DamageArea.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier),typeof(Coordinate)},new HashSet<Type>{typeof(int)},new HashSet<Type>{typeof(int)}};
             DamageArea.ResultType = typeof(void);
             DamageArea.ValidContexts = UnitScript.EvalContext.Resolve;
             DamageArea.Callable = p_DamageArea;
@@ -3149,7 +3246,7 @@ namespace RuleManager
             ReturnValue["Distance"] = Distance;
 
             UnitScript.Builtin_FuncInfo Range = new UnitScript.Builtin_FuncInfo();
-            Range.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)},new HashSet<Type>{typeof(int)}};
+            Range.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier),typeof(Coordinate)},new HashSet<Type>{typeof(int)}};
             Range.ResultType = typeof(List<Coordinate>);
             Range.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
             Range.Callable = p_Range;
@@ -3163,8 +3260,16 @@ namespace RuleManager
             RegisterContinous.Callable = p_RegisterContinous;
             ReturnValue["RegisterContinous"] = RegisterContinous;
 
+            UnitScript.Builtin_FuncInfo RegisterTrigger = new UnitScript.Builtin_FuncInfo();
+            RegisterTrigger.ArgTypes = new List<HashSet<Type>> { new HashSet<Type> { typeof(UnitScript.TriggeredAbility) } };
+            RegisterTrigger.KeyArgTypes = new Dictionary<string, Type> { { "IsOneShot", typeof(bool) }, { "IsEndOfTurn", typeof(bool) } };
+            RegisterTrigger.ResultType = typeof(void);
+            RegisterTrigger.ValidContexts = UnitScript.EvalContext.Resolve;
+            RegisterTrigger.Callable = p_RegisterTrigger;
+            ReturnValue["RegisterTrigger"] = RegisterTrigger;
+
             UnitScript.Builtin_FuncInfo PlayAnimation = new UnitScript.Builtin_FuncInfo();
-            PlayAnimation.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(ResourceManager.Animation)},new HashSet<Type>{typeof(UnitIdentifier)}};
+            PlayAnimation.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(ResourceManager.Animation)},new HashSet<Type>{typeof(UnitIdentifier),typeof(Coordinate)}};
             PlayAnimation.KeyArgTypes = new Dictionary<string, Type>{{"Overlayed",typeof(bool)}};
             PlayAnimation.ResultType = typeof(void);
             PlayAnimation.ValidContexts = UnitScript.EvalContext.Resolve;
