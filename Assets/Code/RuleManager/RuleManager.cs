@@ -153,6 +153,7 @@ namespace RuleManager
         public string UnitName;
         public int EffectID = -1;
         public int ResourceID = -1;
+        public UnitScript.EvaluationEnvironment Envir = null;
         public UnitScript.Expression Expr;
     }
     public class Effect_GainInitiative : Effect
@@ -690,6 +691,7 @@ namespace RuleManager
         public int ConditionID = 0;
         public int ResourceID = 0;
         public List<UnitScriptTarget> Targets;
+        public UnitScript.EvaluationEnvironment Envir = null;
     }
     public class TargetCondition_Type : TargetCondition
     {
@@ -1890,6 +1892,7 @@ namespace RuleManager
                 }
                 EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
                 UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
+                UnitScript.EvaluationEnvironment NewEnvir = new();
 
                 //Add targets
                 int CurrentIndex = 0;
@@ -1899,27 +1902,25 @@ namespace RuleManager
                     {
                         if (Target is Target_Unit)
                         {
-                            AssociatedUnit.Envir.AddVar(UnitEffect.Targets[CurrentIndex].Name, new UnitIdentifier(((Target_Unit)Target).UnitID));
+                            NewEnvir.AddVar(UnitEffect.Targets[CurrentIndex].Name, new UnitIdentifier(((Target_Unit)Target).UnitID));
                         }
                         else if (Target is Target_Tile)
                         {
-                            AssociatedUnit.Envir.AddVar(UnitEffect.Targets[CurrentIndex].Name , ((Target_Tile)Target).TargetCoordinate);
+                            NewEnvir.AddVar(UnitEffect.Targets[CurrentIndex].Name , ((Target_Tile)Target).TargetCoordinate);
                         }
                         CurrentIndex++;
                     }
                 }
-                if(UnitEffect.Envir != null)
+                NewEnvir.AddVar("SOURCE", UnitSource);
+                NewEnvir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
+                if (UnitEffect.Envir != null)
                 {
-                    UnitEffect.Envir.AddVar("SOURCE", UnitSource);
-                    UnitEffect.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
+                    NewEnvir.SetParent(UnitEffect.Envir);
                     m_ScriptHandler.Eval(UnitEffect.Envir, UnitEffect.Expr);
                 }
                 else
                 {
-                    UnitScript.EvaluationEnvironment NewEnvir = new();
                     NewEnvir.SetParent(AssociatedUnit.Envir);
-                    NewEnvir.AddVar("SOURCE", UnitSource);
-                    NewEnvir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
                     m_ScriptHandler.Eval(NewEnvir, UnitEffect.Expr);
                 }
             }
@@ -2253,7 +2254,14 @@ namespace RuleManager
                 EffectSource_Unit Unit = (EffectSource_Unit)Source;
                 UnitScript.EvaluationEnvironment NewEnvir = new();
                 UnitInfo SourceUnit = m_UnitInfos[Unit.UnitID];
-                NewEnvir.SetParent(SourceUnit.Envir);
+                if(UnitScriptTarget.Envir != null)
+                {
+                    NewEnvir.SetParent(UnitScriptTarget.Envir);
+                }
+                else
+                {
+                    NewEnvir.SetParent(SourceUnit.Envir);
+                }
                 int CurrentIndex = 0;
                 foreach(Target PrevTarget in CurrentTargets)
                 {
@@ -2282,13 +2290,13 @@ namespace RuleManager
                 }
                 NewEnvir.AddVar("this", new UnitIdentifier(SourceUnit.UnitID) );
                 UnitScript.Expression ExprToEvaluate = UnitScriptTarget.Targets[CurrentIndex].Condition;
-                object Result = m_ScriptHandler.Eval(SourceUnit.Envir,ExprToEvaluate);
+                object Result = m_ScriptHandler.Eval(NewEnvir, ExprToEvaluate);
                 if( !(Result is bool) || !((bool)Result))
                 {
                     ReturnValue = false;
                     if(NewEnvir.HasVar("ERROR"))
                     {
-                        Error = (string)SourceUnit.Envir.GetVar("ERROR");
+                        Error = (string)NewEnvir.GetVar("ERROR");
                     }
                 }
             }
@@ -4107,7 +4115,14 @@ namespace RuleManager
                 Effect_ContinousUnitScript UnitScriptEffect = (Effect_ContinousUnitScript)Modifier;
                 UnitInfo SourceUnit = m_UnitInfos[ ((EffectSource_Unit) Source).UnitID];
                 UnitScript.EvaluationEnvironment NewEnvir = new();
-                NewEnvir.SetParent(SourceUnit.Envir);
+                if(UnitScriptEffect.Envir != null)
+                {
+                    NewEnvir.SetParent(UnitScriptEffect.Envir);
+                }
+                else
+                {
+                    NewEnvir.SetParent(SourceUnit.Envir);
+                }
                 NewEnvir.AddVar(UnitScriptEffect.UnitName,InfoToModify);
                 m_ScriptHandler.Eval(NewEnvir,UnitScriptEffect.Expr);
             }
