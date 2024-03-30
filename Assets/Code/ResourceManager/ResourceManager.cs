@@ -49,6 +49,7 @@ namespace ResourceManager
         //needed to support serialisation
         public Dictionary<int, RuleManager.Effect> TotalEffects = new();
         public Dictionary<int, RuleManager.TargetCondition> TotalTargetConditions = new();
+        public Dictionary<int, UnitScript.AbilityInformation> TotalAbilities = new();
         public int ResourceID = 0;
 
         public int CurrentEffectID = 0;

@@ -1299,7 +1299,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     {
         ruleManager.RestoreState(g_ResourceManager, SavedData);
         int Height = ruleManager.GetHeight();
-        int Width = ruleManager.GetHeight();
+        int Width = ruleManager.GetWidth();
 
         HashSet<int> RegisteredUnits = new();
         for(int i = 0; i < Height;i++)
