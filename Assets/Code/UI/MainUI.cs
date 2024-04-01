@@ -830,6 +830,18 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         return jsonToSave;
     }
 
+
+    public void FromJson(MBJson.JSONObject json)
+    {
+        List<KeyValuePair<int, TileColoringEffect>> coloringEffects = MBJson.JSONObject.DeserializeObject<List<KeyValuePair<int, TileColoringEffect>>>(json);
+        tileColorIndicatorIndex = coloringEffects[coloringEffects.Count - 1].Key;
+
+        foreach(KeyValuePair<int,TileColoringEffect> pair in coloringEffects)
+        {
+            coloringEffects.Add(pair);
+        }
+        PaintTiles();
+    }
     public void OnUnitRotation(int UnitID, RuleManager.Coordinate NewRotation)
     {
         UnitInfo MovedUnit = ruleManager.GetUnitInfo(UnitID);
