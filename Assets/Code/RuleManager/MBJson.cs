@@ -39,6 +39,11 @@ namespace MBJson
             m_Type = JSONType.Integer;
             m_InternalData = IntegerData;
         }
+        public JSONObject(float FloatData)
+        {
+            m_Type = JSONType.Float;
+            m_InternalData = FloatData;
+        }
         public JSONObject(List<JSONObject> Contents)
         {
             m_Type = JSONType.Array;
@@ -79,6 +84,14 @@ namespace MBJson
                 throw new System.Exception("Object not of boolean type");
             }
             return ((bool)m_InternalData);
+        }
+        public float GetFloatData()
+        {
+            if (m_Type != JSONType.Float)
+            {
+                throw new System.Exception("Object not of float type");
+            }
+            return ((float)m_InternalData);
         }
         public List<JSONObject> GetArrayData()
         {
@@ -436,6 +449,14 @@ namespace MBJson
             {
                 ReturnValue = new JSONObject((bool)(object)ObjectToSerialize);
             }
+            else if(ObjectToSerialize is float)
+            {
+                ReturnValue = new JSONObject((float)(object)ObjectToSerialize);
+            }
+            else if (ObjectToSerialize is double)
+            {
+                ReturnValue = new JSONObject( (float)(double)ObjectToSerialize);
+            }
             else if(ObjectType.IsEnum)
             {
                 ReturnValue = new JSONObject(Convert.ToInt32(ObjectToSerialize));
@@ -507,6 +528,16 @@ namespace MBJson
             {
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetBooleanData();
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                Return = true;
+                ReturnValue = (T)(object)ObjectToParse.GetFloatData();
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                Return = true;
+                ReturnValue = (T)(object)ObjectToParse.GetFloatData();
             }
             else if(typeof(T).IsEnum)
             {
