@@ -752,13 +752,13 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 TileColoringEffect effect = new TileColoringEffect(Color.cyan, null, coordinates);
                 tileColorINdexTORemoveDebug = AddColoringEffect(effect);
                 debugTileColoring = true;
+                ToJson();
             }
             else
             {
                 RemoveColoringEffect(tileColorINdexTORemoveDebug);
                 debugTileColoring = false;
             }
-
         }
 
         if (Input.GetKeyDown(KeyCode.J))
@@ -810,6 +810,24 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         
 
+    }
+
+    public MBJson.JSONObject ToJson()
+    {
+        //MBJson.JSONObject jsonToSave =  MBJson.JSONObject.SerializeObject(coloringEffects);
+        MBJson.JSONObject jsonToSave = new MBJson.JSONObject(new Dictionary<string,MBJson.JSONObject>());
+
+
+        List<KeyValuePair<int, TileColoringEffect>> coloringIds = new List<KeyValuePair<int, TileColoringEffect>>();
+
+        foreach(KeyValuePair<int,TileColoringEffect> pair in coloringEffects)
+        {
+            coloringIds.Add(pair);
+        }
+        jsonToSave["colorEffects"] = MBJson.JSONObject.SerializeObject(coloringIds);
+        
+
+        return jsonToSave;
     }
 
     public void OnUnitRotation(int UnitID, RuleManager.Coordinate NewRotation)
