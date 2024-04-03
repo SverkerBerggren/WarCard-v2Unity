@@ -72,7 +72,7 @@ public class GameState : MonoBehaviour
             return;
         }
         if(m_PlayerActionRetrievers[PlayerIndex].getAvailableActions() > 0)
-        {
+         {
             print("Executing action");
             RuleManager.Action NewAction = m_PlayerActionRetrievers[PlayerIndex].PopAction();
             if(NewAction.PlayerIndex != PlayerIndex)
