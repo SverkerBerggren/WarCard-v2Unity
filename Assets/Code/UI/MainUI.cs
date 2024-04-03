@@ -479,9 +479,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     public int GetColorIndicatorIndex()
     {
-        tileColorIndicatorIndex += 1;
 
-        return tileColorIndicatorIndex -1;
+
+        return tileColorIndicatorIndex += 1;
     }
 
   //  public void AddRangeToColor(List<RuleManager.Coordinate> range, TileColoringEffect coloringEffect, int coloringEffectId)
@@ -521,7 +521,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             foreach (RuleManager.Coordinate coordinate in coloringEffect.Value.coordinateList)
             {
                 tileColorIndicators[coordinate.X][coordinate.Y].gameObject.SetActive(true);
-                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringEffect.Value);
+               // tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringEffect.Value.color);
+                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(Color.black);
             }
         }
     }
