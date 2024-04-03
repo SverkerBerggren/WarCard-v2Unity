@@ -525,11 +525,11 @@ namespace MBJson
         public static T DeserializeWithConstructors<T>(JSONObject ObjectToParse,Dictionary<Type,Func<object>> DefaultConstructors)
         {
             //T ReturnValue = new T();
-            T ReturnValue = default(T);
+            object ReturnValue = default(T);
             bool Return = false;
             if (ObjectToParse.GetJSONType() == JSONType.Null)
             {
-                return ReturnValue;
+                return (T)ReturnValue;
             }
             if (typeof(T) == typeof(int))
             {
@@ -563,7 +563,7 @@ namespace MBJson
             }
             if (Return)
             {
-                return (ReturnValue);
+                return (T) ReturnValue;
             }
             ConstructorInfo ConstructorToUse = typeof(T).GetConstructor(Type.EmptyTypes);
             if (ConstructorToUse == null)
@@ -654,7 +654,7 @@ namespace MBJson
                     Field.SetValue(ReturnValue, SerializedValue);
                 }
             }
-            return (ReturnValue);
+            return (T)ReturnValue;
         }
         public static T DeserializeObject<T>(JSONObject ObjectToParse)
         {
