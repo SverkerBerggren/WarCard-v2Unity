@@ -1350,7 +1350,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         FromJson(SavedData["UIInfo"]);
         ruleManager.RestoreState(g_ResourceManager, SavedData["RuleManager"]);
         int Height = ruleManager.GetHeight();
-        int Width = ruleManager.GetHeight();
+        int Width = ruleManager.GetWidth();
 
         HashSet<int> RegisteredUnits = new();
         for(int i = 0; i < Height;i++)

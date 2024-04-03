@@ -23,7 +23,11 @@ namespace UnitScript
             this.Message = Message;
         }
     }
-
+    public class AbilityInformation
+    {
+        public RuleManager.Ability Ability;
+        public ResourceManager.Animation Icon = null;
+    }
     public class Expression
     {
 
@@ -132,7 +136,7 @@ namespace UnitScript
         Continous = 1<<4,
     }
 
-    public class EvaluationEnvironment
+    public class EvaluationEnvironment : MBJson.JSONSerializable,MBJson.JSONDeserializeable,IComparable<EvaluationEnvironment>
     {
         class ContentPair
         {
@@ -147,6 +151,98 @@ namespace UnitScript
         Dictionary<string, ContentPair> m_Contents = new Dictionary<string, ContentPair>();
         HashSet<string> m_ShadowRemoved = new HashSet<string>();
         EvaluationEnvironment m_Parent = null;
+
+        public int CompareTo(EvaluationEnvironment Envir)
+        {
+            if(m_Parent == null && Envir.m_Parent != null)
+            {
+                return -1;
+            }
+            else if(Envir.m_Parent == null && m_Parent != null)
+            {
+                return 1;
+            }
+            else
+            {
+                return Metadata.ID.CompareTo(Envir.Metadata.ID);
+            }
+        }
+
+        public bool HasParent()
+        {
+            return m_Parent != null;
+        }
+        public EvaluationEnvironment GetParent()
+        {
+            return m_Parent;
+        }
+
+        public MBJson.JSONObject Serialize()
+        {
+            MBJson.JSONObject ReturnValue = new(new Dictionary<string, MBJson.JSONObject>());
+            ReturnValue["Metadata"] = MBJson.JSONObject.SerializeObject(Metadata);
+            return ReturnValue;
+        }
+        public object Deserialize(MBJson.JSONObject ObjectToParse)
+        {
+            Metadata = MBJson.JSONObject.DeserializeObject<EnvirMetadata>(ObjectToParse["Metadata"]);
+            return this;
+        }
+
+        public MBJson.JSONObject SerializeEnvir()
+        {
+            MBJson.JSONObject ReturnValue = new(new Dictionary<string,MBJson.JSONObject>());
+            ReturnValue["Metadata"] = MBJson.JSONObject.SerializeObject(Metadata);
+            if(m_Parent != null)
+            {
+                ReturnValue["Parent"] = MBJson.JSONObject.SerializeObject(m_Parent.Metadata);
+            }
+            else
+            {
+                ReturnValue["Parent"] = new();
+            }
+            Dictionary<string, MBJson.JSONObject> Contents = new();
+            if (Metadata.ResourceID == -1)
+            {
+                foreach (var Pair in m_Contents)
+                {
+                    MBJson.JSONObject NewValue = new(new Dictionary<string, MBJson.JSONObject>());
+                    NewValue["Type"] = new(Pair.Value.Value.GetType().AssemblyQualifiedName);
+                    NewValue["Value"] = MBJson.JSONObject.SerializeObject(Pair.Value.Value);
+                    Contents[Pair.Key] = NewValue;
+                }
+            }
+            ReturnValue["Contents"] = new(Contents);
+            return ReturnValue;
+        }
+
+        public void DeserializeEnvir(MBJson.JSONObject ObjectToParse)
+        {
+            Metadata = MBJson.JSONObject.DeserializeObject<EnvirMetadata>(ObjectToParse["Metadata"]);
+            if(ObjectToParse["Parent"].GetJSONType() != MBJson.JSONType.Null)
+            {
+                m_Parent = new();
+                m_Parent.Metadata = MBJson.JSONObject.DeserializeObject<EnvirMetadata>(ObjectToParse["Parent"]);
+            }
+            if(Metadata.ResourceID == -1)
+            {
+                var ValueMap = ObjectToParse["Contents"];
+                foreach(var Pair in ValueMap.GetAggregateData())
+                {
+                    Type StoredType = Type.GetType(Pair.Value["Type"].GetStringData());
+                    ContentPair NewPair = new( typeof(MBJson.JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(StoredType).Invoke(null,new object[] { Pair.Value["Value"] }),StoredType);
+                    m_Contents[Pair.Key] = NewPair;
+                }
+            }
+        }
+
+        public EnvirMetadata Metadata = new();
+        public class EnvirMetadata
+        {
+            public int ID = 0;
+            public int ResourceID = -1;
+        }
+
         public bool HasVar(string VariableToCheck)
         {
             if(m_ShadowRemoved.Contains(VariableToCheck))
@@ -665,21 +761,23 @@ namespace UnitScript
             Type OutType = typeof(void);
             EvaluationEnvironment NewEnvir = new();
             NewEnvir.SetParent(Envir);
+
+            AbilityInformation ConvertedAbility = ConvertAbility(OutDiagnostics, AssociatedUnit, Envir, ParsedExpression.AbilityLiteral);
             if(ParsedExpression.AbilityLiteral is Parser.Ability_Activated)
             {
                    
             }
-            else if(ParsedExpression.AbilityLiteral is Parser.Ability_Triggered)
+            else if(ConvertedAbility.Ability is RuleManager.Ability_Triggered)
             {
                 Expression_TriggeredAbility Result = new Expression_TriggeredAbility();
-                Result.Ability = ConvertTriggered(OutDiagnostics, AssociatedUnit, NewEnvir, (Parser.Ability_Triggered)ParsedExpression.AbilityLiteral);
+                Result.Ability = ConvertedAbility.Ability as RuleManager.Ability_Triggered;
                 ReturnValue = Result;
                 OutType = typeof(TriggeredAbility);
             }
-            else if(ParsedExpression.AbilityLiteral is Parser.Ability_Continous)
+            else if(ConvertedAbility.Ability is RuleManager.Ability_Continous)
             {
                 Expression_ContinousAbility Result = new Expression_ContinousAbility();
-                Result.Ability = ConvertContinous(OutDiagnostics,AssociatedUnit, NewEnvir, (Parser.Ability_Continous)ParsedExpression.AbilityLiteral);
+                Result.Ability = ConvertedAbility.Ability as RuleManager.Ability_Continous;
                 ReturnValue = Result;
                 OutType = typeof(ContinousAbility);
             }
@@ -945,6 +1043,11 @@ namespace UnitScript
                 }
             }
             ReturnValue.Expr = NewEffect;
+
+            AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue;
+            ReturnValue.ResourceID = AssociatedUnit.ResourceID;
+            ReturnValue.EffectID = AssociatedUnit.CurrentEffectID;
+            AssociatedUnit.CurrentEffectID += 1;
             return ReturnValue;
         }
         RuleManager.TargetType StringToType(string Type)
@@ -1010,6 +1113,11 @@ namespace UnitScript
             {
                 ReturnValue.Targets.Add(Condition);
             }
+
+            AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = Condition;
+            Condition.ConditionID = AssociatedUnit.CurrentEffectID;
+            Condition.ResourceID = AssociatedUnit.ResourceID;
+            AssociatedUnit.CurrentEffectID++;
             return ReturnValue;
         }
 
@@ -1026,11 +1134,6 @@ namespace UnitScript
                 EffectToModify.Targets = ((ReturnValue.ActivationTargets as RuleManager.TargetInfo_List).Targets[0] as RuleManager.TargetCondition_UnitScript).Targets;
             }
 
-            AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivatedEffect;
-            var Effect = (ReturnValue.ActivatedEffect as RuleManager.Effect_UnitScript);
-            Effect.ResourceID = AssociatedUnit.ResourceID;
-            Effect.EffectID = AssociatedUnit.CurrentEffectID;
-            AssociatedUnit.CurrentEffectID += 1;
             //AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.ActivationTargets;
 
             return ReturnValue;
@@ -1117,19 +1220,9 @@ namespace UnitScript
             AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = ReturnValue.EffectToApply;
             Effect.ResourceID = AssociatedUnit.ResourceID;
             Effect.EffectID = AssociatedUnit.CurrentEffectID;
-
             AssociatedUnit.CurrentEffectID += 1;
-            AssociatedUnit.TotalTargetConditions[AssociatedUnit.CurrentEffectID] = ReturnValue.AffectedEntities;
-            var TargetCondition = ReturnValue.AffectedEntities as RuleManager.TargetCondition_UnitScript;
-            TargetCondition.ConditionID = AssociatedUnit.CurrentEffectID;
-            TargetCondition.ResourceID = AssociatedUnit.ResourceID;
-            AssociatedUnit.CurrentEffectID++;
+
             return ReturnValue;
-        }
-        public class AbilityInformation
-        {
-            public RuleManager.Ability Ability;
-            public ResourceManager.Animation Icon = null; 
         }
         public AbilityInformation ConvertAbility(List<Diagnostic> OutDiagnostics,ResourceManager.UnitResource AssociatedUnit,EvaluationEnvironment Envir,Parser.Ability ParsedAbility)
         {
@@ -1138,8 +1231,6 @@ namespace UnitScript
             if(ParsedAbility is Parser.Ability_Activated)
             {
                 var NewAbility = ConvertActivated(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Activated)ParsedAbility);
-                AssociatedUnit.TotalEffects[AssociatedUnit.CurrentEffectID] = NewAbility.ActivatedEffect;
-                AssociatedUnit.CurrentEffectID += 1;
                 ReturnValue.Ability = NewAbility;
             }
             else if(ParsedAbility is Parser.Ability_Triggered)
@@ -1149,7 +1240,6 @@ namespace UnitScript
             }
             else if(ParsedAbility is Parser.Ability_Continous)
             {
-                var NewAbility = ConvertContinous(OutDiagnostics,AssociatedUnit, Envir, (Parser.Ability_Continous)ParsedAbility);
                 ReturnValue.Ability = ConvertContinous(OutDiagnostics,AssociatedUnit,Envir,(Parser.Ability_Continous)ParsedAbility);
             }
             foreach(var Attribute in ParsedAbility.Attributes)
@@ -1202,6 +1292,8 @@ namespace UnitScript
                     }
                 }
             }
+            AssociatedUnit.TotalAbilities[AssociatedUnit.CurrentEffectID] = ReturnValue;
+            AssociatedUnit.CurrentEffectID++;
             return ReturnValue;
         }
         //returns null on error
@@ -1239,6 +1331,7 @@ namespace UnitScript
             ReturnValue.GameInfo.Stats = ConvertStats(ReturnValue.GameInfo,OutDiagnostics,ParsedUnit.Stats);
             ReturnValue.UIInfo = ConvertVisuals(OutDiagnostics, ReturnValue, ReturnValue.GameInfo.Envir,ParsedUnit.visuals);
             ReturnValue.Name = ParsedUnit.Name.Value;
+            ReturnValue.GameInfo.Envir.Metadata.ResourceID = ReturnValue.ResourceID;
             foreach(Parser.VariableDeclaration Vars in ParsedUnit.Variables)
             {
                 int ErrCount = OutDiagnostics.Count;

@@ -31,11 +31,13 @@ namespace RuleManager
             {
                 Content["EffectID"] = new MBJson.JSONObject( (this as Effect_UnitScript).EffectID);
                 Content["ResourceID"] = new MBJson.JSONObject((this as Effect_UnitScript).ResourceID);
+                Content["Envir"] = MBJson.JSONObject.SerializeObject((this as Effect_UnitScript).Envir);
             }
             else if (this is Effect_ContinousUnitScript)
             {
                 Content["EffectID"] = new MBJson.JSONObject((this as Effect_ContinousUnitScript).EffectID);
                 Content["ResourceID"] = new MBJson.JSONObject((this as Effect_ContinousUnitScript).ResourceID);
+                Content["Envir"] = MBJson.JSONObject.SerializeObject((this as Effect_ContinousUnitScript).Envir);
             }
             else
             {
@@ -59,6 +61,10 @@ namespace RuleManager
             if (ObjectToParse.HasAttribute("ResourceID"))
             {
                 ReturnValue.ResourceID= ObjectToParse["ResourceID"].GetIntegerData();
+            }
+            if (ObjectToParse.HasAttribute("Envir"))
+            {
+                ReturnValue.Envir = MBJson.JSONObject.DeserializeObject<UnitScript.EvaluationEnvironment>(ObjectToParse["Envir"]);
             }
             return ReturnValue;
         }
@@ -145,7 +151,6 @@ namespace RuleManager
         public int ResourceID = -1;
         public UnitScript.Expression Expr;
         public List<UnitScriptTarget> Targets = null;
-        [NonSerialized]
         public UnitScript.EvaluationEnvironment Envir;
     }
     public class Effect_ContinousUnitScript : Effect
@@ -668,6 +673,7 @@ namespace RuleManager
                 var Data = this as TargetCondition_UnitScript;
                 Content["ConditionID"] = new(Data.ConditionID);
                 Content["ResourceID"] = new(Data.ResourceID);
+                Content["Envir"] = MBJson.JSONObject.SerializeObject(Data.Envir);
             }
             return ReturnValue;
         }
@@ -678,9 +684,13 @@ namespace RuleManager
             {
                 ReturnValue.ConditionID = ObjectToDeserialize["ConditionID"].GetIntegerData();
             }
-            else if (ObjectToDeserialize.HasAttribute("ResourceID"))
+            if (ObjectToDeserialize.HasAttribute("ResourceID"))
             {
                 ReturnValue.ResourceID = ObjectToDeserialize["ResourceID"].GetIntegerData();
+            }
+            if(ObjectToDeserialize.HasAttribute("Envir"))
+            {
+                ReturnValue.Envir = MBJson.JSONObject.DeserializeObject<UnitScript.EvaluationEnvironment>(ObjectToDeserialize["Envir"]);
             }
             return ReturnValue;
         }
@@ -1352,7 +1362,7 @@ namespace RuleManager
     public class RuleManager
     {
         //retunrs UnitInfo with invalid UnitID on error, that is to say UnitID = 0
-        private Dictionary<int,UnitInfo> m_UnitInfos;
+        private Dictionary<int, UnitInfo> m_UnitInfos;
         private List<List<TileInfo>> m_Tiles;
 
         private readonly int m_PlayerCount = 2;
@@ -1362,9 +1372,9 @@ namespace RuleManager
 
         private int m_CurrentRoundCount = 1;
         private int m_BattleRoundCount = 0;
-        
+
         private bool m_EndOfTurnPass = false;
-        int m_CurrentTriggerID = 1000; 
+        int m_CurrentTriggerID = 1000;
         int m_CurrentContinousID = 1000000;
 
         //effects to remove on unit killed, continous id to remove
@@ -1405,16 +1415,11 @@ namespace RuleManager
         AnimationPlayer m_AnimationPlayer;
         [NonSerialized]
         UnitScript.UnitConverter m_ScriptHandler;
-        
+
 
         public RuleManager()
         {
 
-        }
-        public MBJson.JSONObject Serialize()
-        {
-            MBJson.JSONObject ReturnValue = MBJson.JSONObject.SerializeObject(this);
-            return ReturnValue;
         }
 
         public int GetWidth()
@@ -1431,21 +1436,24 @@ namespace RuleManager
             return m_TheStack;
         }
 
-
-        Effect p_RestoreEffect(ResourceManager.ResourceManager Resources, Effect OldEffect)
+        Effect p_RestoreEffect(ResourceManager.ResourceManager Resources, Effect OldEffect,EnvironmentRestorer EnvirRestorer)
         {
             Effect ReturnValue = null;
-            if(OldEffect is Effect_UnitScript)
+            if (OldEffect is Effect_UnitScript)
             {
                 var SavedEffect = OldEffect as Effect_UnitScript;
                 var EffectFromResource = Resources.GetUnitResource(SavedEffect.ResourceID).TotalEffects[SavedEffect.EffectID];
-                if(EffectFromResource is Effect_UnitScript)
+                if (EffectFromResource is Effect_UnitScript)
                 {
                     SavedEffect.Animation = EffectFromResource.Animation;
                     SavedEffect.Expr = (EffectFromResource as Effect_UnitScript).Expr;
                     SavedEffect.Targets = (EffectFromResource as Effect_UnitScript).Targets;
+                    if(SavedEffect.Envir != null)
+                    {
+                        SavedEffect.Envir = EnvirRestorer.RestoreEnvir(SavedEffect.Envir);
+                    }
                 }
-                else if(EffectFromResource is Effect_ContinousUnitScript)
+                else if (EffectFromResource is Effect_ContinousUnitScript)
                 {
                     var ResourceEffect = EffectFromResource as Effect_ContinousUnitScript;
                     var NewContinousEffect = new Effect_ContinousUnitScript();
@@ -1454,6 +1462,11 @@ namespace RuleManager
                     NewContinousEffect.Animation = EffectFromResource.Animation;
                     NewContinousEffect.UnitName = ResourceEffect.UnitName;
                     NewContinousEffect.Expr = ResourceEffect.Expr;
+                    if(SavedEffect.Envir != null)
+                    {
+                        NewContinousEffect.Envir = EnvirRestorer.RestoreEnvir(SavedEffect.Envir);
+                    }
+                    return NewContinousEffect;
                 }
                 return SavedEffect;
             }
@@ -1463,7 +1476,7 @@ namespace RuleManager
             }
             return ReturnValue;
         }
-        TargetCondition p_RestoreTargetCondition(ResourceManager.ResourceManager Resources, TargetCondition OldCondition)
+        TargetCondition p_RestoreTargetCondition(ResourceManager.ResourceManager Resources, TargetCondition OldCondition, EnvironmentRestorer EnvirRestorer)
         {
             TargetCondition ReturnValue = null;
             if (OldCondition is TargetCondition_UnitScript)
@@ -1471,12 +1484,121 @@ namespace RuleManager
                 var SavedCondition = OldCondition as TargetCondition_UnitScript;
                 var ConditionFromResource = Resources.GetUnitResource(SavedCondition.ResourceID).TotalTargetConditions[SavedCondition.ConditionID];
                 SavedCondition.Targets = (ConditionFromResource as TargetCondition_UnitScript).Targets;
-                return ReturnValue;
+                if(SavedCondition.Envir != null)
+                {
+                    SavedCondition.Envir = EnvirRestorer.RestoreEnvir(SavedCondition.Envir);
+                }
+                return SavedCondition;
             }
             else
             {
                 throw new Exception("Can only deserialise saved unit script target conditions!");
             }
+            return ReturnValue;
+        }
+
+        class EnvironmentRestorer
+        {
+            private Dictionary<int, int> m_IDToIndex = new();
+            private List<UnitScript.EvaluationEnvironment> m_Envirs = new();
+
+            public EnvironmentRestorer(ResourceManager.ResourceManager Resources, MBJson.JSONObject Envirs)
+            {
+                List<MBJson.JSONObject> SerializedEnvirs = Envirs.GetArrayData();
+                foreach(var Envir in SerializedEnvirs)
+                {
+                    UnitScript.EvaluationEnvironment NewEnvir = new();
+                    NewEnvir.DeserializeEnvir(Envir);
+                    m_Envirs.Add(NewEnvir);
+                }
+                //assumed to be sorted
+                for(int i = 0; i < m_Envirs.Count;i++)
+                {
+                    var Envir = m_Envirs[i];
+                    m_IDToIndex[Envir.Metadata.ID] = i;
+                    if(Envir.Metadata.ResourceID != -1)
+                    {
+                        m_Envirs[i] = Resources.GetUnitResource(Envir.Metadata.ResourceID).GameInfo.Envir;
+                    }
+                }
+                for(int i = 0; i < m_Envirs.Count;i++)
+                {
+                    if(m_Envirs[i].HasParent())
+                    {
+                        m_Envirs[i].SetParent(m_Envirs[m_IDToIndex[m_Envirs[i].GetParent().Metadata.ID]]);
+                    }
+                }
+            }
+            public UnitScript.EvaluationEnvironment RestoreEnvir(UnitScript.EvaluationEnvironment EnvirToRestore)
+            {
+                return m_Envirs[m_IDToIndex[EnvirToRestore.Metadata.ID]];
+            }
+        }
+        int p_AddEnvir(Dictionary<object,int> LoadedEnvirs,List<UnitScript.EvaluationEnvironment> TotalEnvirs,int CurrentID,UnitScript.EvaluationEnvironment NewEnvir)
+        {
+            if(NewEnvir != null)
+            {
+                if(!LoadedEnvirs.ContainsKey(NewEnvir))
+                {
+                    LoadedEnvirs[NewEnvir] = CurrentID;
+                    NewEnvir.Metadata.ID = CurrentID;
+                    TotalEnvirs.Add(NewEnvir);
+                    CurrentID += 1;
+                    if(NewEnvir.HasParent())
+                    {
+                        CurrentID = p_AddEnvir(LoadedEnvirs, TotalEnvirs, CurrentID, NewEnvir.GetParent());
+                    }
+                }
+            }
+            return CurrentID;
+        }
+        MBJson.JSONObject p_SerializeEnvirs()
+        {
+            Dictionary<object, int> LoadedEnvirs = new();
+            int CurrentEnvirID = 0;
+            List<UnitScript.EvaluationEnvironment> TotalEnvirs = new();
+            foreach (var Trigger in m_RegisteredTriggeredAbilities)
+            {
+                if (Trigger.Value.TriggerEffect is Effect_UnitScript)
+                {
+                    CurrentEnvirID = p_AddEnvir(LoadedEnvirs,TotalEnvirs,CurrentEnvirID,(Trigger.Value.TriggerEffect as Effect_UnitScript).Envir);
+                }
+            }
+            foreach (var ContinousAbility in m_RegisteredContinousAbilities)
+            {
+                if (ContinousAbility.Value.EffectToApply is Effect_ContinousUnitScript)
+                {
+                    CurrentEnvirID = p_AddEnvir(LoadedEnvirs, TotalEnvirs,CurrentEnvirID, (ContinousAbility.Value.EffectToApply as Effect_ContinousUnitScript).Envir);
+                }
+                if (ContinousAbility.Value.AffectedEntities is TargetCondition_UnitScript)
+                {
+                    CurrentEnvirID = p_AddEnvir(LoadedEnvirs, TotalEnvirs,CurrentEnvirID, (ContinousAbility.Value.AffectedEntities as TargetCondition_UnitScript).Envir);
+                }
+            }
+            foreach (var StackEntity in m_TheStack)
+            {
+                if (StackEntity.EffectToResolve is Effect_UnitScript)
+                {
+                    CurrentEnvirID = p_AddEnvir(LoadedEnvirs, TotalEnvirs, CurrentEnvirID, (StackEntity.EffectToResolve as Effect_UnitScript).Envir);
+                }
+            }
+            TotalEnvirs.Sort();
+            List<MBJson.JSONObject> SerializedEnvirs = new();
+            foreach (var Envir in TotalEnvirs)
+            {
+                if (Envir != null)
+                {
+                    SerializedEnvirs.Add(Envir.SerializeEnvir());
+                }
+            }
+            return new(SerializedEnvirs);
+        }
+
+        public MBJson.JSONObject Serialize()
+        {
+            var SerializedEnvirs = p_SerializeEnvirs();
+            MBJson.JSONObject ReturnValue = MBJson.JSONObject.SerializeObject(this);
+            ReturnValue["TotalEnvironments"] = SerializedEnvirs;
             return ReturnValue;
         }
         public void RestoreState(ResourceManager.ResourceManager Resources,MBJson.JSONObject SavedGamestate)
@@ -1492,6 +1614,7 @@ namespace RuleManager
                 }
                 Field.SetValue(this, Field.GetValue(RawStoredGamestate));
             }
+
             //restored units from resource manager
             foreach(var Unit in m_UnitInfos)
             {
@@ -1502,18 +1625,26 @@ namespace RuleManager
                     Unit.Value.Envir = Resources.GetUnitResource(Unit.Value.OpaqueInteger).GameInfo.Envir;
                 }
             }
+            
+            //Restore environments
+            var EnvirRestorer = new EnvironmentRestorer(Resources, SavedGamestate["TotalEnvironments"]);
+
             foreach(var Trigger in m_RegisteredTriggeredAbilities)
             {
-                Trigger.Value.TriggerEffect = p_RestoreEffect(Resources, Trigger.Value.TriggerEffect);
+                Trigger.Value.TriggerEffect = p_RestoreEffect(Resources, Trigger.Value.TriggerEffect,EnvirRestorer);
+                if(Trigger.Value.Envir != null)
+                {
+                    Trigger.Value.Envir = EnvirRestorer.RestoreEnvir(Trigger.Value.Envir);
+                }
             }
             foreach(var ContinousAbility in m_RegisteredContinousAbilities)
             {
-                ContinousAbility.Value.EffectToApply = p_RestoreEffect(Resources, ContinousAbility.Value.EffectToApply);
-                ContinousAbility.Value.AffectedEntities = p_RestoreTargetCondition(Resources, ContinousAbility.Value.AffectedEntities);
+                ContinousAbility.Value.EffectToApply = p_RestoreEffect(Resources, ContinousAbility.Value.EffectToApply,EnvirRestorer);
+                ContinousAbility.Value.AffectedEntities = p_RestoreTargetCondition(Resources, ContinousAbility.Value.AffectedEntities,EnvirRestorer);
             }
             foreach(var StackEntity in m_TheStack)
             {
-                StackEntity.EffectToResolve = p_RestoreEffect(Resources, StackEntity.EffectToResolve);
+                StackEntity.EffectToResolve = p_RestoreEffect(Resources, StackEntity.EffectToResolve,EnvirRestorer);
             }
         }
 
@@ -1534,7 +1665,6 @@ namespace RuleManager
             public EffectSource TriggerSource;
             public TargetRetriever AffectedEntities;
             public Effect TriggerEffect;
-            [NonSerialized]
             public UnitScript.EvaluationEnvironment Envir;
         }
         int p_RegisterTrigger(RegisteredTrigger Trigger)
