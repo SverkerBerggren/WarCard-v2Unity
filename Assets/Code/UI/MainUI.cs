@@ -811,34 +811,46 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         
 
     }
+    class KeyValue<KeyT, ValT>
+    {
+        public KeyValue()
+        {
+
+        }
+        public KeyValue(KeyT Key,ValT Value)
+        {
+            this.Key = Key;
+            this.Value = Value;
+        }
+        public KeyT Key;
+        public ValT Value;
+    }
 
     public MBJson.JSONObject ToJson()
     {
         //MBJson.JSONObject jsonToSave =  MBJson.JSONObject.SerializeObject(coloringEffects);
         MBJson.JSONObject jsonToSave = new MBJson.JSONObject(new Dictionary<string,MBJson.JSONObject>());
 
-
-        List<KeyValuePair<int, TileColoringEffect>> coloringIds = new List<KeyValuePair<int, TileColoringEffect>>();
-
+        List<KeyValue<int, TileColoringEffect>> coloringIds = new List<KeyValue<int, TileColoringEffect>>();
         foreach(KeyValuePair<int,TileColoringEffect> pair in coloringEffects)
         {
-            coloringIds.Add(pair);
+            coloringIds.Add(new KeyValue<int, TileColoringEffect>(pair.Key,pair.Value));
         }
         jsonToSave["colorEffects"] = MBJson.JSONObject.SerializeObject(coloringIds);
-        
-
         return jsonToSave;
     }
 
 
     public void FromJson(MBJson.JSONObject json)
     {
-        List<KeyValuePair<int, TileColoringEffect>> coloringEffects = MBJson.JSONObject.DeserializeObject<List<KeyValuePair<int, TileColoringEffect>>>(json);
-        tileColorIndicatorIndex = coloringEffects[coloringEffects.Count - 1].Key;
+        Dictionary<Type, Func<object>> DefaultConstructors = new Dictionary<Type, Func<object>>();
+        DefaultConstructors[typeof(UnityEngine.Color)] = () => new UnityEngine.Color(0,0,0,0);
+        List<KeyValue<int, TileColoringEffect>> serializedColorings = MBJson.JSONObject.DeserializeWithConstructors<List<KeyValue<int, TileColoringEffect>>>(json["colorEffects"],DefaultConstructors);
+        tileColorIndicatorIndex = serializedColorings[serializedColorings.Count - 1].Key;
 
-        foreach(KeyValuePair<int,TileColoringEffect> pair in coloringEffects)
+        foreach(KeyValue<int,TileColoringEffect> pair in serializedColorings)
         {
-            coloringEffects.Add(pair);
+            coloringEffects.Add(pair.Key, pair.Value);
         }
         PaintTiles();
     }
@@ -1259,16 +1271,24 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         }
 
     }
+    MBJson.JSONObject CreateSave()
+    {
+        MBJson.JSONObject ReturnValue = new(new Dictionary<string, MBJson.JSONObject>());
+        ReturnValue["RuleManager"] = ruleManager.Serialize();
+        ReturnValue["UIInfo"] = ToJson();
+        return ReturnValue;
+    }
+
     public RuleManager.Action PopAction()
     {
         //DEBUG
         string SaveFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Warcards/Save.json";
         var OutFile = new System.IO.FileStream(SaveFile, System.IO.FileMode.Create);
-        var ObjectToWrite = ruleManager.Serialize();
+        var ObjectToWrite = CreateSave();
         OutFile.Write(System.Text.UTF8Encoding.UTF8.GetBytes( ObjectToWrite.ToString()));
         OutFile.Flush();
         OutFile.Close();
-        var DeserializedFile = MBJson.JSONObject.DeserializeObject<RuleManager.RuleManager>(ObjectToWrite);
+        //var DeserializedFile = MBJson.JSONObject.DeserializeObject<RuleManager.RuleManager>(ObjectToWrite);
         return ExecutedActions.Dequeue();
     }
     public int getAvailableActions()
@@ -1327,7 +1347,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
     private void InitilizeFromSave(MBJson.JSONObject SavedData)
     {
-        ruleManager.RestoreState(g_ResourceManager, SavedData);
+        FromJson(SavedData["UIInfo"]);
+        ruleManager.RestoreState(g_ResourceManager, SavedData["RuleManager"]);
         int Height = ruleManager.GetHeight();
         int Width = ruleManager.GetHeight();
 

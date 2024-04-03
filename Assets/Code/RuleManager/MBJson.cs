@@ -87,9 +87,13 @@ namespace MBJson
         }
         public float GetFloatData()
         {
-            if (m_Type != JSONType.Float)
+            if (m_Type != JSONType.Float && m_Type != JSONType.Integer)
             {
                 throw new System.Exception("Object not of float type");
+            }
+            if(m_Type == JSONType.Integer)
+            {
+                return (int)m_InternalData;
             }
             return ((float)m_InternalData);
         }
@@ -97,7 +101,7 @@ namespace MBJson
         {
             if (m_Type != JSONType.Array)
             {
-                throw new System.Exception("Object not of string type");
+                throw new System.Exception("Object not of array type");
             }
             return ((List<JSONObject>)m_InternalData);
         }
@@ -220,21 +224,34 @@ namespace MBJson
         }
         static JSONObject Parse_Integer(byte[] Buffer, int Offset, out int OutOffset)
         {
-            int ReturnValue = 0;
+            JSONObject ReturnValue = new(0);
             int ParseOffset = Offset;
             int IntegerBegin = ParseOffset;
             int IntEnd = IntegerBegin;
+
+            bool IsFloat = false;
             while(IntEnd < Buffer.Length)
             {
-                if(!(Buffer[IntEnd] >= '0' && Buffer[IntEnd] <= '9') && Buffer[IntEnd] != '-')
+                if(!(Buffer[IntEnd] >= '0' && Buffer[IntEnd] <= '9') && Buffer[IntEnd] != '-' && Buffer[IntEnd] != '.')
                 {
                     break;
+                }
+                if(Buffer[IntEnd] == '.')
+                {
+                    IsFloat = true;
                 }
                 IntEnd += 1;
             }
             try
             {
-                ReturnValue = int.Parse(System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin));
+                if(!IsFloat)
+                {
+                    ReturnValue = new(int.Parse(System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin)));
+                }
+                else
+                {
+                    ReturnValue = new(float.Parse(System.Text.Encoding.UTF8.GetString(Buffer, IntegerBegin, IntEnd - IntegerBegin)));
+                }
             }
             catch (Exception )
             {
@@ -244,7 +261,7 @@ namespace MBJson
             }
 
             OutOffset = IntEnd;
-            return (new JSONObject(ReturnValue));
+            return ReturnValue;
         }
         static JSONObject Parse_Null(byte[] Buffer, int Offset, out int OutOffset)
         {
@@ -505,16 +522,16 @@ namespace MBJson
             //else if(ObjectToSerialize is Dictionary<string,)
             return (ReturnValue);
         }
-        public static T DeserializeObject<T>(JSONObject ObjectToParse)
+        public static T DeserializeWithConstructors<T>(JSONObject ObjectToParse,Dictionary<Type,Func<object>> DefaultConstructors)
         {
             //T ReturnValue = new T();
             T ReturnValue = default(T);
             bool Return = false;
-            if(ObjectToParse.GetJSONType() == JSONType.Null)
+            if (ObjectToParse.GetJSONType() == JSONType.Null)
             {
                 return ReturnValue;
             }
-            if(typeof(T) == typeof(int))
+            if (typeof(T) == typeof(int))
             {
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetIntegerData();
@@ -524,7 +541,7 @@ namespace MBJson
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetStringData();
             }
-            else if(typeof(T) == typeof(bool))
+            else if (typeof(T) == typeof(bool))
             {
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetBooleanData();
@@ -539,28 +556,38 @@ namespace MBJson
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetFloatData();
             }
-            else if(typeof(T).IsEnum)
+            else if (typeof(T).IsEnum)
             {
                 Return = true;
                 ReturnValue = (T)(object)ObjectToParse.GetIntegerData();
             }
-            if(Return)
+            if (Return)
             {
                 return (ReturnValue);
             }
             ConstructorInfo ConstructorToUse = typeof(T).GetConstructor(Type.EmptyTypes);
-            if(ConstructorToUse == null)
+            if (ConstructorToUse == null)
             {
-                string ErrorString = "Error Deserializing type: no default constructor avaialbe for " + typeof(T).Name;
-                throw new Exception(ErrorString);
+                if (DefaultConstructors == null || !DefaultConstructors.ContainsKey(typeof(T))) 
+                {
+                    string ErrorString = "Error Deserializing type: no default constructor avaialbe for " + typeof(T).Name;
+                    throw new Exception(ErrorString);
+                }
+                else
+                {
+                    ReturnValue = (T)DefaultConstructors[typeof(T)]();
+                }
             }
-            ReturnValue = (T)typeof(T).GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
-            if(ReturnValue is JSONDeserializeable)
+            else
+            {
+                ReturnValue = (T)typeof(T).GetConstructor(Type.EmptyTypes).Invoke(new object[] { });
+            }
+            if (ReturnValue is JSONDeserializeable)
             {
                 JSONDeserializeable JsonSerializer = (JSONDeserializeable)ReturnValue;
-                ReturnValue = (T) JsonSerializer.Deserialize(ObjectToParse);
+                ReturnValue = (T)JsonSerializer.Deserialize(ObjectToParse);
             }
-            else if(ReturnValue is JSONTypeConverter)
+            else if (ReturnValue is JSONTypeConverter)
             {
                 JSONTypeConverter Converter = ReturnValue as JSONTypeConverter;
                 MBJson.DynamicJSONDeserializer Deserializer = new MBJson.DynamicJSONDeserializer(Converter);
@@ -574,21 +601,23 @@ namespace MBJson
                 Type KeyType = ReturnType.GetGenericArguments()[0];
                 foreach (KeyValuePair<string, JSONObject> SerializedField in SerializedDictionary)
                 {
-                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[1]).Invoke(null, new object[] {SerializedField.Value});
+                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeWithConstructors").MakeGenericMethod(ReturnType.GenericTypeArguments[1]).Invoke(
+                        null, new object[] { SerializedField.Value,DefaultConstructors });
                     object ConvertedKey = SerializedField.Key;
-                    if(KeyType == typeof(int))
+                    if (KeyType == typeof(int))
                     {
                         ConvertedKey = int.Parse(SerializedField.Key);
                     }
-                    DictionaryData.Add(ConvertedKey,SerializedValue);
+                    DictionaryData.Add(ConvertedKey, SerializedValue);
                 }
             }
-            else if(ReturnValue.GetType().IsGenericType && ReturnValue.GetType().GetGenericTypeDefinition() ==  typeof(Stack<>))
+            else if (ReturnValue.GetType().IsGenericType && ReturnValue.GetType().GetGenericTypeDefinition() == typeof(Stack<>))
             {
                 Type ReturnType = ReturnValue.GetType();
                 foreach (JSONObject ListEntry in ObjectToParse.GetArrayData())
                 {
-                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[0]).Invoke(null, new object[] { ListEntry });
+                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeWithConstructors").MakeGenericMethod(ReturnType.GenericTypeArguments[0]).
+                        Invoke(null, new object[] { ListEntry, DefaultConstructors });
                     var PushMethod = ReturnValue.GetType().GetMethod("Push");
                     PushMethod.Invoke(ReturnValue, new object[] { SerializedValue });
                 }
@@ -600,7 +629,8 @@ namespace MBJson
                 List<JSONObject> SerializedList = ObjectToParse.GetArrayData();
                 foreach (JSONObject ListEntry in SerializedList)
                 {
-                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeObject").MakeGenericMethod(ReturnType.GenericTypeArguments[0]).Invoke(null, new object[] { ListEntry});
+                    object SerializedValue = typeof(JSONObject).GetMethod("DeserializeWithConstructors").MakeGenericMethod(ReturnType.GenericTypeArguments[0]).
+                        Invoke(null, new object[] { ListEntry , DefaultConstructors });
                     ListToModify.Add(SerializedValue);
                 }
             }
@@ -616,15 +646,19 @@ namespace MBJson
                     {
                         continue;
                     }
-                    MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeObject");
+                    MethodInfo DeserializeMethod = typeof(JSONObject).GetMethod("DeserializeWithConstructors");
                     //throw new Exception(Field.Name +" "+ Field.FieldType.ToString());
                     //throw new Exception(DeserializeMethod.ToString());
                     MethodInfo MethodToCall = DeserializeMethod.MakeGenericMethod(Field.FieldType);
-                    object SerializedValue = MethodToCall.Invoke(null, new object[] { SerializedObjectData[Field.Name]});
+                    object SerializedValue = MethodToCall.Invoke(null, new object[] { SerializedObjectData[Field.Name], DefaultConstructors });
                     Field.SetValue(ReturnValue, SerializedValue);
                 }
             }
             return (ReturnValue);
+        }
+        public static T DeserializeObject<T>(JSONObject ObjectToParse)
+        {
+            return DeserializeWithConstructors<T>(ObjectToParse, null);
         }
 
 
@@ -728,6 +762,10 @@ namespace MBJson
             else if(m_Type == JSONType.Null)
             {
                 ReturnValue = "null";
+            }
+            else if (m_Type == JSONType.Float)
+            {
+                ReturnValue = ((float)m_InternalData).ToString();
             }
             else if (m_Type == JSONType.String)
             {
