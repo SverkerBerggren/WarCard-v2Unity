@@ -521,8 +521,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             foreach (RuleManager.Coordinate coordinate in coloringEffect.Value.coordinateList)
             {
                 tileColorIndicators[coordinate.X][coordinate.Y].gameObject.SetActive(true);
-               // tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringEffect.Value.color);
-                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(Color.black);
+                tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(coloringEffect.Value.color);
+                //tileColorIndicators[coordinate.X][coordinate.Y].PaintTile(Color.black);
             }
         }
     }
