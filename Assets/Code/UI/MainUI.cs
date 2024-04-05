@@ -397,6 +397,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     private Dictionary<int, List<GameObject>> listOfActivationIndicators = new Dictionary<int, List<GameObject>>();
 
 
+    [SerializeField] private GameObject hpBarPrefab;
+    private Dictionary<int, HpBar> unitHpBar = new Dictionary<int, HpBar>();
 
     //public Dictionary<int, ResourceManager.UnitResource> m_OpaqueToUIInfo = new Dictionary<int, ResourceManager.UnitResource>();
 
@@ -793,6 +795,8 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
     public void OnUnitDamage(int unitId, int amount)
     {
         DamageVFX(unitId, amount);
+        unitHpBar[unitId].SetFromDamage(amount);
+
     }
 
     public void DamageVFX(int unitId, int amount)
@@ -955,7 +959,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             Coordinate TilePos = NewPosition + MovedUnit.UnitTileOffsets[i];
             listOfActivationIndicators[UnitID][i].transform.position = gridManager.GetTilePosition(TilePos);
         }
-        
+
+        unitHpBar[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
+        unitHpBar[UnitID].AddOffset();
 
     }
 
@@ -1116,6 +1122,12 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
         stackObjectsToDestroy.Clear();
     }
 
+    private void CreateHpBar()
+    {
+
+    }
+
+
     public void OnScoreChange(int PlayerIndex,int NewScore)
     {
 
@@ -1138,8 +1150,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             Tile.SetActive(false);
         }
         listOfActivationIndicators.Remove(UnitID);
-    }
+        Destroy(unitHpBar[UnitID].gameObject);
 
+        unitHpBar.Remove(UnitID);
+    }
+//
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
     {
         canvasUIScript.changeTopFrame(CurrentPlayerTurnIndex);
@@ -1175,6 +1190,16 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
             unitToCreateVisualObject.GetComponent<SpriteRenderer>().flipX = true;
         }
         unitToCreateVisualObject.GetComponent<SpriteRenderer>().sortingOrder = p_GetSortingOrder(new Coordinate(NewUnit.TopLeftCorner.X, NewUnit.TopLeftCorner.Y));
+
+        HpBar hpBar = Instantiate(hpBarPrefab, localPositionCanvas.transform).GetComponent<HpBar>();
+        hpBar.transform.position = gridManager.GetTilePosition(NewUnit.TopLeftCorner);
+        hpBar.SetUp(NewUnit.Stats.HP);
+        hpBar.AddOffset();
+        
+        unitHpBar.Add(NewUnit.UnitID, hpBar);
+    
+
+
     }
 
     public void OnPlayerWin(int WinningPlayerIndex)
