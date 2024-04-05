@@ -32,6 +32,7 @@ public class CanvasUiScript : MonoBehaviour
     public TextMeshProUGUI Player1Score;
     public TextMeshProUGUI Player2Score;
 
+    public static CanvasUiScript instance;
     // Start is called before the first frame update
     void Start()
     {
@@ -46,7 +47,17 @@ public class CanvasUiScript : MonoBehaviour
         
     }
 
-
+    void Awake()
+    {
+        if (instance != null)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            instance = this;
+        }
+    }
 
     Sprite p_SpriteFromVisual(ResourceManager.Visual VisualToConvert)
     {
@@ -137,6 +148,9 @@ public class CanvasUiScript : MonoBehaviour
             abilityButton.unitInfo = unitInfo;
 
             var AssociatedUnit =mainUI.GetUnitUIInfo(unitInfo);
+
+            abilityButton.SetClickable(!unitInfo.AbilityActivated[i]);
+
             if (AssociatedUnit.UIInfo.AbilityIcons.ContainsKey(i))
             {
                 newButton.GetComponent<Image>().sprite = p_SpriteFromVisual(AssociatedUnit.UIInfo.AbilityIcons[i].VisualInfo);

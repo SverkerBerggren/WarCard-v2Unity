@@ -11,6 +11,8 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public MainUI mainUI; 
     RuleManager.RuleManager ruleManager;
 
+    [SerializeField]private Image buttonImage;
+
     public bool activatedAbility = false; 
 
     public int abilityIndex = -1;
@@ -23,6 +25,8 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
     public GameObject informationPopUp;
 
+    private bool clickable = true;
+
     public TextMeshProUGUI abilityFlavourText;
     public TextMeshProUGUI abilityDescriptionText;
     public TextMeshProUGUI abilityNameText;
@@ -33,9 +37,13 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public int playerIndex;
 
     public RuleManager.UnitInfo unitInfo;
+
+
     // Start is called before the first frame update
     void Start()
     {
+
+        //    buttonImage = GetComponent<Image>();
         clickHandlerAbility = FindObjectOfType<AbilityClickHandler>();
 
         informationPopUp.SetActive(false);
@@ -69,6 +77,10 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public void AbilityButtonClick()
     {
 
+        if(!clickable)
+        {
+            return;
+        }
         clickHandlerAbility.selectedAbilityIndex = abilityIndex;
         clickHandlerUnitSelect.ActivateAbilitySelection();
         clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>(whichTargets);
@@ -92,6 +104,8 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
             abilityToExecute.UnitID = unitInfo.UnitID;
 
             mainUI.EnqueueAction(abilityToExecute);
+            unitInfo.AbilityActivated[abilityIndex] = true;
+            CanvasUiScript.instance.createUnitCard(unitInfo);
 
         }
 
@@ -112,6 +126,17 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     void Update()
     {
         
+    }
+
+    public void SetClickable(bool clickable)
+    {
+        this.clickable = clickable;
+
+        if(!clickable )
+        {
+            buttonImage.color = new Color(255, 255, 255, 0.5f);
+        }
+
     }
 
     public void OnPointerClick(PointerEventData eventData)

@@ -497,6 +497,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainUI: {fileID: 0}
+  buttonImage: {fileID: 6644968833537666697}
   activatedAbility: 0
   abilityIndex: -1
   abilityName: 
@@ -513,6 +514,7 @@ MonoBehaviour:
     UnitID: 0
     PlayerIndex: 0
     OpaqueInteger: -1
+    Tags: []
     AbilityActivated: 
     Direction:
       X: 1
