@@ -1679,7 +1679,7 @@ namespace RuleManager
             int ReturnValue = m_CurrentContinousID;
             m_RegisteredContinousAbilities.Add(ReturnValue, ContinousEffect);
             m_CurrentContinousID += 1;
-            return (m_CurrentContinousID);
+            return (ReturnValue);
         }
         
 
