@@ -104,7 +104,7 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
             abilityToExecute.UnitID = unitInfo.UnitID;
 
             mainUI.EnqueueAction(abilityToExecute);
-            unitInfo.AbilityActivated[abilityIndex] = true;
+            unitInfo.AbilityActivationCount[abilityIndex] = 1;
             CanvasUiScript.instance.createUnitCard(unitInfo);
 
         }

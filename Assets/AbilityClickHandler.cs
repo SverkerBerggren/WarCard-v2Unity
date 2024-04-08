@@ -98,7 +98,7 @@ public class AbilityClickHandler : ClickHandler
                 if(GlobalNetworkState.IsLocal ||(selectedUnit.PlayerIndex == GlobalNetworkState.LocalPlayerIndex))
                 {
                     mainUi.EnqueueAction(abilityToExecute);
-                    selectedUnit.AbilityActivated[selectedAbilityIndex] = true;
+                    selectedUnit.AbilityActivationCount[selectedAbilityIndex] = 1;
                     canvasUIScript.createUnitCard(selectedUnit);
                 }
             }
