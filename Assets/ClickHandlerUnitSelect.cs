@@ -10,8 +10,11 @@ public class ClickHandlerUnitSelect : ClickHandler
     public Color ValidAttackColor;
 
     private Color MovementColor;
-    private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
-    private List<List<GameObject>> attackIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
+    // private List<List<GameObject>> movementIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
+    // private List<List<GameObject>> attackIndicatorObjectDictionary = new List<List<GameObject>>();//new Dictionary<RuleManager.Coordinate, GameObject>();
+    private int createdAttackRangedId = -1;
+    private int createdMovementRangedId = -1;
+    
     public UnitInfo selectedUnit;
 
     private bool abilityActionSelected = false;
@@ -37,8 +40,8 @@ public class ClickHandlerUnitSelect : ClickHandler
     public override void Setup(MainUI ui)
     {
         mainUi = ui;
-        CreateMovementObjects();
-        CreateAttackObjects();
+    //    CreateMovementObjects();
+    //    CreateAttackObjects();
         ruleManager = mainUi.ruleManager; 
         GameObject tempObject = Instantiate(ClickHandlerAbilityPrefab, new Vector3(), new Quaternion());
         ClickHandlerAbility = (AbilityClickHandler) tempObject.GetComponent<ClickHandler>();
@@ -158,6 +161,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         ClickHandlerAbility.Deactivate();
         resetSelection();
         DestroyMovementRange();
+        DestroyAttackRange();
     }
 
     public override bool OnHandleClick(ClickType clickType, Coordinate cord)
@@ -224,138 +228,164 @@ public class ClickHandlerUnitSelect : ClickHandler
 
     private void ConstructMovementRange(RuleManager.UnitInfo info)
     {
+    
+        DestroyMovementRange();
+        DestroyAttackRange();
+        
+        TileColoringEffect tileColorEffect = new TileColoringEffect(Color.blue, null, ruleManager.PossibleMoves(info.UnitID));
+        createdMovementRangedId = mainUi.AddColoringEffect(tileColorEffect);
 
 
-        int Height = info.Stats.Movement;
-        print("Movement range for ID: " + info.UnitID);
-
-        foreach (RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
-        {
-            movementIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
-            if((info.Flags & UnitFlags.HasMoved) != 0)
-            {
-                movementIndicatorObjectDictionary[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = new Color(MovementColor.r,MovementColor.g,MovementColor.b,MovementColor.a/2);
-            }
-        }
+    //   int Height = info.Stats.Movement;
+    //   print("Movement range for ID: " + info.UnitID);
+    //
+    //   foreach (RuleManager.Coordinate cord in ruleManager.PossibleMoves(info.UnitID))
+    //   {
+    //       movementIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
+    //       if((info.Flags & UnitFlags.HasMoved) != 0)
+    //       {
+    //           movementIndicatorObjectDictionary[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = new Color(MovementColor.r,MovementColor.g,MovementColor.b,MovementColor.a/2);
+    //       }
+    //   }
 
 
     }
     private void ConstructAttackRange(RuleManager.UnitInfo info)
     {
+        DestroyMovementRange();
+        DestroyAttackRange();
+        
+        TileColoringEffect tileColorEffect = new TileColoringEffect(Color.red, null, ruleManager.PossibleAttacks(info.UnitID));
+        createdAttackRangedId = mainUi.AddColoringEffect(tileColorEffect);
 
-
-        int Height = info.Stats.Range;
-
-
-        foreach (RuleManager.Coordinate cord in ruleManager.PossibleAttacks(info.UnitID))
-        {
-            attackIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
-            if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
-            {
-                AttackAction ActionToTest = new AttackAction(info.UnitID, ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-                ActionToTest.PlayerIndex = info.PlayerIndex;
-                string Error;
-                if (ruleManager.ActionIsValid(ActionToTest, out Error))
-                {
-                    print("Defender ID: " + ActionToTest.DefenderID);
-                    attackIndicatorObjectDictionary[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = ValidAttackColor;
-                }
-            }
-        }
+    //
+    //
+    //    foreach (RuleManager.Coordinate cord in ruleManager.PossibleAttacks(info.UnitID))
+    //    {
+    //        attackIndicatorObjectDictionary[cord.X][cord.Y].SetActive(true);
+    //        if(ruleManager.GetTileInfo(cord.X,cord.Y).StandingUnitID != 0)
+    //        {
+    //            AttackAction ActionToTest = new AttackAction(info.UnitID, ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+    //            ActionToTest.PlayerIndex = info.PlayerIndex;
+    //            string Error;
+    //            if (ruleManager.ActionIsValid(ActionToTest, out Error))
+    //            {
+    //                print("Defender ID: " + ActionToTest.DefenderID);
+    //                attackIndicatorObjectDictionary[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = ValidAttackColor;
+    //            }
+    //        }
+    //    }
 
 
     }
 
-    public void DestroyMovementRange()
-    {
+     public void DestroyMovementRange()
+     {
 
-
-
-        foreach (List<GameObject> obj in movementIndicatorObjectDictionary)
+        if(createdMovementRangedId != -1)
         {
-            //obj.SetActive(false);
 
-            foreach (GameObject ob in obj)
-            {
-                ob.SetActive(false);
-                ob.GetComponent<SpriteRenderer>().color = MovementColor;
-            }
+            mainUi.RemoveColoringEffect(createdMovementRangedId);
         }
+        else
+        {
+            createdMovementRangedId = -1;
+        }
+
+   
+      //   foreach (List<GameObject> obj in movementIndicatorObjectDictionary)
+      //   {
+      //       //obj.SetActive(false);
+      //
+      //       foreach (GameObject ob in obj)
+      //       {
+      //           ob.SetActive(false);
+      //           ob.GetComponent<SpriteRenderer>().color = MovementColor;
+      //       }
+      //   }
+   
+     }
+     public void DestroyAttackRange()
+     {
+
+        if (createdAttackRangedId != -1)
+        {
+
+            mainUi.RemoveColoringEffect(createdAttackRangedId);
+        }
+        else
+        {
+            createdAttackRangedId = -1;
+        }
+
+        //   foreach (List<GameObject> obj in attackIndicatorObjectDictionary)
+        //   {
+        //       //obj.SetActive(false);
+        //
+        //       foreach (GameObject ob in obj)
+        //       {
+        //           ob.SetActive(false);
+        //           ob.GetComponent<SpriteRenderer>().color = AttackColor;
+        //       }
+        //   }
 
     }
-    public void DestroyAttackRange()
-    {
-
-
-
-        foreach (List<GameObject> obj in attackIndicatorObjectDictionary)
-        {
-            //obj.SetActive(false);
-
-            foreach (GameObject ob in obj)
-            {
-                ob.SetActive(false);
-                ob.GetComponent<SpriteRenderer>().color = AttackColor;
-            }
-        }
-
-    }
-    private void CreateMovementObjects()
-    {
-        for (int i = 0; i < mainUi.gridManager.Width; i++)
-        {
-            movementIndicatorObjectDictionary.Add(new List<GameObject>());
-
-            for (int z = 0; z < mainUi.gridManager.Height; z++)
-            {
-                movementIndicatorObjectDictionary[i].Add(null);
-            }
-        }
-
-
-        for (int i = 0; i < mainUi.gridManager.Width; i++)
-        {
-            for (int z = 0; z < mainUi.gridManager.Height; z++)
-            {
-                GameObject newObject = Instantiate(MovementRange);
-                newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
-                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-                MovementColor = newObject.GetComponent<SpriteRenderer>().color;
-                //    print(tempCord.X + " " + tempCord.Y);
-                newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
-                movementIndicatorObjectDictionary[i][z] = newObject;
-                newObject.SetActive(false);
-            }
-        }
-    }
-    private void CreateAttackObjects()
-    {
-        for (int i = 0; i < mainUi.gridManager.Width; i++)
-        {
-            attackIndicatorObjectDictionary.Add(new List<GameObject>());
-
-            for (int z = 0; z < mainUi.gridManager.Height; z++)
-            {
-                attackIndicatorObjectDictionary[i].Add(null);
-            }
-        }
-
-
-        for (int i = 0; i < mainUi.gridManager.Width; i++)
-        {
-            for (int z = 0; z < mainUi.gridManager.Height; z++)
-            {
-                GameObject newObject = Instantiate(attackRange);
-                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-                newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
-                newObject.GetComponent<SpriteRenderer>().color = AttackColor;
-                //    print(tempCord.X + " " + tempCord.Y);
-                newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
-                attackIndicatorObjectDictionary[i][z] = newObject;
-                newObject.SetActive(false);
-            }
-        }
-    }
+  //  private void CreateMovementObjects()
+  //  {
+  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
+  //      {
+  //          movementIndicatorObjectDictionary.Add(new List<GameObject>());
+  //
+  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
+  //          {
+  //              movementIndicatorObjectDictionary[i].Add(null);
+  //          }
+  //      }
+  //
+  //
+  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
+  //      {
+  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
+  //          {
+  //              GameObject newObject = Instantiate(MovementRange);
+  //              newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
+  //              RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+  //              MovementColor = newObject.GetComponent<SpriteRenderer>().color;
+  //              //    print(tempCord.X + " " + tempCord.Y);
+  //              newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
+  //              movementIndicatorObjectDictionary[i][z] = newObject;
+  //              newObject.SetActive(false);
+  //          }
+  //      }
+  //  }
+  //  private void CreateAttackObjects()
+  //  {
+  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
+  //      {
+  //          attackIndicatorObjectDictionary.Add(new List<GameObject>());
+  //
+  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
+  //          {
+  //              attackIndicatorObjectDictionary[i].Add(null);
+  //          }
+  //      }
+  //
+  //
+  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
+  //      {
+  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
+  //          {
+  //              GameObject newObject = Instantiate(attackRange);
+  //              RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+  //              newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
+  //              newObject.GetComponent<SpriteRenderer>().color = AttackColor;
+  //              //    print(tempCord.X + " " + tempCord.Y);
+  //              newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
+  //              attackIndicatorObjectDictionary[i][z] = newObject;
+  //              newObject.SetActive(false);
+  //          }
+  //      }
+  //  }
     public Color RotationColor;
     public Color InvalidRotationColor;
     List<GameObject> m_RotationObjects = new List<GameObject>();
@@ -390,9 +420,9 @@ public class ClickHandlerUnitSelect : ClickHandler
     }
     void p_DestroySubElements()
     {
-        DestroyMovementRange();
+   //     DestroyMovementRange();
         ClickHandlerAbility.DestroyAbilityRangeIndicator();
-        DestroyAttackRange();
+     //   DestroyAttackRange();
         p_DeactivateRotationObjects();
         moveActionSelected = false;
         abilityActionSelected = false;

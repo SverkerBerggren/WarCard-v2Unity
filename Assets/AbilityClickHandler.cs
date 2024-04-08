@@ -19,9 +19,10 @@ public class AbilityClickHandler : ClickHandler
 
     public Color CorrectTargetColor = new Color(0,0.5f,0.5f);
     public Color TargetRangeColor = new Color(0,0.5f,0.5f);
-    private List<List<GameObject>> abilityRangeIndicators = new List<List<GameObject>>();
-    public GameObject abilityRangeIndicator;
-
+    //private List<List<GameObject>> abilityRangeIndicators = new List<List<GameObject>>();
+    // public GameObject abilityRangeIndicator;
+    private int createdAbilityRangeId = -1; 
+    private int createdValidTargetsRangeId = -1; 
 
     CanvasUiScript canvasUIScript;
     // Start is called before the first frame update
@@ -97,8 +98,11 @@ public class AbilityClickHandler : ClickHandler
                 if(GlobalNetworkState.IsLocal ||(selectedUnit.PlayerIndex == GlobalNetworkState.LocalPlayerIndex))
                 {
                     mainUi.EnqueueAction(abilityToExecute);
+                    selectedUnit.AbilityActivated[selectedAbilityIndex] = true;
+                    canvasUIScript.createUnitCard(selectedUnit);
                 }
             }
+
             Deactivate();
 
             print("den gor abiliten");
@@ -157,7 +161,7 @@ public class AbilityClickHandler : ClickHandler
     {
         mainUi = ui;
         canvasUIScript = ui.canvasUIScript;
-        CreateAbilityRangeIndicators();
+       // CreateAbilityRangeIndicators();
 
 
     }
@@ -166,69 +170,73 @@ public class AbilityClickHandler : ClickHandler
     public void ShowAbilityRangeIndicators(int UnitID, int effectIndex, List<Target> currentTargets)
     {
         DestroyAbilityRangeIndicator();
-        List<Coordinate> listOfCords = ruleManager.GetAbilityRange(UnitID, effectIndex, currentTargets);
-        foreach (RuleManager.Coordinate cord in listOfCords)
-        {
-            abilityRangeIndicators[cord.X][cord.Y].SetActive(true);
-            Target_Tile TileTarget = new Target_Tile(cord);
-            bool TargetIsValid = ruleManager.TargetIsValid(UnitID, effectIndex, currentTargets, TileTarget);
-            if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
-            {
-                Target_Unit UnitTarget = new Target_Unit(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
-                TargetIsValid = TargetIsValid || ruleManager.TargetIsValid(UnitID, effectIndex, currentTargets, UnitTarget);
-            }
-            if (TargetIsValid)
-            {
-                abilityRangeIndicators[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = CorrectTargetColor;
-                print("Changing color");
-            }
-        }
+        createdAbilityRangeId =  mainUi.AddColoringEffect(new TileColoringEffect(TargetRangeColor,null,ruleManager.GetAbilityRange(UnitID, effectIndex, currentTargets)));
+    //    createdAbilityRangeId =  mainUi.AddColoringEffect(new TileColoringEffect(TargetRangeColor,null,ruleManager.GetPossibleTargets( currentTargets)));
+
+        
+      //  foreach (RuleManager.Coordinate cord in listOfCords)
+      //  {
+      //      abilityRangeIndicators[cord.X][cord.Y].SetActive(true);
+      //      Target_Tile TileTarget = new Target_Tile(cord);
+      //      bool TargetIsValid = ruleManager.TargetIsValid(UnitID, effectIndex, currentTargets, TileTarget);
+      //      if (ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID != 0)
+      //      {
+      //          Target_Unit UnitTarget = new Target_Unit(ruleManager.GetTileInfo(cord.X, cord.Y).StandingUnitID);
+      //          TargetIsValid = TargetIsValid || ruleManager.TargetIsValid(UnitID, effectIndex, currentTargets, UnitTarget);
+      //      }
+      //      if (TargetIsValid)
+      //      {
+      //          abilityRangeIndicators[cord.X][cord.Y].GetComponent<SpriteRenderer>().color = CorrectTargetColor;
+      //          print("Changing color");
+      //      }
+      //  }
     } 
     public void DestroyAbilityRangeIndicator()
     {
-        foreach (List<GameObject> obj in abilityRangeIndicators)
+        if(createdAbilityRangeId != -1)
         {
-            //obj.SetActive(false);
-
-            foreach (GameObject ob in obj)
-            {
-                ob.SetActive(false);
-                ob.GetComponent<SpriteRenderer>().color = TargetRangeColor;
-            }
+            mainUi.RemoveColoringEffect(createdAbilityRangeId);
+            mainUi.RemoveColoringEffect(createdValidTargetsRangeId);
         }
+      //  foreach (List<GameObject> obj in abilityRangeIndicators)
+      //  {
+      //      //obj.SetActive(false);
+      //
+      //      foreach (GameObject ob in obj)
+      //      {
+      //          ob.SetActive(false);
+      //          ob.GetComponent<SpriteRenderer>().color = TargetRangeColor;
+      //      }
+      //  }
     } 
-    public void CreateAbilityRangeIndicators()
-    {
-        for (int i = 0; i < mainUi.gridManager.Width; i++)
-        {
-            abilityRangeIndicators.Add(new List<GameObject>());
+  //  public void CreateAbilityRangeIndicators()
+  //  {
+  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
+  //      {
+  //          abilityRangeIndicators.Add(new List<GameObject>());
+  //
+  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
+  //          {
+  //              abilityRangeIndicators[i].Add(null);
+  //          }
+  //      }
+  //
+  //
+  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
+  //      {
+  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
+  //          {
+  //              GameObject newObject = Instantiate(abilityRangeIndicator);
+  //              newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
+  //              RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
+  //              newObject.GetComponent<SpriteRenderer>().color = TargetRangeColor;
+  //              //    print(tempCord.X + " " + tempCord.Y);
+  //              newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
+  //              abilityRangeIndicators[i][z] = newObject;
+  //              newObject.SetActive(false);
+  //          }
+  //      }
+  //  }    
 
-            for (int z = 0; z < mainUi.gridManager.Height; z++)
-            {
-                abilityRangeIndicators[i].Add(null);
-            }
-        }
-
-
-        for (int i = 0; i < mainUi.gridManager.Width; i++)
-        {
-            for (int z = 0; z < mainUi.gridManager.Height; z++)
-            {
-                GameObject newObject = Instantiate(abilityRangeIndicator);
-                newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
-                RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-                newObject.GetComponent<SpriteRenderer>().color = TargetRangeColor;
-                //    print(tempCord.X + " " + tempCord.Y);
-                newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
-                abilityRangeIndicators[i][z] = newObject;
-                newObject.SetActive(false);
-            }
-        }
-    }    
-
-    public void CreateValidTargetIndicators()
-    {
-
-    }
 
 }

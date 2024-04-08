@@ -3475,6 +3475,12 @@ namespace RuleManager
             m_ScriptHandler = ScriptHandler;
             m_ScriptHandler.AddBuiltins(GetUnitScriptFuncs());
         }
+
+        public List<Coordinate> GetTiles(Target target )
+        {
+            return new List<Coordinate>();
+        }
+
         public List<Target> GetPossibleTargets(TargetCondition CurrentCondition , EffectSource Source, List<Target> CurrentTargets)
         {
             List<Target> ReturnValue = new List<Target>();
