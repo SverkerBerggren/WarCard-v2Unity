@@ -4,8 +4,8 @@ Artillery
     {
         HP = 200;
         Movement = 4;
-        Range = 30;
-        Damage = 25;
+        Range = 0;
+        Damage = 0;
         ObjectiveControll = 5;
         ActivationCost = 30;
     }
@@ -23,7 +23,13 @@ Artillery
             Description="Make a place on the map gebombt";
     {
         id = AddTileColoring(Range(stuff,3));
-        RegisterTrigger(triggered _ NewBattleround(){ 
+        RegisterTrigger(triggered _ 
+            NewBattleround() : 
+                Icon = Image("./PH_Artillery_2.png");
+                Name="Bombing";
+                Flavour="Shits going down";
+                Description="Place is getting gebombt";
+            { 
                 RemoveTileColoring(id);
                 MoveCamera(stuff);
                 PlayAnimation(Blast,stuff);

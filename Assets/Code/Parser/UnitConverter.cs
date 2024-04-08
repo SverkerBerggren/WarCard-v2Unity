@@ -25,6 +25,7 @@ namespace UnitScript
     }
     public class AbilityInformation
     {
+        public int Index = 0;
         public RuleManager.Ability Ability;
         public ResourceManager.Animation Icon = null;
     }
@@ -58,20 +59,24 @@ namespace UnitScript
     public class ContinousAbility
     {
         public EvaluationEnvironment Envir;
+        public int Index = 0;
         public RuleManager.Ability_Continous Ability;
     }
     public class TriggeredAbility
     {
         public EvaluationEnvironment Envir;
+        public int Index = 0;
         public RuleManager.Ability_Triggered Ability;
     }
     public class Expression_ContinousAbility : Expression
     {
+        public int Index = 0;
         public RuleManager.Ability_Continous Ability;
     }
 
     public class Expression_TriggeredAbility : Expression
     {
+        public int Index = 0;
         public RuleManager.Ability_Triggered Ability;
     }
     public enum ModificationType
@@ -641,6 +646,8 @@ namespace UnitScript
                 Result.Envir = new EvaluationEnvironment();
                 Result.Envir.SetParent(Envir);
                 Result.Ability = ContinousLiteral.Ability;
+                Result.Index = ContinousLiteral.Index;
+
                 (ContinousLiteral.Ability.AffectedEntities as RuleManager.TargetCondition_UnitScript).Envir = Envir;
                 (Result.Ability.EffectToApply as RuleManager.Effect_ContinousUnitScript).Envir = Result.Envir;
 
@@ -653,6 +660,7 @@ namespace UnitScript
                 Result.Envir = new EvaluationEnvironment();
                 Result.Envir.SetParent(Envir);
                 Result.Ability = TriggeredLiteral.Ability;
+                Result.Index = TriggeredLiteral.Index;
                 (Result.Ability.TriggeredEffect as RuleManager.Effect_UnitScript).Envir = Result.Envir;
                 ReturnValue = Result;
             }
@@ -771,6 +779,7 @@ namespace UnitScript
             {
                 Expression_TriggeredAbility Result = new Expression_TriggeredAbility();
                 Result.Ability = ConvertedAbility.Ability as RuleManager.Ability_Triggered;
+                Result.Index = ConvertedAbility.Index;
                 ReturnValue = Result;
                 OutType = typeof(TriggeredAbility);
             }
@@ -778,6 +787,7 @@ namespace UnitScript
             {
                 Expression_ContinousAbility Result = new Expression_ContinousAbility();
                 Result.Ability = ConvertedAbility.Ability as RuleManager.Ability_Continous;
+                Result.Index = ConvertedAbility.Index;
                 ReturnValue = Result;
                 OutType = typeof(ContinousAbility);
             }
@@ -1086,8 +1096,17 @@ namespace UnitScript
                     OutDiagnostics.Add(new Diagnostic(ParsedTarget.RangeBegin,5,"Result of range expression must be of type List<Coordinate>"));
                 }
             }
+            if (!(ParsedTarget.HoverBegin.Line == 0 && ParsedTarget.HoverBegin.ByteOffset == 0))
+            {
+                Type ResultType;
+                ReturnValue.Hover = ConvertExpression(OutDiagnostics, EvalContext.Predicate, AssociatedUnit, Envir, ParsedTarget.HoverExpression, out ResultType);
+                if (ResultType != typeof(List<RuleManager.Coordinate>))
+                {
+                    OutDiagnostics.Add(new Diagnostic(ParsedTarget.HoverBegin, 5, "Result of range expression must be of type List<Coordinate>"));
+                }
+            }
             //add dummy type to environment
-            if(ReturnValue.Type == RuleManager.TargetType.Unit)
+            if (ReturnValue.Type == RuleManager.TargetType.Unit)
             {
                 Envir.AddVar(ReturnValue.Name,new RuleManager.UnitIdentifier());
             }
@@ -1292,8 +1311,9 @@ namespace UnitScript
                     }
                 }
             }
-            AssociatedUnit.TotalAbilities[AssociatedUnit.CurrentEffectID] = ReturnValue;
-            AssociatedUnit.CurrentEffectID++;
+            ReturnValue.Index = AssociatedUnit.CurrentAbilityID;
+            AssociatedUnit.TotalAbilities[AssociatedUnit.CurrentAbilityID] = ReturnValue;
+            AssociatedUnit.CurrentAbilityID++;
             return ReturnValue;
         }
         //returns null on error
@@ -1353,14 +1373,16 @@ namespace UnitScript
                 ReturnValue.GameInfo.Envir.AddVar(Vars.VariableName.Value,ResultObject);
             }
             int Index = 0;
+
+            ReturnValue.CurrentAbilityID = ParsedUnit.Abilities.Count;
             foreach(Parser.Ability Ability in ParsedUnit.Abilities)
             {
                 EvaluationEnvironment NewEnvir = new EvaluationEnvironment();
                 NewEnvir.SetParent(ReturnValue.GameInfo.Envir);
                 NewEnvir.AddVar("this",new RuleManager.UnitIdentifier(CurrentUnitID));
                 AbilityInformation NewAbility = ConvertAbility(OutDiagnostics,ReturnValue,NewEnvir,Ability);
+                ReturnValue.TotalAbilities[Index] = NewAbility;
                 ReturnValue.GameInfo.Abilities.Add(NewAbility.Ability);
-                ReturnValue.UIInfo.AbilityIcons[Index] = NewAbility.Icon;
                 Index++;
             }
             return ReturnValue;

@@ -417,6 +417,7 @@ namespace RuleManager
     {
         public readonly AbilityType Type = AbilityType.Null;
 
+        public int AbilityID = 0;
         protected Ability(AbilityType NewType)
         {
             Type = NewType;
@@ -488,6 +489,7 @@ namespace RuleManager
         public ActivationCondition Conditions = new ActivationCondition_True();
         public TargetInfo ActivationTargets;
         public Effect ActivatedEffect;
+        public int AllowedActivations = 1;
 
         public AnimationSpecification Animation = null;
 
@@ -657,6 +659,7 @@ namespace RuleManager
         public string Name;
         public UnitScript.Expression Condition;
         public UnitScript.Expression Range = null;
+        public UnitScript.Expression Hover = null;
     }
     public class TargetInfo_UnitScript : TargetInfo
     {
@@ -1183,6 +1186,13 @@ namespace RuleManager
         HasMoved = 1<<2,
         HasAttacked = 1<<3,
         IsActivated = 1<<4,
+        ConeAttack = 1<<5,
+    }
+
+    public class AppliedContinousInfo
+    {
+        public int AbilityIndex = 0;
+        public int UnitID = 0;
     }
     [Serializable]
     public class UnitInfo
@@ -1202,11 +1212,12 @@ namespace RuleManager
         public UnitScript.EvaluationEnvironment Envir = new UnitScript.EvaluationEnvironment();
 
         //Dynamic stuff
-        public List<bool> AbilityActivated = new List<bool>();
+        public List<int> AbilityActivationCount = new List<int>();
         public Coordinate Direction = new Coordinate(1, 0);
         //used so that positions can be calculated with a simple diff
         public Coordinate TopLeftCorner = new Coordinate(0, 0);
         public List<Coordinate> UnitTileOffsets = new List<Coordinate>(new Coordinate[] { new Coordinate(0,0)});
+        public Dictionary<int, List<AppliedContinousInfo>> AppliedContinousEffects = new();
         public UnitFlags Flags = 0;
         public UnitInfo()
         {
@@ -1297,7 +1308,11 @@ namespace RuleManager
             {
                 UnitTileOffsets.Add(new Coordinate(CoordToCopy));
             }
-            AbilityActivated = new List<bool>(InfoToCopy.AbilityActivated);
+            AbilityActivationCount = new(InfoToCopy.AbilityActivationCount);
+            foreach(var Pair in InfoToCopy.AppliedContinousEffects)
+            {
+                AppliedContinousEffects[Pair.Key] = new(Pair.Value);
+            }
             Flags = InfoToCopy.Flags;
 
         }
@@ -1820,7 +1835,7 @@ namespace RuleManager
 
             for(int i = 0; i < NewUnit.Abilities.Count;i++)
             {
-                NewUnit.AbilityActivated.Add(false);
+                NewUnit.AbilityActivationCount.Add(0);
                 //if ability är continous
                 if(NewUnit.Abilities[i] is Ability_Continous)
                 {
@@ -1853,9 +1868,9 @@ namespace RuleManager
             //UnitToRefresh.HasAttacked = false;
             //UnitToRefresh.HasMoved = false;
             //UnitToRefresh.IsActivated = false;
-            for(int i = 0; i < UnitToRefresh.AbilityActivated.Count;i++)
+            for(int i = 0; i < UnitToRefresh.AbilityActivationCount.Count;i++)
             {
-                UnitToRefresh.AbilityActivated[i] = false;
+                UnitToRefresh.AbilityActivationCount[i] = 0;
             }
         }
 
@@ -2041,7 +2056,6 @@ namespace RuleManager
                         CurrentIndex++;
                     }
                 }
-                NewEnvir.AddVar("SOURCE", UnitSource);
                 NewEnvir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
                 if (UnitEffect.Envir != null)
                 {
@@ -2050,6 +2064,7 @@ namespace RuleManager
                 }
                 else
                 {
+                    NewEnvir.AddVar("SOURCE", UnitSource);
                     NewEnvir.SetParent(AssociatedUnit.Envir);
                     m_ScriptHandler.Eval(NewEnvir, UnitEffect.Expr);
                 }
@@ -3070,7 +3085,7 @@ namespace RuleManager
                         m_EventHandler.OnInitiativeChange(m_PlayerIntitiative[UnitWithEffect.PlayerIndex], UnitWithEffect.PlayerIndex);
                     }
                 }
-                UnitWithEffect.AbilityActivated[EffectToExecute.EffectIndex] = true;
+                UnitWithEffect.AbilityActivationCount[EffectToExecute.EffectIndex] += 1;
                 p_PassPriority();
             }
             else
@@ -3235,7 +3250,7 @@ namespace RuleManager
             RegisteredContinousEffect EffectToRegister = new RegisteredContinousEffect();
             EffectToRegister.AffectedEntities = AbilityToRegister.Ability.AffectedEntities;
             EffectToRegister.EffectToApply = AbilityToRegister.Ability.EffectToApply;
-            if(Args.KeyArguments.ContainsKey("TurnDuration"))
+            if (Args.KeyArguments.ContainsKey("TurnDuration")) ;
             {
                 EffectToRegister.TurnDuration = (int)Args.KeyArguments["TurnDuration"];
             }
@@ -3246,7 +3261,8 @@ namespace RuleManager
             //OBS Effect source most likely depreactd, should bbe baked in the unit environemnt
             //returned by the "lambda"
             //EffectToRegister.AbilitySource = new EffectSource_Empty();
-            EffectToRegister.AbilitySource = (EffectSource)Args.Envir.GetVar("SOURCE");
+            EffectSource_Unit OldSource = Args.Envir.GetVar("SOURCE") as EffectSource_Unit;
+            EffectToRegister.AbilitySource = new EffectSource_Unit(OldSource.PlayerIndex,OldSource.UnitID,AbilityToRegister.Index);
             p_RegisterContinousEffect(EffectToRegister);
             return null;
         }
@@ -3256,7 +3272,10 @@ namespace RuleManager
             RegisteredTrigger EffectToRegister = new ();
             EffectToRegister.TriggerCondition = AbilityToRegister.Ability.Condition;
             EffectToRegister.TriggerEffect = AbilityToRegister.Ability.TriggeredEffect;
-            EffectToRegister.TriggerSource = (EffectSource)Args.Envir.GetVar("SOURCE");
+            var OldSource = Args.Envir.GetVar("SOURCE") as EffectSource_Unit;
+            EffectToRegister.TriggerSource = new EffectSource_Unit(OldSource.PlayerIndex, OldSource.UnitID, AbilityToRegister.Index);
+
+
             EffectToRegister.AffectedEntities = new TargetRetriever_Empty();
 
             if (Args.KeyArguments.ContainsKey("IsOneShot"))
@@ -3298,6 +3317,12 @@ namespace RuleManager
             {
                 InfoToModify.Flags |= UnitFlags.CantAttack;
             }
+            return null;
+        }
+        object p_ConeAttack(UnitScript.BuiltinFuncArgs Args)
+        {
+            UnitInfo InfoToModify = (UnitInfo)Args.Arguments[0];
+            InfoToModify.Flags |= UnitFlags.ConeAttack;
             return null;
         }
         object p_PlayAnimation(UnitScript.BuiltinFuncArgs Args)
@@ -3435,6 +3460,13 @@ namespace RuleManager
             Heavy.ValidContexts = UnitScript.EvalContext.Continous;
             Heavy.Callable = p_Heavy;
             ReturnValue["Heavy"] = Heavy;
+
+            UnitScript.Builtin_FuncInfo ConeAttack = new UnitScript.Builtin_FuncInfo();
+            ConeAttack.ArgTypes = new List<HashSet<Type>> { new HashSet<Type> { typeof(UnitIdentifier) } };
+            ConeAttack.ResultType = typeof(void);
+            ConeAttack.ValidContexts = UnitScript.EvalContext.Continous;
+            ConeAttack.Callable = p_ConeAttack;
+            ReturnValue["ConeAttack"] = ConeAttack;
 
             return ReturnValue;
         }
@@ -3665,13 +3697,6 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if(AssociatedUnit.AbilityActivated[EffectToCheck.EffectIndex])
-                {
-                    ReturnValue = false;
-                    ErrorString = "Can only activate an effect once per turn";
-                    OutInfo = ErrorString;
-                    return (ReturnValue);
-                }
                 if(AssociatedUnit.Abilities[EffectToCheck.EffectIndex].Type != AbilityType.Activated)
                 {
                     ReturnValue = false;
@@ -3679,7 +3704,14 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if((AssociatedUnit.Flags & UnitFlags.Silenced) != 0)
+                if (AssociatedUnit.AbilityActivationCount[EffectToCheck.EffectIndex] > (AssociatedUnit.Abilities[EffectToCheck.EffectIndex] as Ability_Activated).AllowedActivations)
+                {
+                    ReturnValue = false;
+                    ErrorString = "Can only activate an effect once per turn";
+                    OutInfo = ErrorString;
+                    return (ReturnValue);
+                }
+                if ((AssociatedUnit.Flags & UnitFlags.Silenced) != 0)
                 {
                     ReturnValue = false;
                     ErrorString = "Unit is silenced";
@@ -3859,6 +3891,38 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+        List<Coordinate> p_FilterCone(List<Coordinate> Tiles,Coordinate Origin,Coordinate Direction)
+        {
+            List<Coordinate> ReturnValue = new();
+            foreach(var Tile in Tiles)
+            {
+                var CompareTile = Tile - Origin;
+                if(Direction.X != 0)
+                {
+                    if (Math.Sign(CompareTile.X) != Math.Sign(Direction.X))
+                    {
+                        continue;
+                    }
+                    if(Math.Abs(CompareTile.Y) > Math.Abs(CompareTile.X))
+                    {
+                        continue;
+                    }
+                }
+                if (Direction.Y != 0)
+                {
+                    if (Math.Sign(CompareTile.Y) != Math.Sign(Direction.Y))
+                    {
+                        continue;
+                    }
+                    if (Math.Abs(CompareTile.X) > Math.Abs(CompareTile.Y))
+                    {
+                        continue;
+                    }
+                }
+                ReturnValue.Add(Tile);
+            }
+            return ReturnValue;
+        }
         //Incredibly naive implementation, basicsally runs the function 6 times
         List<Coordinate> p_GetTiles(int Range,List<Coordinate> UnitTiles)
         {
@@ -3867,6 +3931,16 @@ namespace RuleManager
             foreach(Coordinate Origin in UnitTiles)
             {
                 ReturnValue.AddRange(p_GetTiles(Range, Origin, Depths));
+            }
+            return (ReturnValue);
+        }
+        List<Coordinate> p_GetConeTiles(int Range, List<Coordinate> UnitTiles,Coordinate Direction)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            Dictionary<Coordinate, int> Depths = new Dictionary<Coordinate, int>();
+            foreach (Coordinate Origin in UnitTiles)
+            {
+                ReturnValue.AddRange(p_FilterCone(p_GetTiles(Range, Origin, Depths),Origin,Direction));
             }
             return (ReturnValue);
         }
@@ -4028,6 +4102,8 @@ namespace RuleManager
             List<Coordinate> SourceTiles = p_GetAbsolutePositions(AttackingUnit.TopLeftCorner, AttackingUnit.UnitTileOffsets);
             Queue<Coordinate> TilesToExamine = new Queue<Coordinate>(SourceTiles);
             VisitedTiles.UnionWith(TilesToExamine);
+
+            var StaticOffsets = new Coordinate[] { new Coordinate(1, 0), new Coordinate(-1, 0), new Coordinate(0, 1), new Coordinate(0, -1) };
             while (TilesToExamine.Count > 0)
             {
                 Coordinate CurrentCoord = TilesToExamine.Dequeue();
@@ -4042,9 +4118,9 @@ namespace RuleManager
                     if(p_HasLineOfSight(SourceTiles,BlockingTiles,CurrentCoord))
                     {
                         ReturnValue.Add(CurrentCoord);
-                        foreach(Coordinate Offset in new Coordinate[] {new Coordinate(1,0), new Coordinate(-1, 0), new Coordinate(0, 1), new Coordinate(0, -1) })
+                        foreach(Coordinate Offset in StaticOffsets)
                         {
-                            Coordinate NewCoord = Offset+CurrentCoord;
+                            Coordinate NewCoord = Offset + CurrentCoord;
                             if(VisitedTiles.Contains(NewCoord))
                             {
                                 continue;
@@ -4065,6 +4141,16 @@ namespace RuleManager
                 }
             }
             //ReturnValue = p_GetTiles(AttackingUnit.Stats.Range,p_GetAbsolutePositions(AttackingUnit.TopLeftCorner,AttackingUnit.UnitTileOffsets));
+
+            if( (AttackingUnit.Flags & UnitFlags.ConeAttack) != 0)
+            {
+                ///filter attacks going beyond the cone
+                HashSet<Coordinate> OriginalTiles = new(ReturnValue);
+                HashSet<Coordinate> ConeTiles = new(p_GetConeTiles(AttackingUnit.Stats.Range, SourceTiles, AttackingUnit.Direction));
+                ConeTiles.IntersectWith(OriginalTiles);
+                ReturnValue = new(ConeTiles);
+            }
+
             return (ReturnValue);
         }
 
@@ -4211,6 +4297,30 @@ namespace RuleManager
             }
             return ReturnValue;
         }
+        List<Coordinate> p_GetHover(int UnitID, int EffectIndex, List<Target> CurrentTargets, UnitInfo AssociatedUnit, TargetCondition_UnitScript ConditionToSatisfy)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            if (ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover != null)
+            {
+                AssociatedUnit.Envir.AddVar("SOURCE", new EffectSource_Unit(AssociatedUnit.PlayerIndex, UnitID, EffectIndex));
+                AssociatedUnit.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
+                int CurrentIndex = 0;
+                foreach (Target PrevTarget in CurrentTargets)
+                {
+                    if (PrevTarget is Target_Unit)
+                    {
+                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name, new UnitIdentifier(((Target_Unit)PrevTarget).UnitID));
+                    }
+                    else if (PrevTarget is Target_Tile)
+                    {
+                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name, ((Target_Tile)PrevTarget).TargetCoordinate);
+                    }
+                    CurrentIndex++;
+                }
+                ReturnValue = (List<Coordinate>)m_ScriptHandler.Eval(AssociatedUnit.Envir, ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover);
+            }
+            return ReturnValue;
+        }
         public List<Coordinate> GetAbilityRange(int UnitID, int effectIndex, List<Target> currentTargets)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
@@ -4237,13 +4347,52 @@ namespace RuleManager
             }
             return (ReturnValue);
         }
+        public List<Coordinate> GetAbilityHover(int UnitID, int effectIndex, List<Target> currentTargets)
+        {
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(UnitID);
+            Ability AbilityToInspect = AssociatedUnit.Abilities[effectIndex];
+            if (!(AbilityToInspect is Ability_Activated))
+            {
+                return ReturnValue;
+            }
+            Ability_Activated ActivatedAbility = (Ability_Activated)AbilityToInspect;
+            TargetInfo_List TargetList = (TargetInfo_List)ActivatedAbility.ActivationTargets;
+            if (TargetList.Targets.Count == 0)
+            {
+                return ReturnValue;
+            }
+            TargetCondition ConditionToSatsify = TargetList.Targets[currentTargets.Count];
+            if (ConditionToSatsify is TargetCondition_UnitScript)
+            {
+                ReturnValue = p_GetRange_UnitScript(UnitID, effectIndex, currentTargets, AssociatedUnit, (TargetCondition_UnitScript)ConditionToSatsify);
+            }
+            return (ReturnValue);
+        }
 
         void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier,EffectSource Source)
         {
             if(Modifier is Effect_ContinousUnitScript)
             {
                 Effect_ContinousUnitScript UnitScriptEffect = (Effect_ContinousUnitScript)Modifier;
+                EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
                 UnitInfo SourceUnit = m_UnitInfos[ ((EffectSource_Unit) Source).UnitID];
+                if (UnitSource.EffectIndex != -1)
+                {
+                    Ability AssociatedAbility = SourceUnit.Abilities[UnitSource.EffectIndex];
+                    AppliedContinousInfo NewInfo = new();
+                    NewInfo.AbilityIndex = UnitSource.EffectIndex;
+                    NewInfo.UnitID = UnitSource.UnitID;
+                    if (InfoToModify.AppliedContinousEffects.ContainsKey(AssociatedAbility.AbilityID))
+                    {
+                        InfoToModify.AppliedContinousEffects[UnitSource.EffectIndex].Add(NewInfo);
+                    }
+                    else
+                    {
+                        InfoToModify.AppliedContinousEffects[AssociatedAbility.AbilityID] = new();
+                        InfoToModify.AppliedContinousEffects[AssociatedAbility.AbilityID].Add(NewInfo);
+                    }
+                }
                 UnitScript.EvaluationEnvironment NewEnvir = new();
                 if(UnitScriptEffect.Envir != null)
                 {

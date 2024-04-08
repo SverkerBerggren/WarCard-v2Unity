@@ -1073,9 +1073,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
                 if(Source.EffectIndex != -1)
                 {
                     var UnitResource = g_ResourceManager.GetUnitResource(ruleManager.GetUnitInfo(Source.UnitID).OpaqueInteger);
-                    if (UnitResource.UIInfo.AbilityIcons.ContainsKey(Source.EffectIndex)) 
+                    if (UnitResource.TotalAbilities.ContainsKey(Source.EffectIndex)) 
                     {
-                        var Visual = UnitResource.UIInfo.AbilityIcons[Source.EffectIndex];
+                        var Visual = UnitResource.TotalAbilities[Source.EffectIndex].Icon;
                         if(Visual.VisualInfo is ResourceManager.Visual_Image)
                         {
                             createdImage.GetComponentInChildren<UnityEngine.UI.RawImage>().texture = ((ResourceManager.Visual_Image)Visual.VisualInfo).Sprite.texture;

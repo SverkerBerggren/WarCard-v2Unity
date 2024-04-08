@@ -22,5 +22,6 @@ HeavyWeapon
             Description="Cannot attack the same turn this unit has moved";
     {
         Heavy(stuff);
+        ConeAttack(stuff);
     }
 }

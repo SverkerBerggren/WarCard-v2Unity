@@ -42,9 +42,9 @@ public class StackEntry : MonoBehaviour,IPointerClickHandler //, IPointerEnterHa
             var UnitInfo = m_UI.UnitIDToResource(Source.UnitID);
             if(UnitInfo != null)
             {
-                if(UnitInfo.UIInfo.AbilityIcons.ContainsKey(Source.EffectIndex))
+                if(UnitInfo.TotalAbilities.ContainsKey(Source.EffectIndex))
                 {
-                    var Visual = UnitInfo.UIInfo.AbilityIcons[Source.EffectIndex].VisualInfo;
+                    var Visual = UnitInfo.TotalAbilities[Source.EffectIndex].Icon.VisualInfo;
                     if(Visual is ResourceManager.Visual_Image)
                     {
                         GetComponentInChildren<Image>().sprite = (Visual as ResourceManager.Visual_Image).Sprite;

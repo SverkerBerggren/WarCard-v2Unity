@@ -38,7 +38,7 @@ namespace ResourceManager
 
         public Audio SelectSound = null;
 
-        public Dictionary<int,Animation> AbilityIcons = new Dictionary<int, Animation>();
+        //public Dictionary<int,Animation> AbilityIcons = new Dictionary<int, Animation>();
     }
 
     public class UnitResource
@@ -53,6 +53,7 @@ namespace ResourceManager
         public int ResourceID = 0;
 
         public int CurrentEffectID = 0;
+        public int CurrentAbilityID = 0;
     }
 
     class UnitDirectoryIterator
