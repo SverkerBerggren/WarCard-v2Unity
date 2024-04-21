@@ -17,7 +17,7 @@ public class GridManager : MonoBehaviour
     public int Height = 20;
     public float Angle = 45;
     public float Tilt = 30;
-    private ClickReciever m_Reciever = null;
+    private EventReciever m_Reciever = null;
 
     public float TileWidth = 1;
     public float GrassMultiplier = 4;
@@ -120,13 +120,27 @@ public class GridManager : MonoBehaviour
             m_Reciever.OnClick(Type, new Coordinate(X, Y));
         }
     }
+    public void OnHover(int x,int y)
+    {
+        if(m_Reciever != null)
+        {
+            m_Reciever.OnHover(new Coordinate(x, y));
+        }
+    }
+    public void OnHoverExit(int x, int y)
+    {
+        if (m_Reciever != null)
+        {
+            m_Reciever.OnHoverExit(new Coordinate(x, y));
+        }
+    }
     // Update is called once per frame
     void Update()
     {
       //  print("tilewidth update " + m_TileWidth);
     }
 
-    public void SetInputReciever(ClickReciever clicker)
+    public void SetInputReciever(EventReciever clicker)
     {
         m_Reciever = clicker; 
     }
@@ -145,8 +159,10 @@ public class GridManager : MonoBehaviour
         return (new Vector3(Tilt,0,Angle));
     }
 }
-public interface ClickReciever
+public interface EventReciever
 {
     void OnClick(ClickType clickType, Coordinate cord);
+    void OnHover(Coordinate cord);
+    void OnHoverExit(Coordinate cord);
     
 }

@@ -3478,7 +3478,17 @@ namespace RuleManager
 
         public List<Coordinate> GetTiles(Target target )
         {
-            return new List<Coordinate>();
+            List<Coordinate> ReturnValue = new List<Coordinate>();
+            if(target is Target_Unit)
+            {
+                var Unit = p_GetProcessedUnitInfo((target as Target_Unit).UnitID);
+                ReturnValue = p_GetAbsolutePositions(Unit.TopLeftCorner, Unit.UnitTileOffsets);
+            }
+            else if(target is Target_Tile)
+            {
+                ReturnValue.Add((target as Target_Tile).TargetCoordinate);
+            }
+            return ReturnValue;
         }
 
         public List<Target> GetPossibleTargets(TargetCondition CurrentCondition , EffectSource Source, List<Target> CurrentTargets)
@@ -4306,6 +4316,8 @@ namespace RuleManager
         List<Coordinate> p_GetHover(int UnitID, int EffectIndex, List<Target> CurrentTargets, UnitInfo AssociatedUnit, TargetCondition_UnitScript ConditionToSatisfy)
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
+            //sussy 
+            ReturnValue = GetTiles(CurrentTargets[0]);
             if (ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover != null)
             {
                 AssociatedUnit.Envir.AddVar("SOURCE", new EffectSource_Unit(AssociatedUnit.PlayerIndex, UnitID, EffectIndex));
@@ -4368,10 +4380,10 @@ namespace RuleManager
             {
                 return ReturnValue;
             }
-            TargetCondition ConditionToSatsify = TargetList.Targets[currentTargets.Count];
+            TargetCondition ConditionToSatsify = TargetList.Targets[currentTargets.Count  - 1] ;
             if (ConditionToSatsify is TargetCondition_UnitScript)
             {
-                ReturnValue = p_GetRange_UnitScript(UnitID, effectIndex, currentTargets, AssociatedUnit, (TargetCondition_UnitScript)ConditionToSatsify);
+                ReturnValue = p_GetHover(UnitID, effectIndex, currentTargets, AssociatedUnit, (TargetCondition_UnitScript)ConditionToSatsify);
             }
             return (ReturnValue);
         }

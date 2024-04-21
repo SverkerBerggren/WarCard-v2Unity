@@ -25,7 +25,7 @@ public class HpBar : MonoBehaviour
 
     }
 
-    public void AddOffset()
+    public void AddOffset() 
     {
         rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x + OffsetX, rectTransform.anchoredPosition.y + OffsetY);
 
