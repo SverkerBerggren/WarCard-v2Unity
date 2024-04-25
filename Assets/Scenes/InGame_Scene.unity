@@ -1498,6 +1498,12 @@ PrefabInstance:
       objectReference: {fileID: 1868169915}
     - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
         type: 3}
+      propertyPath: hpBarPrefab
+      value: 
+      objectReference: {fileID: 3509470547012738100, guid: 28656bb8465c95d4e8ba0b96e2ed96df,
+        type: 3}
+    - target: {fileID: 3212706685785821690, guid: 05a6ff7ba351c17449114168f7734336,
+        type: 3}
       propertyPath: damageTextVFX
       value: 
       objectReference: {fileID: 982598532997257496, guid: 02c5bd4ec0cc0a94f8b34be2bfde9cba,
