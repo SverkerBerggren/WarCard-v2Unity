@@ -23,7 +23,7 @@ public interface RestorableUIElement
 {
     void RestoreFromGamestate(RuleManager.RuleManager RestoredGamestate);
 }
-public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickReciever, ActionRetriever,AnimationPlayer
+public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventReciever, ActionRetriever,AnimationPlayer
 {
     public bool LoadSave = true;
     public static MainUI instance = null;
@@ -1255,7 +1255,21 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , ClickRecieve
 
         
     }
-
+    public void OnHover(Coordinate coordinate)
+    {
+        if(clickHandler != null)
+        {
+            print("kommer den till on hover");
+            clickHandler.OnHover(coordinate);
+        }
+    }
+    public void OnHoverExit(Coordinate coordinate)
+    {
+        if (clickHandler != null)
+        {
+            clickHandler.OnHoverExit(coordinate);
+        }
+    }
     public void OnInitiativeChange(int newIntitiative, int whichPlayer)
     {
         if(whichPlayer == 0)

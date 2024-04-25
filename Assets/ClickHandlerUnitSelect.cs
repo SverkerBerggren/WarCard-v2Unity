@@ -330,62 +330,7 @@ public class ClickHandlerUnitSelect : ClickHandler
         //   }
 
     }
-  //  private void CreateMovementObjects()
-  //  {
-  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
-  //      {
-  //          movementIndicatorObjectDictionary.Add(new List<GameObject>());
-  //
-  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
-  //          {
-  //              movementIndicatorObjectDictionary[i].Add(null);
-  //          }
-  //      }
-  //
-  //
-  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
-  //      {
-  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
-  //          {
-  //              GameObject newObject = Instantiate(MovementRange);
-  //              newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
-  //              RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-  //              MovementColor = newObject.GetComponent<SpriteRenderer>().color;
-  //              //    print(tempCord.X + " " + tempCord.Y);
-  //              newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
-  //              movementIndicatorObjectDictionary[i][z] = newObject;
-  //              newObject.SetActive(false);
-  //          }
-  //      }
-  //  }
-  //  private void CreateAttackObjects()
-  //  {
-  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
-  //      {
-  //          attackIndicatorObjectDictionary.Add(new List<GameObject>());
-  //
-  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
-  //          {
-  //              attackIndicatorObjectDictionary[i].Add(null);
-  //          }
-  //      }
-  //
-  //
-  //      for (int i = 0; i < mainUi.gridManager.Width; i++)
-  //      {
-  //          for (int z = 0; z < mainUi.gridManager.Height; z++)
-  //          {
-  //              GameObject newObject = Instantiate(attackRange);
-  //              RuleManager.Coordinate tempCord = new RuleManager.Coordinate(i, z);
-  //              newObject.transform.eulerAngles = mainUi.gridManager.GetEulerAngle();
-  //              newObject.GetComponent<SpriteRenderer>().color = AttackColor;
-  //              //    print(tempCord.X + " " + tempCord.Y);
-  //              newObject.transform.position = mainUi.gridManager.GetTilePosition(tempCord);
-  //              attackIndicatorObjectDictionary[i][z] = newObject;
-  //              newObject.SetActive(false);
-  //          }
-  //      }
-  //  }
+
     public Color RotationColor;
     public Color InvalidRotationColor;
     List<GameObject> m_RotationObjects = new List<GameObject>();
@@ -468,5 +413,21 @@ public class ClickHandlerUnitSelect : ClickHandler
         p_DestroySubElements();
         abilityActionSelected = true;
         ClickHandlerAbility.ShowAbilityRangeIndicators(selectedUnit.UnitID, ClickHandlerAbility.selectedAbilityIndex, new List<RuleManager.Target>());
+    }
+
+    public override void OnHover(Coordinate coordinate)
+    {
+        if(abilityActionSelected)
+        {
+            ClickHandlerAbility.OnHover(coordinate);
+        }
+    }
+
+    public override void OnHoverExit(Coordinate coordinate)
+    {
+        if (abilityActionSelected)
+        {
+            ClickHandlerAbility.OnHoverExit(coordinate);
+        }
     }
 }
