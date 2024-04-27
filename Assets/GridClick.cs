@@ -17,13 +17,13 @@ public class GridClick : Clickable, IPointerEnterHandler, IPointerExitHandler
     public void OnPointerEnter(PointerEventData eventData)
     {
         AssociatedGrid.OnHover(X, Y);
-       print("enter " + X + " " + Y); 
+//print("enter " + X + " " + Y); 
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         AssociatedGrid.OnHoverExit(X, Y);
-       print("exit " + X + " " + Y);
+      // print("exit " + X + " " + Y);
 
     }
 

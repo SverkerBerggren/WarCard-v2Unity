@@ -282,7 +282,6 @@ GameObject:
   - component: {fileID: 6785537327689618170}
   - component: {fileID: 761841468017459246}
   - component: {fileID: 6551500994442564308}
-  - component: {fileID: 8179936988475949556}
   - component: {fileID: 1807967293523624482}
   m_Layer: 0
   m_Name: StatusEffectImage
@@ -300,7 +299,7 @@ RectTransform:
   m_GameObject: {fileID: 5492369711355671074}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6685925767247150019}
@@ -395,7 +394,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 8179936988475949556}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: AbilityButton, Assembly-CSharp
         m_MethodName: AbilityButtonClick
         m_Mode: 1
@@ -407,7 +406,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &8179936988475949556
+--- !u!114 &1807967293523624482
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -416,22 +415,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5492369711355671074}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c81d99abeff412641abf3c865e4b1457, type: 3}
+  m_Script: {fileID: 11500000, guid: 1f765500b1d148e41b3168c5287f47f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainUI: {fileID: 0}
   buttonImage: {fileID: 761841468017459246}
-  activatedAbility: 0
-  abilityIndex: -1
-  abilityName: 
-  abilityFlavour: 
-  abilityDescription: 
   informationPopUp: {fileID: 8616846537623594576}
   abilityFlavourText: {fileID: 9211621786729497387}
   abilityDescriptionText: {fileID: 5027376613148230853}
-  abilityNameText: {fileID: 9114323479106523973}
-  clickHandlerAbility: {fileID: 0}
-  clickHandlerUnitSelect: {fileID: 0}
+  abilityNameText: {fileID: 0}
   playerIndex: 0
   unitInfo:
     UnitID: 0
@@ -449,18 +440,6 @@ MonoBehaviour:
     - X: 0
       Y: 0
     Flags: 0
---- !u!114 &1807967293523624482
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5492369711355671074}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f765500b1d148e41b3168c5287f47f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &8014446404604898930
 GameObject:
   m_ObjectHideFlags: 0
