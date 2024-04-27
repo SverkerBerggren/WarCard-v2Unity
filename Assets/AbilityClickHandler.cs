@@ -55,7 +55,7 @@ public class AbilityClickHandler : ClickHandler
             Deactivate();
             return;
         }
-        if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile, out ErrorString))
+         if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetTile, out ErrorString,true))
         {
             currentTargetToSelect += 1;
             targetWasCorrect = true;
@@ -63,7 +63,7 @@ public class AbilityClickHandler : ClickHandler
         }
         if (currentTargetToSelect < requiredAbilityTargets.Count)
         {
-            if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetUnit, out ErrorString) && !targetWasCorrect)
+            if (ruleManager.p_VerifyTarget(requiredAbilityTargets[currentTargetToSelect], EffectSource, EmptyTargets, targetUnit, out ErrorString,true) && !targetWasCorrect)
             {
                 currentTargetToSelect += 1;
                 targetWasCorrect = true;

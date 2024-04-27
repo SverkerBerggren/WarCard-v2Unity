@@ -17,7 +17,7 @@ Knight
         Up = Image("Knight_2.png");
         Down = Image("Knight_2_2.png");
     }
-    SmiteDamage = 100;
+    SmiteDamage = 50;
     LightningPose = Animation("LightningPose",FPS=25,XCenter=50,Width=15,YCenter=5);
     LightningStrike = Animation("LightningStrike",FPS=25,XCenter=50,Width=15,YCenter=2);
     activated Smite ( Unit target : Enemy(target) && Distance(this,target) < 13 range Range(this,12))

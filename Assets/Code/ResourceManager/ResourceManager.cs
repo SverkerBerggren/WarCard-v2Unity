@@ -147,7 +147,9 @@ namespace ResourceManager
             try
             {
                 Parser.Unit ParsedUnit = m_Parser.ParseUnit(m_Tokenizer);
-                UnitResource NewResource = m_ScriptHandler.ConvertUnit(Errors,ParsedUnit,m_CurrentResourceID);
+                UnitResource NewResource = m_ScriptHandler.ConvertUnit(Errors,PathToLoad,ParsedUnit);
+                NewResource.ResourceID = m_CurrentResourceID;
+                NewResource.GameInfo.OpaqueInteger = m_CurrentResourceID;
                 m_IDToUnitResource[NewResource.ResourceID] = NewResource;
                 m_CurrentResourceID++;
                 m_LoadedUnitInfos[NewResource.Name] = NewResource;

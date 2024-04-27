@@ -152,7 +152,10 @@ public class CanvasUiScript : MonoBehaviour
 
             if (AssociatedUnit.TotalAbilities.ContainsKey(i))
             {
-                newButton.GetComponent<Image>().sprite = p_SpriteFromVisual(AssociatedUnit.TotalAbilities[i].Icon.VisualInfo);
+                if(AssociatedUnit.TotalAbilities[i].Icon != null)
+                {
+                    newButton.GetComponent<Image>().sprite = p_SpriteFromVisual(AssociatedUnit.TotalAbilities[i].Icon.VisualInfo);
+                }
             }
 
             if (ability is RuleManager.Ability_Activated)

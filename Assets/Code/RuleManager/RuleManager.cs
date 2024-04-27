@@ -1206,6 +1206,8 @@ namespace RuleManager
         
         [NonSerialized]
         public List<Ability> Abilities = new List<Ability>();
+        [NonSerialized]
+        public Dictionary<int,Ability> TotalAbilities = new ();
         public UnitStats Stats = new UnitStats();
         public List<string> Tags = new List<string>();
         [NonSerialized]
@@ -1294,6 +1296,7 @@ namespace RuleManager
             PlayerIndex = InfoToCopy.PlayerIndex;
             OpaqueInteger = InfoToCopy.OpaqueInteger;
             Abilities = new List<Ability>(InfoToCopy.Abilities);
+            TotalAbilities = new(InfoToCopy.TotalAbilities);
             Stats = new UnitStats(InfoToCopy.Stats);
             Tags = new List<string>(InfoToCopy.Tags);
             //IsActivated =   InfoToCopy.IsActivated;
@@ -2036,7 +2039,7 @@ namespace RuleManager
                     throw new Exception("Effect_UnitScript assumes that the source is a Unit");
                 }
                 EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
-                UnitInfo AssociatedUnit = m_UnitInfos[UnitSource.UnitID];
+                UnitInfo AssociatedUnit = p_GetProcessedUnitInfo(UnitSource.UnitID);
                 UnitScript.EvaluationEnvironment NewEnvir = new();
 
                 //Add targets
@@ -2379,7 +2382,7 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,List<Target> CurrentTargets,Target TargetToVerify,out string OutError)
+        public bool p_VerifyTarget(TargetCondition Condition,EffectSource Source,List<Target> CurrentTargets,Target TargetToVerify,out string OutError,bool EvaluateSource)
         {
             bool ReturnValue = true;
             string Error = "";
@@ -2398,7 +2401,15 @@ namespace RuleManager
                 }
                 EffectSource_Unit Unit = (EffectSource_Unit)Source;
                 UnitScript.EvaluationEnvironment NewEnvir = new();
-                UnitInfo SourceUnit = m_UnitInfos[Unit.UnitID];
+                UnitInfo SourceUnit = null;
+                if(EvaluateSource)
+                {
+                    SourceUnit = p_GetProcessedUnitInfo(Unit.UnitID);
+                }
+                else
+                {
+                    SourceUnit = m_UnitInfos[Unit.UnitID];
+                }
                 if(UnitScriptTarget.Envir != null)
                 {
                     NewEnvir.SetParent(UnitScriptTarget.Envir);
@@ -2445,187 +2456,6 @@ namespace RuleManager
                     }
                 }
             }
-            else if(Condition is TargetCondition_Type)
-            {
-                TargetCondition_Type TypeCondition = (TargetCondition_Type)Condition;
-                ReturnValue = TypeCondition.ValidType == TargetToVerify.Type;
-                if(!ReturnValue)
-                {
-                    Error = "Invalid type for target: type needs to be " + TypeCondition.ValidType.ToString();
-                }
-            }
-            else if(Condition is TargetCondition_Enemy)
-            {
-                ReturnValue = true;
-                if(TargetToVerify is Target_Unit)
-                {
-                    ReturnValue = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].PlayerIndex != Source.PlayerIndex;
-                    if(!ReturnValue)
-                    {
-                        Error = "Target needs to be an enemy unit";
-                    }
-                }
-                else if(TargetToVerify is Target_Player)
-                {
-                    ReturnValue = ((Target_Player)TargetToVerify).PlayerIndex != Source.PlayerIndex;
-                    if (!ReturnValue)
-                    {
-                        Error = "Target needs to be an enemy player";
-                    }
-                }
-            }
-            else if(Condition is TargetCondition_Friendly)
-            {
-                ReturnValue = true;
-                if (TargetToVerify is Target_Unit)
-                {
-                    ReturnValue = m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].PlayerIndex == Source.PlayerIndex;
-                    if(!ReturnValue)
-                    {
-                        Error = "Target needs to be a friendly unit";
-                    }
-                }
-                else if (TargetToVerify is Target_Player)
-                {
-                    ReturnValue = ((Target_Player)TargetToVerify).PlayerIndex == Source.PlayerIndex;
-                    if (!ReturnValue)
-                    {
-                        Error = "Target needs to be a friendly player";
-                    }
-                }
-            }
-            else if(Condition is TargetCondition_Range)
-            {
-                TargetCondition_Range RangeCondition = (TargetCondition_Range)Condition;
-                List<Coordinate> SourceCoordinate = null;
-                if(RangeCondition.TargetIndex == -1)
-                {
-                    SourceCoordinate = p_GetAbsolutePositions(m_UnitInfos[((EffectSource_Unit)Source).UnitID].TopLeftCorner,m_UnitInfos[((EffectSource_Unit)Source).UnitID].UnitTileOffsets);
-                }
-                else
-                {
-                    Target PreviousTarget = CurrentTargets[RangeCondition.TargetIndex];
-                    if(PreviousTarget is Target_Unit)
-                    {
-                        SourceCoordinate = p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)PreviousTarget).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)PreviousTarget).UnitID].UnitTileOffsets);
-                    }
-                    else if(PreviousTarget is Target_Tile)
-                    {
-                        SourceCoordinate = new List<Coordinate>();
-                        SourceCoordinate.Add(((Target_Tile)PreviousTarget).TargetCoordinate);
-                    }
-                }
-                List<Coordinate> TargetCoordinate = null;
-                if(TargetToVerify is Target_Unit)
-                {
-                    TargetCoordinate = p_GetAbsolutePositions(m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].TopLeftCorner, m_UnitInfos[((Target_Unit)TargetToVerify).UnitID].UnitTileOffsets);
-                }
-                else if(TargetToVerify is Target_Tile)
-                {
-                    TargetCoordinate = new List<Coordinate>();
-                    TargetCoordinate .Add(((Target_Tile)TargetToVerify).TargetCoordinate);
-                }
-                else
-                {
-                    throw new Exception("Target condition only applies to targets of type Unit and Tile");
-                }
-                if(!(p_CalculateTileDistance(SourceCoordinate,TargetCoordinate) <= RangeCondition.Range))
-                {
-                    ReturnValue = false;
-                }
-                if(!ReturnValue)
-                {
-                    Error = "Target out of range";
-                }
-
-            }
-            else if(Condition is TargetCondition_Target)
-            {
-                TargetCondition_Target TargetCondition = (TargetCondition_Target)Condition;
-                ReturnValue = TargetCondition.NeededTarget.Equals(TargetToVerify);
-                if(!ReturnValue)
-                {
-                    Error = "This should not be written";
-                }
-            }
-            else if(Condition is TargetCondition_Self)
-            {
-                if(!(Source is EffectSource_Unit))
-                {
-                    Error = "self can only refer to a unit";
-                    return (false);
-                }
-                EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
-                if(!(TargetToVerify is Target_Unit))
-                {
-                    Error = "Self can only refer to a unit";
-                    return (false);
-                }
-                Target_Unit UnitTarget = (Target_Unit)TargetToVerify;
-                if(!(UnitTarget.UnitID == UnitSource.UnitID))
-                {
-                    Error = "Target isn't itself";
-                    return (false);
-                }
-                ReturnValue = true;
-            }
-            else if(Condition is TargetCondition_UnitTag)
-            {
-                TargetCondition_UnitTag TagCondition = (TargetCondition_UnitTag)Condition;
-                if(TargetToVerify.Type != TargetType.Unit)
-                {
-                    ReturnValue = false;
-                    Error = "Target needs to be a unit";
-                }
-                else
-                {
-                    int UnitToInspect = ((Target_Unit)TargetToVerify).UnitID;
-                    if(!m_UnitInfos.ContainsKey(UnitToInspect))
-                    {
-                        Error = "Unit doesn't exist";
-                        OutError = Error;
-                        return (false);
-                    }
-                    ReturnValue = m_UnitInfos[UnitToInspect].Tags.Contains(TagCondition.TagToContain);
-                    if(!ReturnValue)
-                    {
-                        Error = "Unit doesn't have the required tag: " + TagCondition.TagToContain;
-                    }
-                }
-            }
-            else if(Condition is TargetCondition_And)
-            {
-                TargetCondition_And AndCondition = (TargetCondition_And)Condition;
-                foreach(TargetCondition AndClause in AndCondition.Conditions)
-                {
-                    if(!p_VerifyTarget(AndClause,Source,CurrentTargets,TargetToVerify,out Error))
-                    {
-                        ReturnValue = false;
-                        break;
-                    }
-                }
-            }
-            else if (Condition is TargetCondition_Or)
-            {
-                TargetCondition_Or OrCondition = (TargetCondition_Or)Condition;
-                ReturnValue = false;
-                foreach (TargetCondition OrClause in OrCondition.Conditions)
-                {
-                    if (p_VerifyTarget(OrClause, Source, CurrentTargets, TargetToVerify,out Error))
-                    {
-                        ReturnValue = true;
-                        break;
-                    }
-                }
-            }
-            else if(Condition is TargetCondition_True)
-            {
-                return (true);
-            }
-            else
-            {
-                throw new Exception("Invalid target condition type: "+Condition.GetType().Name);
-            }
             OutError = Error;
             return (ReturnValue);
         }
@@ -2646,7 +2476,7 @@ namespace RuleManager
                 List<Target> CurrentTargets = new List<Target>();
                 for(int i = 0; i < ListToVerify.Targets.Count;i++)
                 {
-                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source,CurrentTargets, TargetsToVerify[i],out OutError))
+                    if(!p_VerifyTarget(ListToVerify.Targets[i],Source,CurrentTargets, TargetsToVerify[i],out OutError,true))
                     {
                         return (false);
                     }
@@ -3134,6 +2964,18 @@ namespace RuleManager
             p_DealDamage(IdToModify.ID,DamageToDeal);
             return null;
         }
+
+        object p_IsUnitType(UnitScript.BuiltinFuncArgs Args)
+        {
+            var UnitToInspect = Args.Arguments[0] as UnitIdentifier;
+            var Resource = Args.Arguments[1] as ResourceManager.UnitResource;
+            bool ReturnValue = false;
+            if (m_UnitInfos.ContainsKey(UnitToInspect.ID))
+            {
+                ReturnValue = m_UnitInfos[UnitToInspect.ID].OpaqueInteger == Resource.ResourceID;
+            }
+            return ReturnValue;
+        }
         object p_Enemy(UnitScript.BuiltinFuncArgs Args)
         {
             UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
@@ -3250,7 +3092,7 @@ namespace RuleManager
             RegisteredContinousEffect EffectToRegister = new RegisteredContinousEffect();
             EffectToRegister.AffectedEntities = AbilityToRegister.Ability.AffectedEntities;
             EffectToRegister.EffectToApply = AbilityToRegister.Ability.EffectToApply;
-            if (Args.KeyArguments.ContainsKey("TurnDuration")) ;
+            if (Args.KeyArguments.ContainsKey("TurnDuration"))
             {
                 EffectToRegister.TurnDuration = (int)Args.KeyArguments["TurnDuration"];
             }
@@ -3366,6 +3208,14 @@ namespace RuleManager
             DestroyUnit.ValidContexts = UnitScript.EvalContext.Resolve;
             DestroyUnit.Callable = p_DestroyUnit;
             ReturnValue["DestroyUnit"] = DestroyUnit;
+
+            UnitScript.Builtin_FuncInfo IsUnitType = new UnitScript.Builtin_FuncInfo();
+            IsUnitType.ArgTypes = new List<HashSet<Type>> { new HashSet<Type> { typeof(UnitIdentifier) }, new HashSet<Type> { typeof(ResourceManager.UnitResource) } };
+            IsUnitType.ResultType = typeof(bool);
+            IsUnitType.ValidContexts = UnitScript.EvalContext.Predicate | UnitScript.EvalContext.Resolve;
+            IsUnitType.Callable = p_IsUnitType;
+            ReturnValue["IsUnitType"] = IsUnitType;
+
 
             UnitScript.Builtin_FuncInfo MoveUnit = new UnitScript.Builtin_FuncInfo();
             MoveUnit.ArgTypes = new List<HashSet<Type>>{new HashSet<Type>{typeof(UnitIdentifier)}};
@@ -3498,7 +3348,7 @@ namespace RuleManager
             while (TargetEnumerator.MoveNext())
             {
                 string Error;
-                if(p_VerifyTarget(CurrentCondition,Source,CurrentTargets,TargetEnumerator.Current,out Error))
+                if(p_VerifyTarget(CurrentCondition,Source,CurrentTargets,TargetEnumerator.Current,out Error,true))
                 {
                     ReturnValue.Add(TargetEnumerator.Current);
                 }
@@ -3654,7 +3504,18 @@ namespace RuleManager
                     OutInfo = ErrorString;
                     return (ReturnValue);
                 }
-                if (p_CalculateUnitDistance(DefenderInfo,AttackerInfo) > AttackerInfo.Stats.Range)
+                List<Coordinate> ValidTiles = PossibleAttacks(AttackToCheck.AttackerID);
+                List<Coordinate> DefenderTiles = p_GetAbsolutePositions(DefenderInfo.TopLeftCorner, DefenderInfo.UnitTileOffsets);
+                bool DefendContained = false;
+                foreach(var Coord in DefenderTiles)
+                {
+                    if(ValidTiles.Contains(Coord))
+                    {
+                        DefendContained = true;
+                        break;
+                    }
+                }
+                if (!DefendContained)
                 {
                     ReturnValue = false;
                     ErrorString = "Defender out of range for attacker";
@@ -4234,7 +4095,7 @@ namespace RuleManager
             {
                 return (ReturnValue);
             }
-            ReturnValue = p_VerifyTarget(Condition, Source, currentTargets, NewTarget,out ErrorString);
+            ReturnValue = p_VerifyTarget(Condition, Source, currentTargets, NewTarget,out ErrorString,true);
             return (ReturnValue);
         }
 
@@ -4317,7 +4178,6 @@ namespace RuleManager
         {
             List<Coordinate> ReturnValue = new List<Coordinate>();
             //sussy 
-            ReturnValue = GetTiles(CurrentTargets[0]);
             if (ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover != null)
             {
                 AssociatedUnit.Envir.AddVar("SOURCE", new EffectSource_Unit(AssociatedUnit.PlayerIndex, UnitID, EffectIndex));
@@ -4388,22 +4248,30 @@ namespace RuleManager
             return (ReturnValue);
         }
 
-        void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier,EffectSource Source)
+        void p_ApplyContinousEffect(UnitInfo InfoToModify,Effect Modifier,EffectSource Source,bool EvaluateSource)
         {
             if(Modifier is Effect_ContinousUnitScript)
             {
                 Effect_ContinousUnitScript UnitScriptEffect = (Effect_ContinousUnitScript)Modifier;
                 EffectSource_Unit UnitSource = (EffectSource_Unit)Source;
-                UnitInfo SourceUnit = m_UnitInfos[ ((EffectSource_Unit) Source).UnitID];
+                UnitInfo SourceUnit = null;
+                if(EvaluateSource)
+                {
+                    SourceUnit = p_GetProcessedUnitInfo(((EffectSource_Unit)Source).UnitID);
+                }
+                else
+                {
+                    SourceUnit = m_UnitInfos[((EffectSource_Unit)Source).UnitID];
+                }
                 if (UnitSource.EffectIndex != -1)
                 {
-                    Ability AssociatedAbility = SourceUnit.Abilities[UnitSource.EffectIndex];
+                    Ability AssociatedAbility = SourceUnit.TotalAbilities[UnitSource.EffectIndex];
                     AppliedContinousInfo NewInfo = new();
                     NewInfo.AbilityIndex = UnitSource.EffectIndex;
                     NewInfo.UnitID = UnitSource.UnitID;
                     if (InfoToModify.AppliedContinousEffects.ContainsKey(AssociatedAbility.AbilityID))
                     {
-                        InfoToModify.AppliedContinousEffects[UnitSource.EffectIndex].Add(NewInfo);
+                        InfoToModify.AppliedContinousEffects[AssociatedAbility.AbilityID].Add(NewInfo);
                     }
                     else
                     {
@@ -4459,9 +4327,25 @@ namespace RuleManager
             string ErrorString = "";
             foreach(KeyValuePair<int,RegisteredContinousEffect> ContinousEffect in m_RegisteredContinousAbilities)
             {
-                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource,EmptyTargets, new Target_Unit(ID),out ErrorString))
+                bool AbilityApplied = false;
+                bool EvaluateSource = false;
+                //if(ContinousEffect.Value.AbilitySource is EffectSource_Unit)
+                //{
+                //    if(ID == (ContinousEffect.Value.AbilitySource as EffectSource_Unit).EffectIndex)
+                //    {
+                //        EvaluateSource = false;
+                //    }
+                //}
+                if (p_VerifyTarget(ContinousEffect.Value.AffectedEntities, ContinousEffect.Value.AbilitySource,EmptyTargets, new Target_Unit(ID),out ErrorString,EvaluateSource))
                 {
-                    p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply,ContinousEffect.Value.AbilitySource);
+                    if(!AbilityApplied)
+                    {
+                        UnitScript.EvaluationEnvironment NewEnvir = new();
+                        NewEnvir.SetParent(ReturnValue.Envir);
+                        ReturnValue.Envir = NewEnvir;
+                    }
+                    AbilityApplied = true;
+                    p_ApplyContinousEffect(ReturnValue, ContinousEffect.Value.EffectToApply,ContinousEffect.Value.AbilitySource,EvaluateSource);
                 }
             }
 

@@ -1,3 +1,6 @@
+import "Priest.unit" as Priest
+import "Knight.unit" as Knight
+
 RelicBearer
 {
     stats
@@ -23,5 +26,11 @@ RelicBearer
             Description="Target a friendly unit withing 12 tiles: refresh it, and destroy this unit";
     {
         RefreshUnit(target);
+    }
+    continous PriestBuff(Priest target : Friendly(target) && Distance(this,target) < LastRiteRange range Range(this,LastRiteRange))
+        :
+            Name="Range increasing xd xd";
+    {
+        AddStat(&target.SilenceRange,12);
     }
 }

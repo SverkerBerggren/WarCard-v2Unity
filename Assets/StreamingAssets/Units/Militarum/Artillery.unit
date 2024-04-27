@@ -15,7 +15,9 @@ Artillery
         Down = Image("./PH_Artillery_3.png");
     }
     Blast = Animation("Blast",FPS=25,Width=25);
-    activated IsHeavy(Tile stuff : Distance(this,stuff) < 30 range Range(this,30))
+    blastRange = 15;
+
+    activated IsHeavy(Tile stuff : Distance(this,stuff) < blastRange range Range(this,blastRange) hover Range(stuff,3) )
           :
             Icon = Image("./PH_Ability_S_Artillery.png");
             Name="Bomb";
@@ -33,7 +35,10 @@ Artillery
                 RemoveTileColoring(id);
                 MoveCamera(stuff);
                 PlayAnimation(Blast,stuff);
-                DamageArea(stuff,3,30);
+                DamageArea(stuff,blastRange,30);
             },IsOneShot=true); 
+    }
+    continous IncrRange(Unit stuff : Eq(this,stuff))
+    {
     }
 }
