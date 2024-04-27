@@ -116,6 +116,9 @@ public class CanvasUiScript : MonoBehaviour
         //   print("hur manga barn efter destroy " + GameObject.Find("UnitActions").transform.childCount);
         //    GameObject.Find("UnitActions").GetComponent<UnitActions>().clearAbilityButtons();
         //foreach (RuleManager.Ability ability in unitInfo.Abilities)
+
+        
+
         for (int i = 0; i < unitInfo.Abilities.Count; i++)
         {
             RuleManager.Ability ability = unitInfo.Abilities[i];
@@ -254,5 +257,10 @@ public class CanvasUiScript : MonoBehaviour
         {
             Player2Score.text = "Player 2 Score: " + newScore;
         }
+    }
+
+    private void CreateStatusEffect()
+    {
+
     }
 }
