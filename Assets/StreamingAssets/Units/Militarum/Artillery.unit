@@ -15,7 +15,7 @@ Artillery
         Down = Image("./PH_Artillery_3.png");
     }
     Blast = Animation("Blast",FPS=25,Width=25);
-    blastRange = 15;
+    blastRange = 30;
 
     activated IsHeavy(Tile stuff : Distance(this,stuff) < blastRange range Range(this,blastRange) hover Range(stuff,3) )
           :

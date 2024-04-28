@@ -31,6 +31,18 @@ RelicBearer
         :
             Name="Range increasing xd xd";
     {
-        AddStat(&target.SilenceRange,12);
+        AddStat(&target.SilenceRange,6);
+    }
+    continous PriestBuff2(Priest target : Friendly(target) && Distance(this,target) < LastRiteRange range Range(this,LastRiteRange))
+        :
+            Name="Range increasing xd xd";
+    {
+        AddStat(&target.BlindingRange,6);
+    }
+    continous KnightBuff(Knight target : Friendly(target) && Distance(this,target) < LastRiteRange range Range(this,LastRiteRange))
+        :
+            Name="Damage increasing xd xd";
+    {
+        AddStat(&target.SmiteDamage,25);
     }
 }

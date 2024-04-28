@@ -1396,7 +1396,7 @@ namespace RuleManager
         int m_CurrentContinousID = 1000000;
 
         //effects to remove on unit killed, continous id to remove
-        Dictionary<int, int> m_UnitRegisteredContinousAbilityMap = new Dictionary<int, int>();
+        Dictionary<int, List<int>> m_UnitRegisteredContinousAbilityMap = new Dictionary<int, List<int>>();
 
         const int m_PlayerMaxInitiative = 150;
         const int m_PlayerTurnInitiativeGain = 100;
@@ -1847,7 +1847,11 @@ namespace RuleManager
                     EffectToRegister.AffectedEntities = AbilityToRegister.AffectedEntities;
                     EffectToRegister.AbilitySource = new EffectSource_Unit(PlayerIndex, NewID, i);
                     EffectToRegister.EffectToApply = AbilityToRegister.EffectToApply;
-                    m_UnitRegisteredContinousAbilityMap.Add(NewID,p_RegisterContinousEffect(EffectToRegister));
+                    if(!m_UnitRegisteredContinousAbilityMap.ContainsKey(NewID))
+                    {
+                        m_UnitRegisteredContinousAbilityMap.Add(NewID,new List<int>());
+                    }
+                    m_UnitRegisteredContinousAbilityMap[NewID].Add(p_RegisterContinousEffect(EffectToRegister));
                 }
             }
             foreach(Coordinate Coord in NewUnit.UnitTileOffsets)
@@ -2499,7 +2503,10 @@ namespace RuleManager
             }
             if (m_UnitRegisteredContinousAbilityMap.ContainsKey(UnitID))
             {
-                m_RegisteredContinousAbilities.Remove(m_UnitRegisteredContinousAbilityMap[UnitID]);
+                foreach(var Effect in m_UnitRegisteredContinousAbilityMap[UnitID])
+                {
+                    m_RegisteredContinousAbilities.Remove(Effect);
+                }
                 m_UnitRegisteredContinousAbilityMap.Remove(UnitID);
             }
             //UnitToRemoveTile.StandingUnitID = 0;

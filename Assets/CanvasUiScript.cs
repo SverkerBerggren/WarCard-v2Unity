@@ -151,7 +151,12 @@ public class CanvasUiScript : MonoBehaviour
             abilityButton.unitInfo = unitInfo;
 
             var AssociatedUnit =mainUI.GetUnitUIInfo(unitInfo);
+
             abilityButton.SetClickable(unitInfo.AbilityActivationCount[i] == 0);
+            if(unitInfo.Abilities[i] is RuleManager.Ability_Activated)
+            {
+                abilityButton.SetClickable(unitInfo.AbilityActivationCount[i] < (unitInfo.Abilities[i] as RuleManager.Ability_Activated).AllowedActivations);
+            }
 
             if (AssociatedUnit.TotalAbilities.ContainsKey(i))
             {

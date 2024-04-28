@@ -15,7 +15,7 @@ Officer
         Down = Image("./PH_Officer_3.png");
     }
     OrderRange = 6;
-    activated MoveMoveMove ( Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange))
+    activated MoveMoveMove ( Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange)) actCount 2
           :
             Icon = Image("PH_Ability_S_Officer_2.png");
             Name="Move move move";
@@ -25,7 +25,7 @@ Officer
         RegisterContinous( 
     continous _(Unit stuff : Eq(stuff,target)){AddStat(&stuff.Stats.Movement,5);  },TurnDuration=1  );
     }
-    activated FirstRankSecondRank ( Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange))
+    activated FirstRankSecondRank ( Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange)) actCount 2
           :
             Icon = Image("./PH_Ability_S_Officer_2.png");
             Name="First rank second rank";
@@ -37,7 +37,7 @@ Officer
     activated InstaMove ( 
             Unit target : Friendly(target) && Tag(target,"Infantry") && Distance(this,target) < OrderRange range Range(this,OrderRange),
             Tile TargetTile : Distance(target,TargetTile) < 3 range Range(target,3)
-                        )
+                        ) actCount 2
           :
             Icon = Image("./PH_Ability_S_Officer_2.png");
             Name="Insta Move";
