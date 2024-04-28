@@ -89,7 +89,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
 
     void p_SetUnitVisual(int UnitID, ResourceManager.Visual VisualToSet)
     {
-        GameObject ObjectToModify = listOfImages[UnitID].objectInScene;
+        GameObject ObjectToModify = unitVisualRepresentation[UnitID].objectInScene;
         SpriteRenderer spriteRenderer = ObjectToModify.GetComponent<SpriteRenderer>();
         if (VisualToSet is ResourceManager.Visual_Image)
         {
@@ -110,7 +110,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
         OffsetDiff.y *= (spriteRenderer.sprite.texture.height / spriteRenderer.sprite.pixelsPerUnit);
         OffsetDiff.x *= Info.Direction.X;
         spriteRenderer.transform.localPosition = NewPosition+(Vector3) OffsetDiff;
-        listOfImages[UnitID].AnimationOffset = OffsetDiff;
+        unitVisualRepresentation[UnitID].AnimationOffset = OffsetDiff;
     }
 
     public static ResourceManager.ResourceManager g_ResourceManager = null;
@@ -257,7 +257,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
         }
         public void Initialize()
         {
-            GameObject SceneObject = m_AssociatedUI.listOfImages[m_UnitID].objectInScene;
+            GameObject SceneObject = m_AssociatedUI.unitVisualRepresentation[m_UnitID].objectInScene;
             m_AssociatedSpriteRenderer = SceneObject.GetComponent<SpriteRenderer>();
             m_SubAnimation = new SpriteAnimation(m_AssociatedSpriteRenderer, m_Animation);
             m_AssociatedSpriteRenderer.sprite = m_Animation.AnimationContent[0];
@@ -275,9 +275,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
         public void Finish()
         {
             m_SubAnimation.Finish();    
-            UnitSceneInfo UnitInfo = m_AssociatedUI.listOfImages[m_UnitID];
-            GameObject SceneObject = m_AssociatedUI.listOfImages[m_UnitID].objectInScene;
-            ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_UnitID].Resource;
+            UnitSceneInfo UnitInfo = m_AssociatedUI.unitVisualRepresentation[m_UnitID];
+            GameObject SceneObject = m_AssociatedUI.unitVisualRepresentation[m_UnitID].objectInScene;
+            ResourceManager.UnitResource Resource = m_AssociatedUI.unitVisualRepresentation[m_UnitID].Resource;
             if (Resource.UIInfo.AttackAnimation == null)
             {
                 return;
@@ -313,9 +313,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
         }
         public void Initialize()
         {
-            UnitSceneInfo UnitInfo = m_AssociatedUI.listOfImages[m_AttackingUnit];
-            GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
-            ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
+            UnitSceneInfo UnitInfo = m_AssociatedUI.unitVisualRepresentation[m_AttackingUnit];
+            GameObject SceneObject = m_AssociatedUI.unitVisualRepresentation[m_AttackingUnit].objectInScene;
+            ResourceManager.UnitResource Resource = m_AssociatedUI.unitVisualRepresentation[m_AttackingUnit].Resource;
             if (Resource.UIInfo.AttackAnimation == null)
             {
                 return;
@@ -331,9 +331,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
         public void Finish()
         {
 
-            UnitSceneInfo UnitInfo = m_AssociatedUI.listOfImages[m_AttackingUnit];
-            GameObject SceneObject = m_AssociatedUI.listOfImages[m_AttackingUnit].objectInScene;
-            ResourceManager.UnitResource Resource = m_AssociatedUI.listOfImages[m_AttackingUnit].Resource;
+            UnitSceneInfo UnitInfo = m_AssociatedUI.unitVisualRepresentation[m_AttackingUnit];
+            GameObject SceneObject = m_AssociatedUI.unitVisualRepresentation[m_AttackingUnit].objectInScene;
+            ResourceManager.UnitResource Resource = m_AssociatedUI.unitVisualRepresentation[m_AttackingUnit].Resource;
             if (Resource.UIInfo.AttackAnimation == null)
             {
                 return;
@@ -392,7 +392,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
 
 
 
-    private Dictionary<int, UnitSceneInfo> listOfImages = new Dictionary<int, UnitSceneInfo>();
+    private Dictionary<int, UnitSceneInfo> unitVisualRepresentation = new Dictionary<int, UnitSceneInfo>();
 
     private Dictionary<int, List<GameObject>> listOfActivationIndicators = new Dictionary<int, List<GameObject>>();
 
@@ -464,6 +464,9 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
     [SerializeField] private GameObject damageTextVFX;
 
     [SerializeField] private GameObject localPositionCanvas;
+
+    private Dictionary<int, GameObject> unitsContinousVFX = new Dictionary<int, GameObject>();
+    [SerializeField] private GameObject vfxContinousAbility; 
     public int GetTileImageIndex()
     {
         tileImageIndex += 1;
@@ -740,57 +743,49 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
             }
         }
 
-        if(Input.GetKeyDown(KeyCode.H))
+        ContinousAbilityVFX();
+    }
+    private void ContinousAbilityVFX()
+    {
+        foreach( var units in unitVisualRepresentation)
         {
-            print("kommer hit");
-            if(!debugTileColoring)
+            if(ruleManager.GetUnitInfo(units.Key) == null)
+            { continue; }
+            if(ruleManager.GetUnitInfo(units.Key).AppliedContinousEffects.Count != 0)
             {
-                List<RuleManager.Coordinate> coordinates = new List<RuleManager.Coordinate>();
 
-                coordinates.Add(new RuleManager.Coordinate(5, 6));
-                coordinates.Add(new RuleManager.Coordinate(2, 6));
-                coordinates.Add(new RuleManager.Coordinate(3, 6));
-                coordinates.Add(new RuleManager.Coordinate(4, 6));
+                if (unitsContinousVFX.ContainsKey(units.Key) == false)
+                {
+                    GameObject newVFX = Instantiate(vfxContinousAbility, units.Value.objectInScene.transform.position, new Quaternion());
 
-                TileColoringEffect effect = new TileColoringEffect(Color.cyan, null, coordinates);
-                tileColorINdexTORemoveDebug = AddColoringEffect(effect);
-                debugTileColoring = true;
-                ToJson();
+                    float originalScale = newVFX.transform.localScale.x;
+                    newVFX.transform.SetParent(units.Value.objectInScene.transform);
+                    //   float newScale = newVFX.transform.localScale.x;
+                    newVFX.transform.localScale = new Vector3(originalScale, originalScale, originalScale);
+                  //  float scaleToChangeTo = 
+                    
+                    
+                    unitsContinousVFX[units.Key] = newVFX;
+
+                }
+                else
+                {
+                    unitsContinousVFX[units.Key].SetActive(true);
+
+                }
             }
             else
-            {
-                RemoveColoringEffect(tileColorINdexTORemoveDebug);
-                debugTileColoring = false;
+            {   if(unitsContinousVFX.ContainsKey(units.Key))
+                {
+                    if (unitsContinousVFX[units.Key] != null)
+                    {
+                        unitsContinousVFX[units.Key].SetActive(false);
+                    }
+                }
+
             }
-        }
-
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            print("kommer hit");
-            if (!debugTileColoring2)
-            {
-                List<RuleManager.Coordinate> coordinates = new List<RuleManager.Coordinate>();
-
-                coordinates.Add(new RuleManager.Coordinate(3, 3));
-                coordinates.Add(new RuleManager.Coordinate(3,4));
-                coordinates.Add(new RuleManager.Coordinate(3, 5));
-                coordinates.Add(new RuleManager.Coordinate(3, 6));
-
-                TileColoringEffect effect = new TileColoringEffect(Color.red, null, coordinates);
-                tileColorINdexTORemoveDebug2 = AddColoringEffect(effect);
-                debugTileColoring2 = true;
-            }
-            else
-            {
-                print("kommer hit inne");
-
-                RemoveColoringEffect(tileColorINdexTORemoveDebug2);
-                debugTileColoring2 = false;
-            }
-
         }
     }
-
 
     public void OnUnitDamage(int unitId, int amount)
     {
@@ -867,7 +862,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
             Coordinate TilePos = MovedUnit.TopLeftCorner + MovedUnit.UnitTileOffsets[i];
             listOfActivationIndicators[UnitID][i].transform.position = gridManager.GetTilePosition(TilePos);
         }
-        UnitSceneInfo UIInfo = listOfImages[UnitID];
+        UnitSceneInfo UIInfo = unitVisualRepresentation[UnitID];
         if(NewRotation.Y == 1 || NewRotation.X == -1)
         {
             p_SetUnitVisual(UnitID, UIInfo.Resource.UIInfo.UpAnimation.VisualInfo);
@@ -880,11 +875,11 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
     }
     public void OnUnitMove(int UnitID, RuleManager.Coordinate PreviousPosition, RuleManager.Coordinate NewPosition)
     {
-        //    listOfImages[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
+        //    unitVisualRepresentation[UnitID].transform.position = gridManager.GetTilePosition(NewPosition);
         GetComponent<AudioSource>().PlayOneShot(PlaceUnitSound);
-        GameObject visualObject = listOfImages[UnitID].objectInScene;
+        GameObject visualObject = unitVisualRepresentation[UnitID].objectInScene;
         SpriteRenderer spriteRenderer = visualObject.GetComponent<SpriteRenderer>();
-        ResourceManager.UnitResource unitSprites = listOfImages[UnitID].Resource;
+        ResourceManager.UnitResource unitSprites = unitVisualRepresentation[UnitID].Resource;
 
         spriteRenderer.sortingOrder = p_GetSortingOrder(PreviousPosition);
 
@@ -953,7 +948,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
         }
         NewWorldPosition /= MovedUnit.UnitTileOffsets.Count;
         visualObject.transform.position = NewWorldPosition;
-        visualObject.transform.position += listOfImages[UnitID].AnimationOffset;
+        visualObject.transform.position += unitVisualRepresentation[UnitID].AnimationOffset;
         for(int i = 0; i < MovedUnit.UnitTileOffsets.Count;i++)
         {
             Coordinate TilePos = NewPosition + MovedUnit.UnitTileOffsets[i];
@@ -1144,15 +1139,20 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
 
     public void OnUnitDestroyed(int UnitID)
     {
-        listOfImages[UnitID].objectInScene.SetActive(false);
+        unitVisualRepresentation[UnitID].objectInScene.SetActive(false);
         foreach(GameObject Tile in listOfActivationIndicators[UnitID])
         {
             Tile.SetActive(false);
         }
         listOfActivationIndicators.Remove(UnitID);
         Destroy(unitHpBar[UnitID].gameObject);
-
         unitHpBar.Remove(UnitID);
+
+        Destroy(unitsContinousVFX[UnitID]);
+        unitsContinousVFX.Remove(UnitID);
+        
+
+
     }
 //
     public void OnTurnChange(int CurrentPlayerTurnIndex, int CurrentTurnCount)
@@ -1182,7 +1182,7 @@ public class MainUI : MonoBehaviour, RuleManager.RuleEventHandler , EventRecieve
             ActivationIndicators.Add(activationIndicator);
         }
         listOfActivationIndicators.Add(unitInt, ActivationIndicators);
-        listOfImages.Add(unitInt, SceneUnit);
+        unitVisualRepresentation.Add(unitInt, SceneUnit);
         SpriteRenderer spriteRenderer = unitToCreateVisualObject.GetComponent<SpriteRenderer>();
         p_SetUnitVisual(unitInt, SceneUnit.Resource.UIInfo.UpAnimation.VisualInfo);
         if (NewUnit.PlayerIndex == 1)

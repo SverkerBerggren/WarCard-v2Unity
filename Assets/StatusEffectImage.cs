@@ -34,10 +34,11 @@ public class StatusEffectImage : MonoBehaviour, IPointerClickHandler, IPointerEn
     public void Setup(AppliedContinousInfo effectInfo)
     {
         ruleManager = MainUI.instance.ruleManager;
-        RuleManager.Ability ability = ruleManager.GetUnitInfo(effectInfo.UnitID).Abilities[effectInfo.AbilityIndex];
+        UnitInfo unitInfo = ruleManager.GetUnitInfo(effectInfo.UnitID);
+        RuleManager.Ability ability = unitInfo.TotalAbilities[effectInfo.AbilityIndex];
 
         informationPopUp.SetActive(false);
-        ResourceManager.UnitResource unitResource = MainUI.g_ResourceManager.GetUnitResource(effectInfo.UnitID);
+        ResourceManager.UnitResource unitResource = MainUI.g_ResourceManager.GetUnitResource(unitInfo.OpaqueInteger);
         AbilityInformation abilityInformation = unitResource.TotalAbilities[effectInfo.AbilityIndex];
         if(abilityInformation.Icon != null)
         {
