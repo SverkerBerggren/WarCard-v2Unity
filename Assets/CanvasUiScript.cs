@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UI; 
+using UnityEngine.UI;
 public class CanvasUiScript : MonoBehaviour
 {
-    public Image topFrame; 
+    public Image topFrame;
     public Sprite firstPlayerTopFrame;
     public Sprite secondPlayerTopFrame;
     private bool isFirstPlayerTopFrame = true;
@@ -16,11 +16,13 @@ public class CanvasUiScript : MonoBehaviour
     public GameObject unitCard;
     public GameObject unitActions;
     public UnitActions unitAbilities;
-    public GameObject genericAbilityButton; 
+    [SerializeField] private UnitActions statusEffectHolder;
+    [SerializeField] private GameObject genericAbilityButton; 
+    [SerializeField] private GameObject statusEffectImage; 
 
     public MainUI mainUI;
 
-    private List<GameObject> buttonDestroyList = new List<GameObject>();
+    private List<GameObject> createdObjectsToDestroy = new List<GameObject>();
 
     [SerializeField]
     private ErrorMessageScript errorMessageScript;
@@ -110,14 +112,8 @@ public class CanvasUiScript : MonoBehaviour
         int ogPadding = padding;
         int index = 0;
 
-        //print(padding);
-        //   print("hur manga barn innan destroy " + GameObject.Find("UnitActions").transform.childCount);
-        DestroyButtons();
-        //   print("hur manga barn efter destroy " + GameObject.Find("UnitActions").transform.childCount);
-        //    GameObject.Find("UnitActions").GetComponent<UnitActions>().clearAbilityButtons();
-        //foreach (RuleManager.Ability ability in unitInfo.Abilities)
+        DestroyCreatedObjects();
 
-        
 
         for (int i = 0; i < unitInfo.Abilities.Count; i++)
         {
@@ -195,11 +191,28 @@ public class CanvasUiScript : MonoBehaviour
             }
 
 
-            buttonDestroyList.Add(newButton);
+            createdObjectsToDestroy.Add(newButton);
 
             index += 1;
-            unitAbilities.sortChildren();
         }
+        CreateStatusEffects(unitInfo);
+        unitAbilities.sortChildren();
+    }
+
+
+    private void CreateStatusEffects(UnitInfo unitInfo)
+    {
+        foreach(var continousInfoValuePair  in unitInfo.AppliedContinousEffects) 
+        {
+            for (int i = 0; i < continousInfoValuePair.Value.Count; i++)
+            {
+                StatusEffectImage createdObject = Instantiate(statusEffectImage,  statusEffectHolder.transform.position, new Quaternion()).GetComponent<StatusEffectImage>();
+                createdObject.transform.SetParent(statusEffectHolder.gameObject.transform);
+                createdObject.Setup(continousInfoValuePair.Value[i]);
+                createdObjectsToDestroy.Add(createdObject.gameObject);
+            }
+        }
+        statusEffectHolder.sortChildren();
     }
 
     public void DisableUnitCard()
@@ -212,15 +225,15 @@ public class CanvasUiScript : MonoBehaviour
 
 
 
-    public void DestroyButtons()
+    public void DestroyCreatedObjects()
     {
-        foreach (GameObject obj in buttonDestroyList)
+        foreach (GameObject obj in createdObjectsToDestroy)
         {
             obj.transform.SetParent(null);
             Destroy(obj);
 
         }
-        buttonDestroyList.Clear();
+        createdObjectsToDestroy.Clear();
     }
     public void changeTopFrame(int PlayerTurn)
     {
@@ -264,8 +277,4 @@ public class CanvasUiScript : MonoBehaviour
         }
     }
 
-    private void CreateStatusEffect()
-    {
-
-    }
 }

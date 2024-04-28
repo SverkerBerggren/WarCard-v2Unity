@@ -62,26 +62,5 @@ public class UnitActions : MonoBehaviour
 
     }
 
-    public void clearAbilityButtons()
-    {
-        List<GameObject> buttonsToDestroy = new List<GameObject>();
-        for(int i = 0; i < gameObject.transform.childCount; i++)
-        {
-            if(i == 0 || i == 1)
-            {
 
-            }
-            else
-            {
-                buttonsToDestroy.Add(gameObject.transform.GetChild(i).gameObject);
-            }
-        }
-
-        foreach(GameObject obj in buttonsToDestroy)
-        {
-            Destroy(obj);
-        }
-
-        buttonsToDestroy.Clear();
-    }
 }

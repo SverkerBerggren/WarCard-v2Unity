@@ -83,8 +83,8 @@ public class AbilityButton : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         }
 
         //clickHandlerAbility.selectedAbilityIndex = abilityIndex;
-        clickHandlerUnitSelect.ActivateAbilitySelection();
         clickHandlerAbility.Setup(abilityIndex, new List<RuleManager.TargetCondition>(whichTargets));
+        clickHandlerUnitSelect.ActivateAbilitySelection();
        // clickHandlerAbility.requiredAbilityTargets = new List<RuleManager.TargetCondition>(whichTargets);
 
 

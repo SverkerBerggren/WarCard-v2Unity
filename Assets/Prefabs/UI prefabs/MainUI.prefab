@@ -1775,7 +1775,7 @@ RectTransform:
   - {fileID: 3722899840918371708}
   - {fileID: 2869414401980186777}
   m_Father: {fileID: 504397793581217163}
-  m_RootOrder: 7
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -2186,6 +2186,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4401753042675738259}
+  - component: {fileID: 8125547710082241312}
   m_Layer: 5
   m_Name: StatusEffectLayout
   m_TagString: Untagged
@@ -2202,17 +2203,31 @@ RectTransform:
   m_GameObject: {fileID: 5343320462926893831}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 4, y: 4, z: 4}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 504397793581217163}
-  m_RootOrder: 8
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 2541, y: -953}
+  m_AnchoredPosition: {x: 2606, y: -1116}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &8125547710082241312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5343320462926893831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9e77c01caa3627449e66b9386f675d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  paddingBetweenButtons: 100
+  heightPadding: 0
 --- !u!1 &5710318975872365674
 GameObject:
   m_ObjectHideFlags: 0
@@ -2479,7 +2494,10 @@ MonoBehaviour:
   unitCard: {fileID: 3550164189252336795}
   unitActions: {fileID: 3992873604736126327}
   unitAbilities: {fileID: 3544125286779993332}
+  statusEffectHolder: {fileID: 8125547710082241312}
   genericAbilityButton: {fileID: 5536026639596192028, guid: 02b16227bbdf53e45b82cc1a8b162b7f,
+    type: 3}
+  statusEffectImage: {fileID: 5492369711355671074, guid: 2dbff461395af40489c58f2643f717ac,
     type: 3}
   mainUI: {fileID: 0}
   errorMessageScript: {fileID: 9075417540317712675}
