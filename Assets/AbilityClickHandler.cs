@@ -143,13 +143,14 @@ public class AbilityClickHandler : ClickHandler
         requiredAbilityTargets = new List<RuleManager.TargetCondition>();
         selectedAbilityIndex = 0;
         selectedUnit = new RuleManager.UnitInfo();
+        RemoveAbilityHover();
+
+        DestroyAbilityRangeIndicator();
 
         currentTargetToSelect = 0;
         selectedTargetsForAbilityExecution = new List<RuleManager.Target>();
         clickHandlerUnitSelect.DeactivateAbilityClickHandler();
-        RemoveAbilityHover();
 
-        DestroyAbilityRangeIndicator();
 
     }
 
