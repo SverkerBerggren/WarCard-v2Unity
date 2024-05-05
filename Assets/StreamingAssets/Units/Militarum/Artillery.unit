@@ -35,7 +35,7 @@ Artillery
                 RemoveTileColoring(id);
                 MoveCamera(stuff);
                 PlayAnimation(Blast,stuff);
-                DamageArea(stuff,blastRange,30);
+                DamageArea(stuff,blastRange,3);
             },IsOneShot=true); 
     }
     continous IncrRange(Unit stuff : Eq(this,stuff))

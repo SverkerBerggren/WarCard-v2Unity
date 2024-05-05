@@ -79,6 +79,11 @@ namespace RuleManager
         {
             m_Text = NewText;
         }
+
+        public virtual Effect Copy()
+        {
+            return this;
+        }
     }
 
     public class UnitIdentifier
@@ -152,6 +157,18 @@ namespace RuleManager
         public UnitScript.Expression Expr;
         public List<UnitScriptTarget> Targets = null;
         public UnitScript.EvaluationEnvironment Envir;
+
+        override public Effect Copy()
+        {
+            Effect_UnitScript ReturnValue = new();
+            ReturnValue.EffectID = EffectID;
+            ReturnValue.ResourceID = ResourceID;
+            ReturnValue.Expr = Expr;
+            ReturnValue.Targets = Targets;
+            ReturnValue.Envir = new();
+            ReturnValue.Envir.SetParent(Envir);
+            return ReturnValue;
+        }
     }
     public class Effect_ContinousUnitScript : Effect
     {
@@ -160,6 +177,17 @@ namespace RuleManager
         public int ResourceID = -1;
         public UnitScript.EvaluationEnvironment Envir = null;
         public UnitScript.Expression Expr;
+        override public Effect Copy()
+        {
+            Effect_ContinousUnitScript ReturnValue = new();
+            ReturnValue.EffectID = EffectID;
+            ReturnValue.ResourceID = ResourceID;
+            ReturnValue.Expr = Expr;
+            ReturnValue.UnitName = UnitName;
+            ReturnValue.Envir = new();
+            ReturnValue.Envir.SetParent(Envir);
+            return ReturnValue;
+        }
     }
     public class Effect_GainInitiative : Effect
     {
@@ -513,15 +541,26 @@ namespace RuleManager
         {
 
         }
+        public Ability_Triggered(Ability_Triggered Original ) : base(AbilityType.Triggered)
+        {
+            Condition = Original.Condition;
+            TriggeredEffect = Original.TriggeredEffect.Copy();
+            Targets = Original.Targets;
+        }
     }
     public class Ability_Continous : Ability
     {
         public TargetCondition AffectedEntities = new TargetCondition_Self();
         public Effect EffectToApply;
-        public Ability_Continous(TargetCondition NewAffectedEntities,Effect NewEffectToApply)
+        public Ability_Continous(TargetCondition NewAffectedEntities,Effect NewEffectToApply) : base(AbilityType.Continous)
         {
             AffectedEntities = NewAffectedEntities;
             EffectToApply = NewEffectToApply;
+        }
+        public Ability_Continous(Ability_Continous Original) : base(AbilityType.Continous)
+        {
+            AffectedEntities = Original.AffectedEntities.Copy();
+            EffectToApply =Original.EffectToApply.Copy();
         }
         public Ability_Continous() : base(AbilityType.Continous)
         {
@@ -697,6 +736,10 @@ namespace RuleManager
             }
             return ReturnValue;
         }
+        virtual public TargetCondition Copy()
+        {
+            return this;
+        }
     }
     //duplicated for each target
     public class TargetCondition_UnitScript : TargetCondition
@@ -705,6 +748,16 @@ namespace RuleManager
         public int ResourceID = 0;
         public List<UnitScriptTarget> Targets;
         public UnitScript.EvaluationEnvironment Envir = null;
+        override public TargetCondition Copy()
+        {
+            TargetCondition_UnitScript ReturnValue = new();
+            ReturnValue.ConditionID = ConditionID;
+            ReturnValue.ResourceID = ResourceID;
+            ReturnValue.Targets = Targets;
+            ReturnValue.Envir = new();
+            ReturnValue.Envir.SetParent(Envir);
+            return ReturnValue;
+        }
     }
     public class TargetCondition_Type : TargetCondition
     {
@@ -2449,6 +2502,7 @@ namespace RuleManager
                     NewEnvir.AddVar(UnitScriptTarget.Targets[CurrentIndex].Name,((Target_Tile)TargetToVerify).TargetCoordinate);
                 }
                 NewEnvir.AddVar("this", new UnitIdentifier(SourceUnit.UnitID) );
+                NewEnvir.AddVar("SOURCE", Source);
                 UnitScript.Expression ExprToEvaluate = UnitScriptTarget.Targets[CurrentIndex].Condition;
                 object Result = m_ScriptHandler.Eval(NewEnvir, ExprToEvaluate);
                 if( !(Result is bool) || !((bool)Result))
@@ -2985,8 +3039,7 @@ namespace RuleManager
         }
         object p_Enemy(UnitScript.BuiltinFuncArgs Args)
         {
-            UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
-            bool ReturnValue = m_CurrentPlayerTurn != m_UnitInfos[IdToModify.ID].PlayerIndex;
+            bool ReturnValue = !(bool)p_Friendly(Args);
             if(!ReturnValue)
             {
                 Args.Envir.AddVar("ERROR","Unit must be enemy");
@@ -2996,7 +3049,9 @@ namespace RuleManager
         object p_Friendly(UnitScript.BuiltinFuncArgs Args)
         {
             UnitIdentifier IdToModify = (UnitIdentifier)Args.Arguments[0];
-            bool ReturnValue = m_CurrentPlayerTurn == m_UnitInfos[IdToModify.ID].PlayerIndex;
+            //bool ReturnValue = m_CurrentPlayerTurn == m_UnitInfos[IdToModify.ID].PlayerIndex;
+            EffectSource_Unit Source = Args.Envir.GetVar("SOURCE") as EffectSource_Unit;
+            bool ReturnValue = Source.PlayerIndex == m_UnitInfos[IdToModify.ID].PlayerIndex;
             if(!ReturnValue)
             {
                 Args.Envir.AddVar("ERROR","Unit must be friendly");   
@@ -4162,22 +4217,24 @@ namespace RuleManager
             List<Coordinate> ReturnValue = new List<Coordinate>();
             if(ConditionToSatisfy.Targets[CurrentTargets.Count].Range != null)
             {
-                AssociatedUnit.Envir.AddVar("SOURCE",new EffectSource_Unit(AssociatedUnit.PlayerIndex,UnitID,EffectIndex));
-                AssociatedUnit.Envir.AddVar("this",new UnitIdentifier(AssociatedUnit.UnitID));
+                UnitScript.EvaluationEnvironment NewEnvir = new();
+                NewEnvir.AddVar("SOURCE",new EffectSource_Unit(AssociatedUnit.PlayerIndex,UnitID,EffectIndex));
+                NewEnvir.AddVar("this",new UnitIdentifier(AssociatedUnit.UnitID));
                 int CurrentIndex = 0;
                 foreach(Target PrevTarget in CurrentTargets)
                 {
                     if(PrevTarget is Target_Unit)
                     {
-                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)PrevTarget).UnitID));
+                        NewEnvir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name,new UnitIdentifier( ((Target_Unit)PrevTarget).UnitID));
                     }
                     else if(PrevTarget is Target_Tile)
                     {
-                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name,((Target_Tile)PrevTarget).TargetCoordinate);
+                        NewEnvir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name,((Target_Tile)PrevTarget).TargetCoordinate);
                     }
                     CurrentIndex++;
                 }
-                ReturnValue = (List<Coordinate>)m_ScriptHandler.Eval(AssociatedUnit.Envir,ConditionToSatisfy.Targets[CurrentTargets.Count].Range);
+                NewEnvir.SetParent(AssociatedUnit.Envir);
+                ReturnValue = (List<Coordinate>)m_ScriptHandler.Eval(NewEnvir,ConditionToSatisfy.Targets[CurrentTargets.Count].Range);
             }
             return ReturnValue;
         }
@@ -4187,22 +4244,24 @@ namespace RuleManager
             //sussy 
             if (ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover != null)
             {
-                AssociatedUnit.Envir.AddVar("SOURCE", new EffectSource_Unit(AssociatedUnit.PlayerIndex, UnitID, EffectIndex));
-                AssociatedUnit.Envir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
+                UnitScript.EvaluationEnvironment NewEnvir = new();
+                NewEnvir.AddVar("SOURCE", new EffectSource_Unit(AssociatedUnit.PlayerIndex, UnitID, EffectIndex));
+                NewEnvir.AddVar("this", new UnitIdentifier(AssociatedUnit.UnitID));
                 int CurrentIndex = 0;
                 foreach (Target PrevTarget in CurrentTargets)
                 {
                     if (PrevTarget is Target_Unit)
                     {
-                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name, new UnitIdentifier(((Target_Unit)PrevTarget).UnitID));
+                        NewEnvir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name, new UnitIdentifier(((Target_Unit)PrevTarget).UnitID));
                     }
                     else if (PrevTarget is Target_Tile)
                     {
-                        AssociatedUnit.Envir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name, ((Target_Tile)PrevTarget).TargetCoordinate);
+                        NewEnvir.AddVar(ConditionToSatisfy.Targets[CurrentIndex].Name, ((Target_Tile)PrevTarget).TargetCoordinate);
                     }
                     CurrentIndex++;
                 }
-                ReturnValue = (List<Coordinate>)m_ScriptHandler.Eval(AssociatedUnit.Envir, ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover);
+                NewEnvir.SetParent(AssociatedUnit.Envir);
+                ReturnValue = (List<Coordinate>)m_ScriptHandler.Eval(NewEnvir, ConditionToSatisfy.Targets[CurrentTargets.Count-1].Hover);
             }
             return ReturnValue;
         }
@@ -4287,6 +4346,7 @@ namespace RuleManager
                     }
                 }
                 UnitScript.EvaluationEnvironment NewEnvir = new();
+                NewEnvir.AddVar(UnitScriptEffect.UnitName,InfoToModify);
                 if(UnitScriptEffect.Envir != null)
                 {
                     NewEnvir.SetParent(UnitScriptEffect.Envir);
@@ -4295,7 +4355,6 @@ namespace RuleManager
                 {
                     NewEnvir.SetParent(SourceUnit.Envir);
                 }
-                NewEnvir.AddVar(UnitScriptEffect.UnitName,InfoToModify);
                 m_ScriptHandler.Eval(NewEnvir,UnitScriptEffect.Expr);
             }
             else if(Modifier is Effect_IncreaseDamage)

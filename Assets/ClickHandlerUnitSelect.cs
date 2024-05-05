@@ -387,7 +387,7 @@ public class ClickHandlerUnitSelect : ClickHandler
             resetSelection();
             return;
         }
-        mainUi.ruleManager.ExecuteAction(ActionToExecute);
+        mainUi.EnqueueAction(ActionToExecute);
         resetSelection();
     }
     public void ActivateAttackSelection()

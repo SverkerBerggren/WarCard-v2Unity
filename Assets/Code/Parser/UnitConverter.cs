@@ -667,10 +667,10 @@ namespace UnitScript
                 ContinousAbility Result = new ContinousAbility();
                 Result.Envir = new EvaluationEnvironment();
                 Result.Envir.SetParent(Envir);
-                Result.Ability = ContinousLiteral.Ability;
+                Result.Ability = new(ContinousLiteral.Ability);
                 Result.Index = ContinousLiteral.Index;
 
-                (ContinousLiteral.Ability.AffectedEntities as RuleManager.TargetCondition_UnitScript).Envir = Envir;
+                (Result.Ability.AffectedEntities as RuleManager.TargetCondition_UnitScript).Envir = Result.Envir;
                 (Result.Ability.EffectToApply as RuleManager.Effect_ContinousUnitScript).Envir = Result.Envir;
 
                 ReturnValue = Result;
@@ -681,7 +681,7 @@ namespace UnitScript
                 TriggeredAbility Result = new TriggeredAbility();
                 Result.Envir = new EvaluationEnvironment();
                 Result.Envir.SetParent(Envir);
-                Result.Ability = TriggeredLiteral.Ability;
+                Result.Ability = new(TriggeredLiteral.Ability);
                 Result.Index = TriggeredLiteral.Index;
                 (Result.Ability.TriggeredEffect as RuleManager.Effect_UnitScript).Envir = Result.Envir;
                 ReturnValue = Result;
