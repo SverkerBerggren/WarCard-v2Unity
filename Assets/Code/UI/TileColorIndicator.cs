@@ -11,6 +11,7 @@ public class TileColorIndicator : MonoBehaviour
     public void PaintTile(Color color)
     {
         spriteRenderer.color = color;
+        spriteRenderer.sortingOrder = -1;
     }
 
 }

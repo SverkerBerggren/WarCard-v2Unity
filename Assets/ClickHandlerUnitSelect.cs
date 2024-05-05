@@ -182,8 +182,6 @@ public class ClickHandlerUnitSelect : ClickHandler
     {   
         if(abilityActionSelected)
         {
-            abilityActionSelected = false;
-
             DeactivateAbilityClickHandler();
             return;
         }
